@@ -204,6 +204,14 @@ def rf_model (perc_split, X, Y, search = True, n_estimators = [50, 100, 300, 500
             "max_features" : max_features}
 
         idx = 1
+        min_train_mse = 10000000000
+        min_test_mse = 10000000000
+        max_train_r2 = -10000000000
+        max_test_r2 = -10000000000
+        min_train_mse_hyper = {}
+        min_test_mse_hyper = {}
+        max_train_r2_hyper = {}
+        max_test_r2_hyper = {}
         for a in hyperF["n_estimators"]:
           for b in  hyperF["max_depth"]:
             for c in  hyperF["min_samples_split"]:
@@ -230,19 +238,72 @@ def rf_model (perc_split, X, Y, search = True, n_estimators = [50, 100, 300, 500
                                 mses_train.append(train_mse)
                                 mses_test.append(test_mse)
 
+                                if train_mse < min_train_mse:
+                                    min_train_mse = train_mse
+                                    min_train_mse_hyper = {
+                                        "n_estimators" : a, 
+                                        "max_depth" : b, 
+                                        "min_samples_split" : c, 
+                                        "min_samples_leaf" : d, 
+                                        "random_state" : e, 
+                                        "bootstrap" : f,
+                                        "max_features" : g}
+
+                                if test_mse < min_test_mse:
+                                    min_test_mse = test_mse
+                                    min_test_mse_hyper = {
+                                        "n_estimators" : a, 
+                                        "max_depth" : b, 
+                                        "min_samples_split" : c, 
+                                        "min_samples_leaf" : d, 
+                                        "random_state" : e, 
+                                        "bootstrap" : f,
+                                        "max_features" : g
+                                    }
+
                                 r2_train = r2_score(y_train, y_pred)
                                 r2_test = r2_score(y_test, y_pred_test)
                                 r2s_train.append(r2_train)
                                 r2s_test.append(r2_test)
 
+                                if r2_train > max_train_r2:
+                                    max_train_r2 = r2_train
+                                    max_train_r2_hyper = {
+                                        "n_estimators" : a, 
+                                        "max_depth" : b, 
+                                        "min_samples_split" : c, 
+                                        "min_samples_leaf" : d, 
+                                        "random_state" : e, 
+                                        "bootstrap" : f,
+                                        "max_features" : g
+                                    }
+
+                                if r2_test > max_test_r2:
+                                    max_test_r2 = r2_test
+                                    max_test_r2_hyper = {
+                                        "n_estimators" : a, 
+                                        "max_depth" : b, 
+                                        "min_samples_split" : c, 
+                                        "min_samples_leaf" : d, 
+                                        "random_state" : e, 
+                                        "bootstrap" : f,
+                                        "max_features" : g
+                                    }                                        
+
                                 idxs.append(idx)
                                 idx += 1
+
+        print("min_train_mse_hyper: ", min_train_mse_hyper)
+        print("min_test_mse_hyper: ", min_test_mse_hyper)
+        print("max_train_r2_hyper: ", max_train_r2_hyper)
+        print("max_test_r2_hyper: ", max_test_r2_hyper)
+
     
         plt.clf()
         plt.rcParams.update({'font.size': 15})
         #pyplot.plot(ncomps, r2s, '-o', color='black')
-        plt.plot(idxs, mses_test, '-o', color='black')
-        plt.plot(idxs, mses_train, '-o', color='red')
+        plt.plot(idxs, mses_test, 'o', color='black')
+        plt.plot(idxs, mses_train, 'o', color='red')
         plt.xlabel('Index')
         plt.ylabel('MSE')
         plt.xticks(idxs)
@@ -252,8 +313,8 @@ def rf_model (perc_split, X, Y, search = True, n_estimators = [50, 100, 300, 500
         plt.clf()
         plt.rcParams.update({'font.size': 15})
         #pyplot.plot(ncomps, r2s, '-o', color='black')
-        plt.plot(idxs, r2s_test, '-o', color='black')
-        plt.plot(idxs, r2s_train, '-o', color='red')
+        plt.plot(idxs, r2s_test, 'o', color='black')
+        plt.plot(idxs, r2s_train, 'o', color='red')
         plt.xlabel('Index')
         plt.ylabel('R2')
         plt.xticks(idxs)
