@@ -176,13 +176,13 @@ def pls_model (perc_split, X, Y, search = True, ncomp_start = 1, ncomp_max = 15)
 
 ####################################################################################################
 
-def rf_model (perc_split, X, Y, search = True, n_estimators = [50, 100, 300, 500, 800, 1200],
-               max_depth = [None, 5, 8, 15, 25, 30], 
-               min_samples_split = [2, 5, 10, 15, 100], 
-               min_samples_leaf = [10, 20, 50, 100, 200], 
-               random_state = [42], 
-               max_features = [1, 3, 5, 8, 9, 10, 100], 
-               bootstrap = [True] ):
+def rf_model (perc_split, X, Y, search = True, in_n_estimators = [50, 100, 300, 500, 800, 1200],
+              in_max_depth = [None, 5, 8, 15, 25, 30], 
+              in_min_samples_split = [2, 5, 10, 15, 100], 
+              in_min_samples_leaf = [10, 20, 50, 100, 200], 
+              in_random_state = [42], 
+              in_max_features = [1, 3, 5, 8, 9, 10, 100], 
+              in_bootstrap = [True] ):
 
     X_train, X_test, y_train, y_test = train_test_split(X, Y, \
                                     test_size=perc_split, random_state=42)
@@ -195,13 +195,13 @@ def rf_model (perc_split, X, Y, search = True, n_estimators = [50, 100, 300, 500
         r2s_train = []
         idxs = []
 
-        hyperF = {"n_estimators" : n_estimators, 
-            "max_depth" : max_depth, 
-            "min_samples_split" : min_samples_split, 
-            "min_samples_leaf" : min_samples_leaf, 
-            "random_state" : random_state, 
-            "bootstrap" : bootstrap,
-            "max_features" : max_features}
+        hyperF = {"n_estimators" : in_n_estimators, 
+            "max_depth" : in_max_depth, 
+            "min_samples_split" : in_min_samples_split, 
+            "min_samples_leaf" : in_min_samples_leaf, 
+            "random_state" : in_random_state, 
+            "bootstrap" : in_bootstrap,
+            "max_features" : in_max_features}
 
         idx = 1
         min_train_mse = 10000000000
@@ -322,26 +322,54 @@ def rf_model (perc_split, X, Y, search = True, n_estimators = [50, 100, 300, 500
         plt.show()
 
     else:
+      
+      if len(in_n_estimators) > 1 or \
+         len(in_max_depth) > 1 or \
+         len(in_min_samples_split) > 1 or \
+         len(in_min_samples_leaf) > 1 or \
+         len(in_random_state) > 1 or \
+         len(in_bootstrap) > 1 or \
+         len(in_max_features) > 1:
+        print("ERROR: Only one hyperparameter can be used for prediction.")
+        return
 
-        pls = PLSRegression(ncomp_start)
-        pls.fit(X_train, y_train)
-    
-        y_pred = pls.predict(X_train)
-        y_pred_test = pls.predict(X_test)
+      model = RandomForestRegressor(
+                    n_estimators=in_n_estimators[0],
+                    max_depth=in_max_depth[0],
+                    min_samples_split=in_min_samples_split[0],
+                    min_samples_leaf=in_min_samples_leaf[0],
+                    random_state=in_random_state[0],
+                    bootstrap=in_bootstrap[0],
+                    max_features=in_max_features[0]
+                )
+      
+      model.fit(X_train, y_train)
+      y_pred = model.predict(X_train)
+      y_pred_test = model.predict(X_test)
+      
+      train_mse = mean_squared_error(y_train, y_pred)
+      test_mse = mean_squared_error(y_test, y_pred_test)
+      r2_train = r2_score(y_train, y_pred)
+      r2_test = r2_score(y_test, y_pred_test)
 
-        plt.clf()
-        plt.rcParams.update({'font.size': 15})
-        plt.plot(y_pred, y_train, 'o', color='red')
-        plt.xlabel('PREDICTED')
-        plt.ylabel('TRUE')
-        plt.show()
+      print("train_mse: ", train_mse)
+      print("test_mse: ", test_mse)
+      print("r2_train: ", r2_train)
+      print("r2_test: ", r2_test)
+
+      plt.clf()
+      plt.rcParams.update({'font.size': 15})
+      plt.plot(y_pred, y_train, 'o', color='red')
+      plt.xlabel('PREDICTED')
+      plt.ylabel('TRUE')
+      plt.show()
     
-        plt.clf()
-        plt.rcParams.update({'font.size': 15})
-        plt.plot(y_pred_test, y_test, 'o', color='black')
-        plt.xlabel('PREDICTED')
-        plt.ylabel('TRUE')
-        plt.show()
+      plt.clf()
+      plt.rcParams.update({'font.size': 15})
+      plt.plot(y_pred_test, y_test, 'o', color='black')
+      plt.xlabel('PREDICTED')
+      plt.ylabel('TRUE')
+      plt.show()
 
     return
 
