@@ -103,8 +103,8 @@ def pls_model (perc_split, X, Y, search = True, ncomp_start = 1, ncomp_max = 15)
     
     if search == True:
 
-        mses_test = []
-        mses_train = []
+        rmses_test = []
+        rmses_train = []
         r2s_test = []
         r2s_train = []
         ncomps = []
@@ -116,25 +116,25 @@ def pls_model (perc_split, X, Y, search = True, ncomp_start = 1, ncomp_max = 15)
             y_pred = pls.predict(X_train)
             y_pred_test = pls.predict(X_test)
     
-            mse_train = mean_squared_error(y_train, y_pred)
-            mse_test = mean_squared_error(y_test, y_pred_test)
+            rmse_train = mean_squared_error(y_train, y_pred, squared=False)
+            rmse_test = mean_squared_error(y_test, y_pred_test, squared=False)
     
             r2_train = r2_score(y_train, y_pred)
             r2_test = r2_score(y_test, y_pred_test)
     
             r2s_train.append(r2_train)
-            mses_train.append(mse_train)
+            rmses_train.append(rmse_train)
             r2s_test.append(r2_test)
-            mses_test.append(mse_test)
+            rmses_test.append(rmse_test)
             ncomps.append(ncomp)
     
         plt.clf()
         plt.rcParams.update({'font.size': 15})
         #pyplot.plot(ncomps, r2s, '-o', color='black')
-        plt.plot(ncomps, mses_test, '-o', color='black')
-        plt.plot(ncomps, mses_train, '-o', color='red')
+        plt.plot(ncomps, rmses_test, '-o', color='black')
+        plt.plot(ncomps, rmses_train, '-o', color='red')
         plt.xlabel('Number of Components')
-        plt.ylabel('MSE')
+        plt.ylabel('RMS')
         plt.xticks(ncomps)
         #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
         plt.show()
@@ -189,8 +189,8 @@ def rf_model (perc_split, X, Y, search = True, in_n_estimators = [50, 100, 300, 
     
     if search == True:
 
-        mses_test = []
-        mses_train = []
+        rmses_test = []
+        rmses_train = []
         r2s_test = []
         r2s_train = []
         idxs = []
@@ -204,12 +204,12 @@ def rf_model (perc_split, X, Y, search = True, in_n_estimators = [50, 100, 300, 
             "max_features" : in_max_features}
 
         idx = 1
-        min_train_mse = 10000000000
-        min_test_mse = 10000000000
+        min_train_rmse = 10000000000
+        min_test_rmse = 10000000000
         max_train_r2 = -10000000000
         max_test_r2 = -10000000000
-        min_train_mse_hyper = {}
-        min_test_mse_hyper = {}
+        min_train_rmse_hyper = {}
+        min_test_rmse_hyper = {}
         max_train_r2_hyper = {}
         max_test_r2_hyper = {}
         for a in hyperF["n_estimators"]:
@@ -233,14 +233,16 @@ def rf_model (perc_split, X, Y, search = True, in_n_estimators = [50, 100, 300, 
                                 y_pred = model.predict(X_train)
                                 y_pred_test = model.predict(X_test)
 
-                                train_mse = mean_squared_error(y_train, y_pred)
-                                test_mse = mean_squared_error(y_test, y_pred_test)
-                                mses_train.append(train_mse)
-                                mses_test.append(test_mse)
+                                train_rmse = mean_squared_error(y_train, y_pred, \
+                                                               squared=False)
+                                test_rmse = mean_squared_error(y_test, y_pred_test, \
+                                                              squared=False)
+                                rmses_train.append(train_rmse)
+                                rmses_test.append(test_rmse)
 
-                                if train_mse < min_train_mse:
-                                    min_train_mse = train_mse
-                                    min_train_mse_hyper = {
+                                if train_rmse < min_train_rmse:
+                                    min_train_rmse = train_rmse
+                                    min_train_rmse_hyper = {
                                         "n_estimators" : a, 
                                         "max_depth" : b, 
                                         "min_samples_split" : c, 
@@ -249,9 +251,9 @@ def rf_model (perc_split, X, Y, search = True, in_n_estimators = [50, 100, 300, 
                                         "bootstrap" : f,
                                         "max_features" : g}
 
-                                if test_mse < min_test_mse:
-                                    min_test_mse = test_mse
-                                    min_test_mse_hyper = {
+                                if test_rmse < min_test_rmse:
+                                    min_test_rmse = test_rmse
+                                    min_test_rmse_hyper = {
                                         "n_estimators" : a, 
                                         "max_depth" : b, 
                                         "min_samples_split" : c, 
@@ -293,8 +295,8 @@ def rf_model (perc_split, X, Y, search = True, in_n_estimators = [50, 100, 300, 
                                 idxs.append(idx)
                                 idx += 1
 
-        print("min_train_mse_hyper: ", min_train_mse_hyper)
-        print("min_test_mse_hyper: ", min_test_mse_hyper)
+        print("min_train_rmse_hyper: ", min_train_rmse_hyper)
+        print("min_test_rmse_hyper: ", min_test_rmse_hyper)
         print("max_train_r2_hyper: ", max_train_r2_hyper)
         print("max_test_r2_hyper: ", max_test_r2_hyper)
 
@@ -302,10 +304,10 @@ def rf_model (perc_split, X, Y, search = True, in_n_estimators = [50, 100, 300, 
         plt.clf()
         plt.rcParams.update({'font.size': 15})
         #pyplot.plot(ncomps, r2s, '-o', color='black')
-        plt.plot(idxs, mses_test, 'o', color='black')
-        plt.plot(idxs, mses_train, 'o', color='red')
+        plt.plot(idxs, rmses_test, 'o', color='black')
+        plt.plot(idxs, rmses_train, 'o', color='red')
         plt.xlabel('Index')
-        plt.ylabel('MSE')
+        plt.ylabel('RMSE')
         plt.xticks(idxs)
         #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
         plt.show()
@@ -347,13 +349,13 @@ def rf_model (perc_split, X, Y, search = True, in_n_estimators = [50, 100, 300, 
       y_pred = model.predict(X_train)
       y_pred_test = model.predict(X_test)
       
-      train_mse = mean_squared_error(y_train, y_pred)
-      test_mse = mean_squared_error(y_test, y_pred_test)
+      train_rmse = mean_squared_error(y_train, y_pred, squared=False)
+      test_rmse = mean_squared_error(y_test, y_pred_test, squared=False)
       r2_train = r2_score(y_train, y_pred)
       r2_test = r2_score(y_test, y_pred_test)
 
-      print("train_mse: ", train_mse)
-      print("test_mse: ", test_mse)
+      print("train_rmse: ", train_rmse)
+      print("test_rmse: ", test_rmse)
       print("r2_train: ", r2_train)
       print("r2_test: ", r2_test)
 
@@ -371,7 +373,8 @@ def rf_model (perc_split, X, Y, search = True, in_n_estimators = [50, 100, 300, 
       plt.ylabel('TRUE')
       plt.show()
 
-    return
+
+    return min_train_rmse_hyper, min_test_rmse_hyper, max_train_r2_hyper, max_test_r2_hyper
 
 ####################################################################################################
 
