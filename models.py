@@ -323,58 +323,58 @@ def rf_model (perc_split, X, Y, search = True, in_n_estimators = [50, 100, 300, 
         #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
         plt.show()
 
+        return min_train_rmse_hyper, min_test_rmse_hyper, max_train_r2_hyper, max_test_r2_hyper
+
     else:
+        if len(in_n_estimators) > 1 or \
+           len(in_max_depth) > 1 or \
+           len(in_min_samples_split) > 1 or \
+           len(in_min_samples_leaf) > 1 or \
+           len(in_random_state) > 1 or \
+           len(in_bootstrap) > 1 or \
+           len(in_max_features) > 1:
+          print("ERROR: Only one hyperparameter can be used for prediction.")
+          return
       
-      if len(in_n_estimators) > 1 or \
-         len(in_max_depth) > 1 or \
-         len(in_min_samples_split) > 1 or \
-         len(in_min_samples_leaf) > 1 or \
-         len(in_random_state) > 1 or \
-         len(in_bootstrap) > 1 or \
-         len(in_max_features) > 1:
-        print("ERROR: Only one hyperparameter can be used for prediction.")
-        return
-
-      model = RandomForestRegressor(
-                    n_estimators=in_n_estimators[0],
-                    max_depth=in_max_depth[0],
-                    min_samples_split=in_min_samples_split[0],
-                    min_samples_leaf=in_min_samples_leaf[0],
-                    random_state=in_random_state[0],
-                    bootstrap=in_bootstrap[0],
-                    max_features=in_max_features[0]
-                )
+        model = RandomForestRegressor(
+                      n_estimators=in_n_estimators[0],
+                      max_depth=in_max_depth[0],
+                      min_samples_split=in_min_samples_split[0],
+                      min_samples_leaf=in_min_samples_leaf[0],
+                      random_state=in_random_state[0],
+                      bootstrap=in_bootstrap[0],
+                      max_features=in_max_features[0]
+                  )
+        
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_train)
+        y_pred_test = model.predict(X_test)
+        
+        train_rmse = mean_squared_error(y_train, y_pred, squared=False)
+        test_rmse = mean_squared_error(y_test, y_pred_test, squared=False)
+        r2_train = r2_score(y_train, y_pred)
+        r2_test = r2_score(y_test, y_pred_test)
       
-      model.fit(X_train, y_train)
-      y_pred = model.predict(X_train)
-      y_pred_test = model.predict(X_test)
+        print("train_rmse: ", train_rmse)
+        print("test_rmse: ", test_rmse)
+        print("r2_train: ", r2_train)
+        print("r2_test: ", r2_test)
       
-      train_rmse = mean_squared_error(y_train, y_pred, squared=False)
-      test_rmse = mean_squared_error(y_test, y_pred_test, squared=False)
-      r2_train = r2_score(y_train, y_pred)
-      r2_test = r2_score(y_test, y_pred_test)
+        plt.clf()
+        plt.rcParams.update({'font.size': 15})
+        plt.plot(y_pred, y_train, 'o', color='red')
+        plt.xlabel('PREDICTED')
+        plt.ylabel('TRUE')
+        plt.show()
+      
+        plt.clf()
+        plt.rcParams.update({'font.size': 15})
+        plt.plot(y_pred_test, y_test, 'o', color='black')
+        plt.xlabel('PREDICTED')
+        plt.ylabel('TRUE')
+        plt.show()
 
-      print("train_rmse: ", train_rmse)
-      print("test_rmse: ", test_rmse)
-      print("r2_train: ", r2_train)
-      print("r2_test: ", r2_test)
-
-      plt.clf()
-      plt.rcParams.update({'font.size': 15})
-      plt.plot(y_pred, y_train, 'o', color='red')
-      plt.xlabel('PREDICTED')
-      plt.ylabel('TRUE')
-      plt.show()
-    
-      plt.clf()
-      plt.rcParams.update({'font.size': 15})
-      plt.plot(y_pred_test, y_test, 'o', color='black')
-      plt.xlabel('PREDICTED')
-      plt.ylabel('TRUE')
-      plt.show()
-
-
-    return min_train_rmse_hyper, min_test_rmse_hyper, max_train_r2_hyper, max_test_r2_hyper
+    return 
 
 ####################################################################################################
 
