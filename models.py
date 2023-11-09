@@ -7,7 +7,6 @@ from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import (LeaveOneOut, cross_val_predict,
                                      cross_val_score, train_test_split)
 
-
 from tensorflow import keras
 import tensorflow as tf
 
@@ -18,7 +17,6 @@ from tensorflow.keras.layers import Input, Dense
 from tensorflow.keras.models import Model
 
 from ann_visualizer.visualize import ann_viz
-
 
 ####################################################################################################
 
