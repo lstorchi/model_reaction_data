@@ -18,12 +18,14 @@ from tensorflow.keras.models import Model
 
 from ann_visualizer.visualize import ann_viz
 
+SPLIT_RANDOM_STATE = 42
+
 ####################################################################################################
 
 def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_size=-1, inputshape=-1):
 
     X_train, X_test, y_train, y_test = train_test_split(X, Y, \
-                                    test_size=perc_split, random_state=42)
+                                    test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
 
     if inputshape == -1:
         inputshape = X_train.shape[1]
@@ -97,7 +99,7 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_size=-1, inputshape=-
 def pls_model (perc_split, X, Y, search = True, ncomp_start = 1, ncomp_max = 15):
 
     X_train, X_test, y_train, y_test = train_test_split(X, Y, \
-                                    test_size=perc_split, random_state=42)
+                                    test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
     
     if search == True:
 
@@ -148,6 +150,8 @@ def pls_model (perc_split, X, Y, search = True, ncomp_start = 1, ncomp_max = 15)
         #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
         plt.show()
 
+        return ncomps, rmses_test, rmses_train, r2s_test, r2s_train
+
     else:
 
         pls = PLSRegression(ncomp_start)
@@ -183,7 +187,7 @@ def rf_model (perc_split, X, Y, search = True, in_n_estimators = [50, 100, 300, 
               in_bootstrap = [True] ):
 
     X_train, X_test, y_train, y_test = train_test_split(X, Y, \
-                                    test_size=perc_split, random_state=42)
+                                    test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
     
     if search == True:
 
