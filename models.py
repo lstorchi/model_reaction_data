@@ -16,22 +16,44 @@ import tensorflow.keras.losses as tkl
 from tensorflow.keras.layers import Input, Dense
 from tensorflow.keras.models import Model
 
-from ann_visualizer.visualize import ann_viz
+from sklearn import preprocessing
+
+#from ann_visualizer.visualize import ann_viz
 
 SPLIT_RANDOM_STATE = 42
 
 ####################################################################################################
 
-def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_size=-1, inputshape=-1):
+def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
+    """
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        length      - Optional  : character length of bar (Int)
+        fill        - Optional  : bar fill character (Str)
+        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
+    """
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+    # Print New Line on Complete
+    if iteration == total: 
+        print()
+
+####################################################################################################
+
+def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1):
 
     X_train, X_test, y_train, y_test = train_test_split(X, Y, \
                                     test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
-
+    
     if inputshape == -1:
         inputshape = X_train.shape[1]
-
-    if batch_size == -1:
-        batch_size = int(X_train.shape[0])
 
     mses_test = []
     mses_train = []
@@ -40,34 +62,36 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_size=-1, inputshape=-
     modeidxs = []
 
     for midx, modelshape in enumerate(modelshapes):
-        model = keras.Sequential()
-        model.add(keras.layers.Input(shape=(inputshape)))
-
-        for n in modelshape:
-            model.add(keras.layers.Dense(units = n, activation = 'relu'))
-
-        model.add(keras.layers.Dense(units = 1, activation = 'linear'))
-        model.compile(loss='mse', optimizer="adam", metrics='mse')
-        #ann_viz(model, title="Discriminator Model",\
-        #         view=True)
-        
-        history = model.fit(X_train, y_train, epochs=nepochs,  batch_size=batch_size, \
-            verbose=0)
-
-        y_pred = model.predict(X_train)
-        y_pred_test = model.predict(X_test)
-
-        mse_train = mean_squared_error(y_train, y_pred)
-        mse_test = mean_squared_error(y_test, y_pred_test)
-        r2_train = r2_score(y_train, y_pred)
-        r2_test = r2_score(y_test, y_pred_test)
-
-        r2s_train.append(r2_train)
-        mses_train.append(mse_train)
-        r2s_test.append(r2_test)
-        mses_test.append(mse_test)
-
-        modeidxs.append(midx)
+        for nepoch in nepochs:
+            for batch_size in batch_sizes:
+                model = keras.Sequential()
+                model.add(keras.layers.Input(shape=(inputshape)))
+            
+                for n in modelshape:
+                    model.add(keras.layers.Dense(units = n, activation = 'relu'))
+            
+                model.add(keras.layers.Dense(units = 1, activation = 'linear'))
+                model.compile(loss='mse', optimizer="adam", metrics='mse')
+                #ann_viz(model, title="Discriminator Model",\
+                #         view=True)
+                
+                history = model.fit(X_train, y_train, epochs=nepoch,  batch_size=batch_size, \
+                    verbose=0)
+            
+                y_pred = model.predict(X_train)
+                y_pred_test = model.predict(X_test)
+            
+                mse_train = mean_squared_error(y_train, y_pred)
+                mse_test = mean_squared_error(y_test, y_pred_test)
+                r2_train = r2_score(y_train, y_pred)
+                r2_test = r2_score(y_test, y_pred_test)
+            
+                r2s_train.append(r2_train)
+                mses_train.append(mse_train)
+                r2s_test.append(r2_test)
+                mses_test.append(mse_test)
+            
+                modeidxs.append(midx)
 
 
     plt.clf()
@@ -91,12 +115,25 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_size=-1, inputshape=-
     plt.xticks(modeidxs)
     #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
     plt.show()
-
+        
     return
 
 ####################################################################################################
 
-def pls_model (perc_split, X, Y, search = True, ncomp_start = 1, ncomp_max = 15):
+def pls_model (perc_split, Xin, Yin, search = True, ncomp_start = 1, ncomp_max = 15,
+               normlize = False):
+
+    X = None
+    Y = None
+
+    if normlize:
+        scalerX = preprocessing.StandardScaler().fit(Xin)
+        X = scalerX.transform(Xin)
+
+        Y = Yin
+    else:
+        X = Xin
+        Y = Yin
 
     X_train, X_test, y_train, y_test = train_test_split(X, Y, \
                                     test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
@@ -178,10 +215,10 @@ def pls_model (perc_split, X, Y, search = True, ncomp_start = 1, ncomp_max = 15)
 
 ####################################################################################################
 
-def rf_model (perc_split, X, Y, search = True, in_n_estimators = [50, 100, 300, 500, 800, 1200],
+def rf_model (perc_split, X, Y, search = True, in_n_estimators = [50, 100, 300, 400],
               in_max_depth = [None, 5, 8, 15, 25, 30], 
-              in_min_samples_split = [2, 5, 10, 15, 100], 
-              in_min_samples_leaf = [10, 20, 50, 100, 200], 
+              in_min_samples_split = [2, 5, 10, 15], 
+              in_min_samples_leaf = [10, 20, 50], 
               in_random_state = [42], 
               in_max_features = [1, 3, 5, 8, 9, 10, 100], 
               in_bootstrap = [True] ):
@@ -214,6 +251,14 @@ def rf_model (perc_split, X, Y, search = True, in_n_estimators = [50, 100, 300, 
         min_test_rmse_hyper = {}
         max_train_r2_hyper = {}
         max_test_r2_hyper = {}
+        maxidx = len(hyperF["n_estimators"])* \
+                    len(hyperF["max_depth"])* \
+                    len(hyperF["min_samples_split"])* \
+                    len(hyperF["min_samples_leaf"])* \
+                    len(hyperF["random_state"])* \
+                    len(hyperF["bootstrap"])* \
+                    len(hyperF["max_features"])
+        
         for a in hyperF["n_estimators"]:
           for b in  hyperF["max_depth"]:
             for c in  hyperF["min_samples_split"]:
@@ -296,6 +341,12 @@ def rf_model (perc_split, X, Y, search = True, in_n_estimators = [50, 100, 300, 
 
                                 idxs.append(idx)
                                 idx += 1
+
+                                printProgressBar(idx, maxidx, \
+                                                 prefix = 'Progress:', \
+                                                    suffix = 'Complete', length = 50)
+
+                                #print(idx / maxidx * 100, "%")
 
         print("min_train_rmse_hyper: ", min_train_rmse_hyper)
         print("min_test_rmse_hyper: ", min_test_rmse_hyper)
