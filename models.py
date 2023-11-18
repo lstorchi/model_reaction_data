@@ -7,6 +7,8 @@ from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import (LeaveOneOut, cross_val_predict,
                                      cross_val_score, train_test_split)
 
+from sklearn.model_selection import LeaveOneOut
+
 from tensorflow import keras
 import tensorflow as tf
 
@@ -121,7 +123,7 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1)
 ####################################################################################################
 
 def pls_model (perc_split, Xin, Yin, search = True, ncomp_start = 1, ncomp_max = 15,
-               normlize = False):
+               leaveoneout=False, normlize = False):
 
     X = None
     Y = None
@@ -135,7 +137,14 @@ def pls_model (perc_split, Xin, Yin, search = True, ncomp_start = 1, ncomp_max =
         X = Xin
         Y = Yin
 
-    X_train, X_test, y_train, y_test = train_test_split(X, Y, \
+    X_train = None 
+    X_test = None
+    y_train = None 
+    y_test = None
+
+    if not leaveoneout:
+
+        X_train, X_test, y_train, y_test = train_test_split(X, Y, \
                                     test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
     
     if search == True:
@@ -191,25 +200,68 @@ def pls_model (perc_split, Xin, Yin, search = True, ncomp_start = 1, ncomp_max =
 
     else:
 
-        pls = PLSRegression(ncomp_start)
-        pls.fit(X_train, y_train)
-    
-        y_pred = pls.predict(X_train)
-        y_pred_test = pls.predict(X_test)
+        if leaveoneout:
 
-        plt.clf()
-        plt.rcParams.update({'font.size': 15})
-        plt.plot(y_pred, y_train, 'o', color='red')
-        plt.xlabel('PREDICTED')
-        plt.ylabel('TRUE')
-        plt.show()
-    
-        plt.clf()
-        plt.rcParams.update({'font.size': 15})
-        plt.plot(y_pred_test, y_test, 'o', color='black')
-        plt.xlabel('PREDICTED')
-        plt.ylabel('TRUE')
-        plt.show()
+            loo = LeaveOneOut()
+            y_pred_test = []
+            y_true_test = []
+            for i, (train_index, test_index) in enumerate(loo.split(X)):
+                X_train, X_test = X[train_index], X[test_index]
+                y_train, y_test = Y[train_index], Y[test_index]
+
+                #print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
+
+                pls = PLSRegression(ncomp_start)
+                pls.fit(X_train, y_train)
+
+                y_pred_test.append(pls.predict(X_test)[0])
+                y_true_test.append(y_test[0])
+
+                #print(y_pred_test[-1], y_true_test[-1])
+
+            rmse = mean_squared_error(y_true_test, y_pred_test, squared=False)
+
+            print("RMSE: ", rmse)
+
+        else: 
+            pls = PLSRegression(ncomp_start)
+            pls.fit(X_train, y_train)
+           
+            y_pred = pls.predict(X_train)
+            y_pred_test = pls.predict(X_test)
+           
+            rmse_train = mean_squared_error(y_train, y_pred, squared=False)
+            rmse_test = mean_squared_error(y_test, y_pred_test, squared=False)
+           
+            r2_train = r2_score(y_train, y_pred)
+            r2_test = r2_score(y_test, y_pred_test)
+           
+            print("RMSE Train: ", rmse_train)
+            print("RMSE Test : ", rmse_test)
+            print("R2 Train  : ", r2_train)
+            print("R2 Test   : ", r2_test)
+           
+            y_pred_full = pls.predict(X)
+            rmse_full = mean_squared_error(Y, y_pred_full, squared=False)
+            r2_full = r2_score(Y, y_pred_full)
+           
+            print("RMSE Full: ", rmse_full)
+            print("R2 Full  : ", r2_full)
+           
+            plt.clf()
+            plt.rcParams.update({'font.size': 15})
+            plt.plot(y_pred, y_train, 'o', color='red')
+            plt.xlabel('PREDICTED')
+            plt.ylabel('TRUE')
+            plt.show()
+           
+            plt.clf()
+            plt.rcParams.update({'font.size': 15})
+            plt.plot(y_pred_test, y_test, 'o', color='black')
+            plt.xlabel('PREDICTED')
+            plt.ylabel('TRUE')
+            plt.show()
+
 
     return
 
