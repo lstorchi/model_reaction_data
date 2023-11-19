@@ -221,7 +221,7 @@ def pls_model (perc_split, Xin, Yin, search = True, ncomp_start = 1, ncomp_max =
 
             rmse = mean_squared_error(y_true_test, y_pred_test, squared=False)
 
-            print("RMSE: ", rmse)
+            print("Leave On Out RMSE: ", rmse)
 
         else: 
             pls = PLSRegression(ncomp_start)
