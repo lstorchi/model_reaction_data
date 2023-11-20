@@ -155,7 +155,7 @@ def pls_model (perc_split, Xin, Yin, search = True, ncomp_start = 1, ncomp_max =
         r2s_train = []
         ncomps = []
     
-        for ncomp in range(ncomp_start, ncomp_max):
+        for ncomp in range(ncomp_start, ncomp_max+1):
             pls = PLSRegression(ncomp)
             pls.fit(X_train, y_train)
     
