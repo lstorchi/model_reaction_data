@@ -150,11 +150,12 @@ def pls_model (perc_split, Xin, Yin, search = True, ncomp_start = 1, ncomp_max =
                 #print(y_pred_test[-1], y_true_test[-1])
 
             rmse = mean_squared_error(y_true_test, y_pred_test, squared=False)
+            r2 = r2_score(y_true_test, y_pred_test)
 
             if DEBUG:
                 print("Leave On Out RMSE: ", rmse)
 
-            return rmse
+            return rmse, r2
 
         else: 
             pls = PLSRegression(ncomp_start)
