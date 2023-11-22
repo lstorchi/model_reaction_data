@@ -199,7 +199,8 @@ def pls_model (perc_split, Xin, Yin, search = True, ncomp_start = 1, ncomp_max =
                 plt.ylabel('TRUE')
                 plt.show()
 
-            return rmse_train, rmse_test, r2_train, r2_test, rmse_full, r2_full
+            return rmse_train, rmse_test, r2_train, r2_test, rmse_full, r2_full, \
+                pls, X_train, X_test, y_train, y_test 
 
     return
 
