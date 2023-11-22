@@ -23,6 +23,8 @@ from sklearn import preprocessing
 #from ann_visualizer.visualize import ann_viz
 
 SPLIT_RANDOM_STATE = 42
+SHOWPLOTS = False
+DEBUG = False
 
 ####################################################################################################
 
@@ -46,79 +48,6 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
     # Print New Line on Complete
     if iteration == total: 
         print()
-
-####################################################################################################
-
-def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1):
-
-    X_train, X_test, y_train, y_test = train_test_split(X, Y, \
-                                    test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
-    
-    if inputshape == -1:
-        inputshape = X_train.shape[1]
-
-    mses_test = []
-    mses_train = []
-    r2s_test = []
-    r2s_train = []
-    modeidxs = []
-
-    for midx, modelshape in enumerate(modelshapes):
-        for nepoch in nepochs:
-            for batch_size in batch_sizes:
-                model = keras.Sequential()
-                model.add(keras.layers.Input(shape=(inputshape)))
-            
-                for n in modelshape:
-                    model.add(keras.layers.Dense(units = n, activation = 'relu'))
-            
-                model.add(keras.layers.Dense(units = 1, activation = 'linear'))
-                model.compile(loss='mse', optimizer="adam", metrics='mse')
-                #ann_viz(model, title="Discriminator Model",\
-                #         view=True)
-                
-                history = model.fit(X_train, y_train, epochs=nepoch,  batch_size=batch_size, \
-                    verbose=0)
-            
-                y_pred = model.predict(X_train)
-                y_pred_test = model.predict(X_test)
-            
-                mse_train = mean_squared_error(y_train, y_pred)
-                mse_test = mean_squared_error(y_test, y_pred_test)
-                r2_train = r2_score(y_train, y_pred)
-                r2_test = r2_score(y_test, y_pred_test)
-            
-                r2s_train.append(r2_train)
-                mses_train.append(mse_train)
-                r2s_test.append(r2_test)
-                mses_test.append(mse_test)
-            
-                modeidxs.append(midx)
-
-
-    plt.clf()
-    plt.rcParams.update({'font.size': 15})
-    #pyplot.plot(ncomps, r2s, '-o', color='black')
-    plt.plot(modeidxs, mses_test, '-o', color='black')
-    plt.plot(modeidxs, mses_train, '-o', color='red')
-    plt.xlabel('Model Index')
-    plt.ylabel('MSE')
-    plt.xticks(modeidxs)
-    #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
-    plt.show()
-
-    plt.clf()
-    plt.rcParams.update({'font.size': 15})
-    #pyplot.plot(ncomps, r2s, '-o', color='black')
-    plt.plot(modeidxs, r2s_test, '-o', color='black')
-    plt.plot(modeidxs, r2s_train, '-o', color='red')
-    plt.xlabel('Model Index')
-    plt.ylabel('R2')
-    plt.xticks(modeidxs)
-    #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
-    plt.show()
-        
-    return
 
 ####################################################################################################
 
@@ -173,28 +102,29 @@ def pls_model (perc_split, Xin, Yin, search = True, ncomp_start = 1, ncomp_max =
             r2s_test.append(r2_test)
             rmses_test.append(rmse_test)
             ncomps.append(ncomp)
-    
-        plt.clf()
-        plt.rcParams.update({'font.size': 15})
-        #pyplot.plot(ncomps, r2s, '-o', color='black')
-        plt.plot(ncomps, rmses_test, '-o', color='black')
-        plt.plot(ncomps, rmses_train, '-o', color='red')
-        plt.xlabel('Number of Components')
-        plt.ylabel('RMS')
-        plt.xticks(ncomps)
-        #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
-        plt.show()
-    
-        plt.clf()
-        plt.rcParams.update({'font.size': 15})
-        #pyplot.plot(ncomps, r2s, '-o', color='black')
-        plt.plot(ncomps, r2s_test, '-o', color='black')
-        plt.plot(ncomps, r2s_train, '-o', color='red')
-        plt.xlabel('Number of Components')
-        plt.ylabel('R2')
-        plt.xticks(ncomps)
-        #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
-        plt.show()
+
+        if SHOWPLOTS: 
+            plt.clf()
+            plt.rcParams.update({'font.size': 15})
+            #pyplot.plot(ncomps, r2s, '-o', color='black')
+            plt.plot(ncomps, rmses_test, '-o', color='black')
+            plt.plot(ncomps, rmses_train, '-o', color='red')
+            plt.xlabel('Number of Components')
+            plt.ylabel('RMS')
+            plt.xticks(ncomps)
+            #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
+            plt.show()
+        
+            plt.clf()
+            plt.rcParams.update({'font.size': 15})
+            #pyplot.plot(ncomps, r2s, '-o', color='black')
+            plt.plot(ncomps, r2s_test, '-o', color='black')
+            plt.plot(ncomps, r2s_train, '-o', color='red')
+            plt.xlabel('Number of Components')
+            plt.ylabel('R2')
+            plt.xticks(ncomps)
+            #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
+            plt.show()
 
         return ncomps, rmses_test, rmses_train, r2s_test, r2s_train
 
@@ -221,7 +151,10 @@ def pls_model (perc_split, Xin, Yin, search = True, ncomp_start = 1, ncomp_max =
 
             rmse = mean_squared_error(y_true_test, y_pred_test, squared=False)
 
-            print("Leave On Out RMSE: ", rmse)
+            if DEBUG:
+                print("Leave On Out RMSE: ", rmse)
+
+            return rmse
 
         else: 
             pls = PLSRegression(ncomp_start)
@@ -236,33 +169,111 @@ def pls_model (perc_split, Xin, Yin, search = True, ncomp_start = 1, ncomp_max =
             r2_train = r2_score(y_train, y_pred)
             r2_test = r2_score(y_test, y_pred_test)
            
-            print("RMSE Train: ", rmse_train)
-            print("RMSE Test : ", rmse_test)
-            print("R2 Train  : ", r2_train)
-            print("R2 Test   : ", r2_test)
+            if DEBUG:
+                print("RMSE Train: ", rmse_train)
+                print("RMSE Test : ", rmse_test)
+                print("R2 Train  : ", r2_train)
+                print("R2 Test   : ", r2_test)
            
             y_pred_full = pls.predict(X)
             rmse_full = mean_squared_error(Y, y_pred_full, squared=False)
             r2_full = r2_score(Y, y_pred_full)
            
-            print("RMSE Full: ", rmse_full)
-            print("R2 Full  : ", r2_full)
-           
-            plt.clf()
-            plt.rcParams.update({'font.size': 15})
-            plt.plot(y_pred, y_train, 'o', color='red')
-            plt.xlabel('PREDICTED')
-            plt.ylabel('TRUE')
-            plt.show()
-           
-            plt.clf()
-            plt.rcParams.update({'font.size': 15})
-            plt.plot(y_pred_test, y_test, 'o', color='black')
-            plt.xlabel('PREDICTED')
-            plt.ylabel('TRUE')
-            plt.show()
+            if DEBUG:
+                print("RMSE Full: ", rmse_full)
+                print("R2 Full  : ", r2_full)
+
+            if SHOWPLOTS:  
+                plt.clf()
+                plt.rcParams.update({'font.size': 15})
+                plt.plot(y_pred, y_train, 'o', color='red')
+                plt.xlabel('PREDICTED')
+                plt.ylabel('TRUE')
+                plt.show()
+               
+                plt.clf()
+                plt.rcParams.update({'font.size': 15})
+                plt.plot(y_pred_test, y_test, 'o', color='black')
+                plt.xlabel('PREDICTED')
+                plt.ylabel('TRUE')
+                plt.show()
+
+            return rmse_train, rmse_test, r2_train, r2_test, rmse_full, r2_full
+
+    return
+
+####################################################################################################
+
+def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1):
+
+    X_train, X_test, y_train, y_test = train_test_split(X, Y, \
+                                    test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
+    
+    if inputshape == -1:
+        inputshape = X_train.shape[1]
+
+    mses_test = []
+    mses_train = []
+    r2s_test = []
+    r2s_train = []
+    modeidxs = []
+
+    for midx, modelshape in enumerate(modelshapes):
+        for nepoch in nepochs:
+            for batch_size in batch_sizes:
+                model = keras.Sequential()
+                model.add(keras.layers.Input(shape=(inputshape)))
+            
+                for n in modelshape:
+                    model.add(keras.layers.Dense(units = n, activation = 'relu'))
+            
+                model.add(keras.layers.Dense(units = 1, activation = 'linear'))
+                model.compile(loss='mse', optimizer="adam", metrics='mse')
+                #ann_viz(model, title="Discriminator Model",\
+                #         view=True)
+                
+                history = model.fit(X_train, y_train, epochs=nepoch,  batch_size=batch_size, \
+                    verbose=0)
+            
+                y_pred = model.predict(X_train)
+                y_pred_test = model.predict(X_test)
+            
+                mse_train = mean_squared_error(y_train, y_pred)
+                mse_test = mean_squared_error(y_test, y_pred_test)
+                r2_train = r2_score(y_train, y_pred)
+                r2_test = r2_score(y_test, y_pred_test)
+            
+                r2s_train.append(r2_train)
+                mses_train.append(mse_train)
+                r2s_test.append(r2_test)
+                mses_test.append(mse_test)
+            
+                modeidxs.append(midx)
 
 
+    if SHOWPLOTS:
+        plt.clf()
+        plt.rcParams.update({'font.size': 15})
+        #pyplot.plot(ncomps, r2s, '-o', color='black')
+        plt.plot(modeidxs, mses_test, '-o', color='black')
+        plt.plot(modeidxs, mses_train, '-o', color='red')
+        plt.xlabel('Model Index')
+        plt.ylabel('MSE')
+        plt.xticks(modeidxs)
+        #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
+        plt.show()
+       
+        plt.clf()
+        plt.rcParams.update({'font.size': 15})
+        #pyplot.plot(ncomps, r2s, '-o', color='black')
+        plt.plot(modeidxs, r2s_test, '-o', color='black')
+        plt.plot(modeidxs, r2s_train, '-o', color='red')
+        plt.xlabel('Model Index')
+        plt.ylabel('R2')
+        plt.xticks(modeidxs)
+        #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
+        plt.show()
+        
     return
 
 ####################################################################################################
@@ -405,28 +416,29 @@ def rf_model (perc_split, X, Y, search = True, in_n_estimators = [50, 100, 300, 
         print("max_train_r2_hyper: ", max_train_r2_hyper)
         print("max_test_r2_hyper: ", max_test_r2_hyper)
 
-    
-        plt.clf()
-        plt.rcParams.update({'font.size': 15})
-        #pyplot.plot(ncomps, r2s, '-o', color='black')
-        plt.plot(idxs, rmses_test, 'o', color='black')
-        plt.plot(idxs, rmses_train, 'o', color='red')
-        plt.xlabel('Index')
-        plt.ylabel('RMSE')
-        plt.xticks(idxs)
-        #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
-        plt.show()
-    
-        plt.clf()
-        plt.rcParams.update({'font.size': 15})
-        #pyplot.plot(ncomps, r2s, '-o', color='black')
-        plt.plot(idxs, r2s_test, 'o', color='black')
-        plt.plot(idxs, r2s_train, 'o', color='red')
-        plt.xlabel('Index')
-        plt.ylabel('R2')
-        plt.xticks(idxs)
-        #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
-        plt.show()
+
+        if SHOWPLOTS:    
+            plt.clf()
+            plt.rcParams.update({'font.size': 15})
+            #pyplot.plot(ncomps, r2s, '-o', color='black')
+            plt.plot(idxs, rmses_test, 'o', color='black')
+            plt.plot(idxs, rmses_train, 'o', color='red')
+            plt.xlabel('Index')
+            plt.ylabel('RMSE')
+            plt.xticks(idxs)
+            #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
+            plt.show()
+        
+            plt.clf()
+            plt.rcParams.update({'font.size': 15})
+            #pyplot.plot(ncomps, r2s, '-o', color='black')
+            plt.plot(idxs, r2s_test, 'o', color='black')
+            plt.plot(idxs, r2s_train, 'o', color='red')
+            plt.xlabel('Index')
+            plt.ylabel('R2')
+            plt.xticks(idxs)
+            #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
+            plt.show()
 
         return min_train_rmse_hyper, min_test_rmse_hyper, max_train_r2_hyper, max_test_r2_hyper
 
@@ -464,20 +476,21 @@ def rf_model (perc_split, X, Y, search = True, in_n_estimators = [50, 100, 300, 
         print("test_rmse: ", test_rmse)
         print("r2_train: ", r2_train)
         print("r2_test: ", r2_test)
-      
-        plt.clf()
-        plt.rcParams.update({'font.size': 15})
-        plt.plot(y_pred, y_train, 'o', color='red')
-        plt.xlabel('PREDICTED')
-        plt.ylabel('TRUE')
-        plt.show()
-      
-        plt.clf()
-        plt.rcParams.update({'font.size': 15})
-        plt.plot(y_pred_test, y_test, 'o', color='black')
-        plt.xlabel('PREDICTED')
-        plt.ylabel('TRUE')
-        plt.show()
+
+        if SHOWPLOTS:    
+            plt.clf()
+            plt.rcParams.update({'font.size': 15})
+            plt.plot(y_pred, y_train, 'o', color='red')
+            plt.xlabel('PREDICTED')
+            plt.ylabel('TRUE')
+            plt.show()
+          
+            plt.clf()
+            plt.rcParams.update({'font.size': 15})
+            plt.plot(y_pred_test, y_test, 'o', color='black')
+            plt.xlabel('PREDICTED')
+            plt.ylabel('TRUE')
+            plt.show()
 
     return 
 
