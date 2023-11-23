@@ -20,6 +20,8 @@ from tensorflow.keras.models import Model
 
 from sklearn import preprocessing
 
+import numpy as np
+
 #from ann_visualizer.visualize import ann_viz
 
 SPLIT_RANDOM_STATE = 42
@@ -206,7 +208,8 @@ def pls_model (perc_split, Xin, Yin, search = True, ncomp_start = 1, ncomp_max =
 
 ####################################################################################################
 
-def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1):
+def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,\
+             search=True):
 
     X_train, X_test, y_train, y_test = train_test_split(X, Y, \
                                     test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
@@ -218,64 +221,102 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1)
     mses_train = []
     r2s_test = []
     r2s_train = []
-    modeidxs = []
+    models = []
 
-    for midx, modelshape in enumerate(modelshapes):
-        for nepoch in nepochs:
-            for batch_size in batch_sizes:
-                model = keras.Sequential()
-                model.add(keras.layers.Input(shape=(inputshape)))
-            
-                for n in modelshape:
-                    model.add(keras.layers.Dense(units = n, activation = 'relu'))
-            
-                model.add(keras.layers.Dense(units = 1, activation = 'linear'))
-                model.compile(loss='mse', optimizer="adam", metrics='mse')
-                #ann_viz(model, title="Discriminator Model",\
-                #         view=True)
+    if search:
+        maxidx = len(modelshapes)*len(nepochs)*len(batch_sizes)
+
+        for midx, modelshape in enumerate(modelshapes):
+            for nepoch in nepochs:
+                for batch_size in batch_sizes:
+                    model = keras.Sequential()
+                    model.add(keras.layers.Input(shape=(inputshape)))
                 
-                history = model.fit(X_train, y_train, epochs=nepoch,  batch_size=batch_size, \
-                    verbose=0)
-            
-                y_pred = model.predict(X_train)
-                y_pred_test = model.predict(X_test)
-            
-                mse_train = mean_squared_error(y_train, y_pred)
-                mse_test = mean_squared_error(y_test, y_pred_test)
-                r2_train = r2_score(y_train, y_pred)
-                r2_test = r2_score(y_test, y_pred_test)
-            
-                r2s_train.append(r2_train)
-                mses_train.append(mse_train)
-                r2s_test.append(r2_test)
-                mses_test.append(mse_test)
-            
-                modeidxs.append(midx)
+                    for n in modelshape:
+                        model.add(keras.layers.Dense(units = n, activation = 'relu'))
+                
+                    model.add(keras.layers.Dense(units = 1, activation = 'linear'))
+                    model.compile(loss='mse', optimizer="adam", metrics='mse')
+                    #ann_viz(model, title="Discriminator Model",\
+                    #         view=True)
+                    
+                    model.fit(X_train, y_train, epochs=nepoch,  batch_size=batch_size, \
+                        verbose=0)
+                
+                    y_pred = model.predict(X_train, verbose=0)
+                    y_pred_test = model.predict(X_test, verbose=0)
+                
+                    mse_train = mean_squared_error(y_train, y_pred)
+                    mse_test = mean_squared_error(y_test, y_pred_test)
+                    r2_train = r2_score(y_train, y_pred)
+                    r2_test = r2_score(y_test, y_pred_test)
+                
+                    r2s_train.append(r2_train)
+                    mses_train.append(mse_train)
+                    r2s_test.append(r2_test)
+                    mses_test.append(mse_test)
+                
+                    models.append((modelshape, nepoch, batch_size))
 
+                    printProgressBar(midx+1, maxidx, \
+                                    prefix = 'Progress:', \
+                                    suffix = 'Complete', length = 50)
+                    
 
-    if SHOWPLOTS:
-        plt.clf()
-        plt.rcParams.update({'font.size': 15})
-        #pyplot.plot(ncomps, r2s, '-o', color='black')
-        plt.plot(modeidxs, mses_test, '-o', color='black')
-        plt.plot(modeidxs, mses_train, '-o', color='red')
-        plt.xlabel('Model Index')
-        plt.ylabel('MSE')
-        plt.xticks(modeidxs)
-        #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
-        plt.show()
-       
-        plt.clf()
-        plt.rcParams.update({'font.size': 15})
-        #pyplot.plot(ncomps, r2s, '-o', color='black')
-        plt.plot(modeidxs, r2s_test, '-o', color='black')
-        plt.plot(modeidxs, r2s_train, '-o', color='red')
-        plt.xlabel('Model Index')
-        plt.ylabel('R2')
-        plt.xticks(modeidxs)
-        #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
-        plt.show()
+        if SHOWPLOTS:
+            plt.clf()
+            plt.rcParams.update({'font.size': 15})
+            #pyplot.plot(ncomps, r2s, '-o', color='black')
+            plt.plot(modeidxs, mses_test, '-o', color='black')
+            plt.plot(modeidxs, mses_train, '-o', color='red')
+            plt.xlabel('Model Index')
+            plt.ylabel('MSE')
+            plt.xticks(modeidxs)
+            #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
+            plt.show()
+           
+            plt.clf()
+            plt.rcParams.update({'font.size': 15})
+            #pyplot.plot(ncomps, r2s, '-o', color='black')
+            plt.plot(modeidxs, r2s_test, '-o', color='black')
+            plt.plot(modeidxs, r2s_train, '-o', color='red')
+            plt.xlabel('Model Index')
+            plt.ylabel('R2')
+            plt.xticks(modeidxs)
+            #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
+            plt.show()
+
+        index_min = np.argmin(mses_test)
+        index_max = np.argmax(r2s_test)
+
+        return models[index_min], models[index_max]
+    else:
+        modelshape = modelshapes[0]
+        nepoch = nepochs[0]
+        batch_size = batch_sizes[0]
+ 
+        model = keras.Sequential()
+        model.add(keras.layers.Input(shape=(inputshape)))
         
+        for n in modelshape:
+            model.add(keras.layers.Dense(units = n, activation = 'relu'))
+        
+        model.add(keras.layers.Dense(units = 1, activation = 'linear'))
+        model.compile(loss='mse', optimizer="adam", metrics='mse')
+        
+        history = model.fit(X_train, y_train, epochs=nepoch,  batch_size=batch_size, \
+            verbose=0)
+        
+        y_pred = model.predict(X_train)
+        y_pred_test = model.predict(X_test)
+        
+        mse_train = mean_squared_error(y_train, y_pred)
+        mse_test = mean_squared_error(y_test, y_pred_test)
+        r2_train = r2_score(y_train, y_pred)
+        r2_test = r2_score(y_test, y_pred_test)
+
+        return mse_train, mse_test, r2_train, r2_test, model
+            
     return
 
 ####################################################################################################
@@ -285,7 +326,7 @@ def rf_model (perc_split, X, Y, search = True, in_n_estimators = [50, 100, 300, 
               in_min_samples_split = [2, 5, 10, 15], 
               in_min_samples_leaf = [10, 20, 50], 
               in_random_state = [42], 
-              in_max_features = [1, 3, 5, 8, 9, 10, 100], 
+              in_max_features = [1, 3, 5, 8, 9, 10], 
               in_bootstrap = [True] ):
 
     X_train, X_test, y_train, y_test = train_test_split(X, Y, \
@@ -413,10 +454,11 @@ def rf_model (perc_split, X, Y, search = True, in_n_estimators = [50, 100, 300, 
 
                                 #print(idx / maxidx * 100, "%")
 
-        print("min_train_rmse_hyper: ", min_train_rmse_hyper)
-        print("min_test_rmse_hyper: ", min_test_rmse_hyper)
-        print("max_train_r2_hyper: ", max_train_r2_hyper)
-        print("max_test_r2_hyper: ", max_test_r2_hyper)
+        if DEBUG:
+            print("min_train_rmse_hyper: ", min_train_rmse_hyper)
+            print("min_test_rmse_hyper: ", min_test_rmse_hyper)
+            print("max_train_r2_hyper: ", max_train_r2_hyper)
+            print("max_test_r2_hyper: ", max_test_r2_hyper)
 
 
         if SHOWPLOTS:    
@@ -474,10 +516,11 @@ def rf_model (perc_split, X, Y, search = True, in_n_estimators = [50, 100, 300, 
         r2_train = r2_score(y_train, y_pred)
         r2_test = r2_score(y_test, y_pred_test)
       
-        print("train_rmse: ", train_rmse)
-        print("test_rmse: ", test_rmse)
-        print("r2_train: ", r2_train)
-        print("r2_test: ", r2_test)
+        if DEBUG:
+            print("train_rmse: ", train_rmse)
+            print("test_rmse: ", test_rmse)
+            print("r2_train: ", r2_train)
+            print("r2_test: ", r2_test)
 
         if SHOWPLOTS:    
             plt.clf()
@@ -493,6 +536,9 @@ def rf_model (perc_split, X, Y, search = True, in_n_estimators = [50, 100, 300, 
             plt.xlabel('PREDICTED')
             plt.ylabel('TRUE')
             plt.show()
+
+        return train_rmse, test_rmse, r2_train, r2_test, model, \
+              X_train, X_test, y_train, y_test
 
     return 
 
