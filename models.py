@@ -224,9 +224,10 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,
     models = []
 
     if search:
+        midx = 0
         maxidx = len(modelshapes)*len(nepochs)*len(batch_sizes)
 
-        for midx, modelshape in enumerate(modelshapes):
+        for modelshape in modelshapes:
             for nepoch in nepochs:
                 for nbatch_size in batch_sizes:
                     model = keras.Sequential()
@@ -257,8 +258,9 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,
                     mses_test.append(mse_test)
                 
                     models.append((modelshape, nepoch, nbatch_size))
+                    midx += 1
 
-                    printProgressBar(midx+1, maxidx, \
+                    printProgressBar(midx, maxidx, \
                                     prefix = 'Progress:', \
                                     suffix = 'Complete', length = 50)
                     
@@ -315,7 +317,11 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,
         r2_train = r2_score(y_train, y_pred)
         r2_test = r2_score(y_test, y_pred_test)
 
-        return mse_train, mse_test, r2_train, r2_test, model
+        y_pred = model.predict(X)
+        mse_full =  mean_squared_error(Y, y_pred)
+        r2_full = r2_score(Y, y_pred)
+
+        return mse_train, mse_test, mse_full, r2_train, r2_test, r2_full, model
             
     return
 
