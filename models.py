@@ -228,7 +228,7 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,
 
         for midx, modelshape in enumerate(modelshapes):
             for nepoch in nepochs:
-                for batch_size in batch_sizes:
+                for nbatch_size in batch_sizes:
                     model = keras.Sequential()
                     model.add(keras.layers.Input(shape=(inputshape)))
                 
@@ -240,7 +240,7 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,
                     #ann_viz(model, title="Discriminator Model",\
                     #         view=True)
                     
-                    model.fit(X_train, y_train, epochs=nepoch,  batch_size=batch_size, \
+                    model.fit(X_train, y_train, epochs=nepoch,  batch_size=nbatch_size, \
                         verbose=0)
                 
                     y_pred = model.predict(X_train, verbose=0)
@@ -256,7 +256,7 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,
                     r2s_test.append(r2_test)
                     mses_test.append(mse_test)
                 
-                    models.append((modelshape, nepoch, batch_size))
+                    models.append((modelshape, nepoch, nbatch_size))
 
                     printProgressBar(midx+1, maxidx, \
                                     prefix = 'Progress:', \
