@@ -24,32 +24,11 @@ import numpy as np
 
 #from ann_visualizer.visualize import ann_viz
 
+import commonutils
+
 SPLIT_RANDOM_STATE = 42
 SHOWPLOTS = False
 DEBUG = False
-
-####################################################################################################
-
-def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
-    """
-    Call in a loop to create terminal progress bar
-    @params:
-        iteration   - Required  : current iteration (Int)
-        total       - Required  : total iterations (Int)
-        prefix      - Optional  : prefix string (Str)
-        suffix      - Optional  : suffix string (Str)
-        decimals    - Optional  : positive number of decimals in percent complete (Int)
-        length      - Optional  : character length of bar (Int)
-        fill        - Optional  : bar fill character (Str)
-        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
-    """
-    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
-    filledLength = int(length * iteration // total)
-    bar = fill * filledLength + '-' * (length - filledLength)
-    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
-    # Print New Line on Complete
-    if iteration == total: 
-        print()
 
 ####################################################################################################
 
@@ -260,7 +239,7 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,
                     models.append((modelshape, nepoch, nbatch_size))
                     midx += 1
 
-                    printProgressBar(midx, maxidx, \
+                    commonutils.printProgressBar(midx, maxidx, \
                                     prefix = 'Progress:', \
                                     suffix = 'Complete', length = 50)
                     
@@ -454,7 +433,7 @@ def rf_model (perc_split, X, Y, search = True, in_n_estimators = [50, 100, 300, 
                                 idxs.append(idx)
                                 idx += 1
 
-                                printProgressBar(idx, maxidx, \
+                                commonutils.printProgressBar(idx, maxidx, \
                                                  prefix = 'Progress:', \
                                                     suffix = 'Complete', length = 50)
 
