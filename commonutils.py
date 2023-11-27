@@ -8,6 +8,145 @@ import re
 
 ####################################################################################################
 
+def read_dataset (rootdir, labelfilename, howmanydifs):
+
+    hflist = ["Nuclear Repulsion  :", \
+          "One Electron Energy:", \
+          "Two Electron Energy:", \
+          "Potential Energy   :", \
+          "Kinetic Energy     :", \
+          "Dispersion correction", \
+          "Total Charge", \
+          "Multiplicity", \
+          "Number of Electrons", \
+          "FINAL SINGLE POINT ENERGY"]
+
+    pbelist = ["Nuclear Repulsion  :", \
+            "One Electron Energy:", \
+            "Two Electron Energy:", \
+            "Potential Energy   :", \
+            "Kinetic Energy     :", \
+            "E(X)               :"  , \
+            "E(C)               :"  , \
+            "Dispersion correction", \
+            "Total Charge"   , \
+            "Multiplicity"   , \
+            "Number of Electrons", \
+            "FINAL SINGLE POINT ENERGY"]
+
+    allvalues = []
+    
+    fp = open (labelfilename, 'r')
+    for line in fp:
+        sline = line.replace("\t", " ").replace("\n", "").rstrip().lstrip().split()
+
+        stechio_ceofs = []
+        chemicals = []
+
+        all = []
+        for j in range(1, len(sline)-howmanydifs-1):
+            all.append(sline[j])
+
+        if len(all) % 2 != 0:
+            print("Error: len(all) % 2 != 0")
+            print(line)
+            return None, None, None
+        
+        for i in range(0, int(len(all)/2)):
+            chemicals.append(all[i])
+
+        for i in range(int(len(all)/2), len(all)):
+            stechio_ceofs.append(int(all[i]))
+
+        label = float(sline[-1*howmanydifs-1])  
+        difs = []
+        for i in range(howmanydifs):
+            difs.append(float(sline[-1*(i+1)]))
+        difs.reverse()
+
+        allvalues.append({"stechio_ceofs" : stechio_ceofs, \
+                          "chemicals" : chemicals, \
+                          "label" : label, \
+                          "difs" : difs})
+
+    fp.close()
+
+    pbedescriptor = {}
+    first = True
+    desclist = []
+    for file in os.listdir(rootdir+'/PBE/'):
+        if file.endswith('.out'):
+            molname = file.split('.out')[0]
+            molname = re.split("\.mpi\d+", molname)[0]
+            #print(molname)
+            moldesc = {}
+            fp = open(rootdir+'/PBE/'+file, 'r')
+            for line in fp:
+                for val in pbelist:
+                    if line.find(val) != -1:
+                        keyval = val.replace(":", "").rstrip().lstrip().replace(" ", "_")
+                        sline = line.rstrip().lstrip().split()
+                        for sval in sline:
+                            try:
+                                firstnumvalue = float(sval)
+                                break
+                            except:
+                                continue
+                        
+                        moldesc["PBE_"+keyval] = firstnumvalue
+                        #print(molname, keyval, sval)
+            fp.close()
+            if first:
+                first = False
+                desclist = list(moldesc.keys())
+            else:
+                if desclist != list(moldesc.keys()):
+                    print("Error: desclist != list(moldesc.keys())")
+                    return None, None, None
+
+            pbedescriptor[molname] = moldesc
+    
+    #read HF data
+    hfdescriptor = {}
+    first = True
+    desclist = []
+    for file in os.listdir(rootdir+'/HF/'):
+        if file.endswith('.out'):
+            molname = file.split('.out')[0]
+            molname = re.split("\.mpi\d+", molname)[0]
+            #print(molname)
+            moldesc = {}
+            fp = open(rootdir+'/HF/'+file, 'r')
+            for line in fp:
+                for val in hflist:
+                    if line.find(val) != -1:
+                        keyval = val.replace(":", "").rstrip().lstrip().replace(" ", "_")
+                        sline = line.rstrip().lstrip().split()
+                        for sval in sline:
+                            try:
+                                firstnumvalue = float(sval)
+                                break
+                            except:
+                                continue
+                        
+                        moldesc["HF_"+keyval] = firstnumvalue
+                        #print(molname, keyval, sval)
+            fp.close()
+
+            if first:  
+                first = False
+                desclist = list(moldesc.keys())
+            else:
+                if desclist != list(moldesc.keys()):
+                    print("Error: desclist != list(moldesc.keys())")
+                    return None, None, None
+
+            hfdescriptor[molname] = moldesc
+
+    return allvalues, pbedescriptor, hfdescriptor
+
+####################################################################################################
+
 def readandcheckdata (rootdirqdata, rootdirdata, howmanydifs):
 
     molnames = []
