@@ -10,6 +10,8 @@ import re
 
 def read_dataset (rootdir, labelfilename, howmanydifs):
 
+    autokcalmol = 627.5096080305927
+
     hflist = ["Nuclear Repulsion  :", \
           "One Electron Energy:", \
           "Two Electron Energy:", \
@@ -142,6 +144,75 @@ def read_dataset (rootdir, labelfilename, howmanydifs):
                     return None, None, None
 
             hfdescriptor[molname] = moldesc
+
+
+    #Build PBE and HF differences and thus descriptors
+    pbeenergylist = ["PBE_Nuclear_Repulsion", \
+                "PBE_One_Electron_Energy", \
+                "PBE_Two_Electron_Energy", \
+                "PBE_Potential_Energy", \
+                "PBE_Kinetic_Energy", \
+                "PBE_E(X)"  , \
+                "PBE_E(C)"  , \
+                "PBE_Dispersion_correction", \
+                "PBE_FINAL_SINGLE_POINT_ENERGY"]
+    
+    hfenergylist = ["HF_Nuclear_Repulsion", \
+              "HF_One_Electron_Energy", \
+              "HF_Two_Electron_Energy", \
+              "HF_Potential_Energy", \
+              "HF_Kinetic_Energy", \
+              "HF_Dispersion_correction", \
+              "HF_FINAL_SINGLE_POINT_ENERGY"]
+
+    for i, val in enumerate(allvalues):
+
+        pbeenergydiff = {}
+        hfenergydiff = {}
+
+        for desc in pbeenergylist:
+            sum = 0.0
+            for j, chemical in enumerate(val["chemicals"]):
+                if chemical not in pbedescriptor:
+                    print(chemical + " not found in PBE descriptors")
+                    sum = float("nan")
+                    break
+                else:
+                    sum += val["stechio_ceofs"][j]*pbedescriptor[chemical][desc]
+            pbeenergydiff[desc] = sum*autokcalmol
+              
+        for desc in hfenergylist:
+            sum = 0.0
+            for j, chemical in enumerate(val["chemicals"]):
+                if chemical not in hfdescriptor:
+                    print(chemical + " not found in HF descriptors")
+                    sum = float("nan")
+                    break
+                else:
+                    sum += val["stechio_ceofs"][j]*hfdescriptor[chemical][desc]
+            hfenergydiff[desc] = sum*autokcalmol
+
+        allvalues[i]["pbeenergydiff"] = pbeenergydiff
+        allvalues[i]["hfenergydiff"] = hfenergydiff
+
+    # check if label or values in descriptor is nan
+    idxtoremovs = []
+    for i, val in enumerate(allvalues):
+        if math.isnan(val["label"]):
+            idxtoremovs.append(i)
+        else:
+            for k,v in val["pbeenergydiff"].items():
+                if math.isnan(v):
+                    idxtoremovs.append(i)
+                    break
+            for k,v in val["hfenergydiff"].items():
+                if math.isnan(v):
+                    idxtoremovs.append(i)
+                    break
+
+    for i in sorted(idxtoremovs, reverse=True):
+        print("Molname to remove:", allvalues[i]["chemicals"], "index:", i)
+        del allvalues[i]
 
     return allvalues, pbedescriptor, hfdescriptor
 
@@ -450,6 +521,29 @@ def readandcheckdata (rootdirqdata, rootdirdata, howmanydifs):
         stechio_ceofs, moldescriptors, chemicals_descriptors, \
         pbe_hf_nonenergy_descriptors, pbe_diff_energy_descriptors, \
         hf_diff_energy_descriptors
+
+####################################################################################################
+
+def build_XY_matrix (fulldescriptors, labels):
+
+    # build features matrix and labels
+    moldescriptors_featues = []
+    Y = []
+    features_names = []
+
+    for idx, descriptors in enumerate(fulldescriptors):
+        val = []
+        for k,v in descriptors.items():
+            if idx == 0:
+                features_names.append(k)
+            val.append(v)
+        moldescriptors_featues.append(val)
+        Y.append(labels[idx])
+
+    Y = np.array(Y)
+    moldescriptors_featues = np.array(moldescriptors_featues)
+
+    return  moldescriptors_featues, Y, features_names
 
 ####################################################################################################
 
