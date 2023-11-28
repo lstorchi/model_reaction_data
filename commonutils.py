@@ -80,7 +80,8 @@ def read_dataset (rootdir, labelfilename, howmanydifs):
         if file.endswith('.out'):
             molname = file.split('.out')[0]
             molname = re.split("\.mpi\d+", molname)[0]
-            #print(molname)
+            #if re.search("S\d+", molname):
+            #    molname = molname.replace("S", "")
             moldesc = {}
             fp = open(rootdir+'/PBE/'+file, 'r')
             for line in fp:
@@ -116,6 +117,8 @@ def read_dataset (rootdir, labelfilename, howmanydifs):
         if file.endswith('.out'):
             molname = file.split('.out')[0]
             molname = re.split("\.mpi\d+", molname)[0]
+            #if re.search("S\d+", molname):
+            #    molname = molname.replace("S", "")
             #print(molname)
             moldesc = {}
             fp = open(rootdir+'/HF/'+file, 'r')
