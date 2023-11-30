@@ -8,6 +8,19 @@ import re
 
 ####################################################################################################
 
+def remove_features (allvalues, features_to_remove, featuressets):
+
+    for val in allvalues:
+        for fs in featuressets:
+            for ftr in features_to_remove:
+                if (ftr in val[fs]):
+                    print("Removing", ftr, "from", fs)
+                    del val[fs][ftr]
+
+    return
+
+####################################################################################################
+
 def read_dataset (rootdir, labelfilename, howmanydifs):
 
     autokcalmol = 627.5096080305927
