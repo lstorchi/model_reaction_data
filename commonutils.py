@@ -21,33 +21,9 @@ def remove_features (allvalues, features_to_remove, featuressets):
 
 ####################################################################################################
 
-def read_dataset (rootdir, labelfilename, howmanydifs):
+def read_dataset (rootdir, labelfilename, howmanydifs, methods):
 
     autokcalmol = 627.5096080305927
-
-    hflist = ["Nuclear Repulsion  :", \
-          "One Electron Energy:", \
-          "Two Electron Energy:", \
-          "Potential Energy   :", \
-          "Kinetic Energy     :", \
-          "Dispersion correction", \
-          "Total Charge", \
-          "Multiplicity", \
-          "Number of Electrons", \
-          "FINAL SINGLE POINT ENERGY"]
-
-    pbelist = ["Nuclear Repulsion  :", \
-            "One Electron Energy:", \
-            "Two Electron Energy:", \
-            "Potential Energy   :", \
-            "Kinetic Energy     :", \
-            "E(X)               :"  , \
-            "E(C)               :"  , \
-            "Dispersion correction", \
-            "Total Charge"   , \
-            "Multiplicity"   , \
-            "Number of Electrons", \
-            "FINAL SINGLE POINT ENERGY"]
 
     allvalues = []
     
@@ -86,151 +62,77 @@ def read_dataset (rootdir, labelfilename, howmanydifs):
 
     fp.close()
 
-    pbedescriptor = {}
-    first = True
-    desclist = []
-    for file in os.listdir(rootdir+'/PBE/'):
-        if file.endswith('.out'):
-            molname = file.split('.out')[0]
-            molname = re.split("\.mpi\d+", molname)[0]
-            #if re.search("S\d+", molname):
-            #    molname = molname.replace("S", "")
-            moldesc = {}
-            fp = open(rootdir+'/PBE/'+file, 'r')
-            for line in fp:
-                for val in pbelist:
-                    if line.find(val) != -1:
-                        keyval = val.replace(":", "").rstrip().lstrip().replace(" ", "_")
-                        sline = line.rstrip().lstrip().split()
-                        for sval in sline:
-                            try:
-                                firstnumvalue = float(sval)
-                                break
-                            except:
-                                continue
-                        
-                        moldesc["PBE_"+keyval] = firstnumvalue
-                        #print(molname, keyval, sval)
-            fp.close()
-            if first:
-                first = False
-                desclist = list(moldesc.keys())
-            else:
-                if desclist != list(moldesc.keys()):
-                    print("Error: desclist != list(moldesc.keys())")
-                    return None, None, None
-
-            pbedescriptor[molname] = moldesc
-    
-    #read HF data
-    hfdescriptor = {}
-    first = True
-    desclist = []
-    for file in os.listdir(rootdir+'/HF/'):
-        if file.endswith('.out'):
-            molname = file.split('.out')[0]
-            molname = re.split("\.mpi\d+", molname)[0]
-            #if re.search("S\d+", molname):
-            #    molname = molname.replace("S", "")
-            #print(molname)
-            moldesc = {}
-            fp = open(rootdir+'/HF/'+file, 'r')
-            for line in fp:
-                for val in hflist:
-                    if line.find(val) != -1:
-                        keyval = val.replace(":", "").rstrip().lstrip().replace(" ", "_")
-                        sline = line.rstrip().lstrip().split()
-                        for sval in sline:
-                            try:
-                                firstnumvalue = float(sval)
-                                break
-                            except:
-                                continue
-                        
-                        moldesc["HF_"+keyval] = firstnumvalue
-                        #print(molname, keyval, sval)
-            fp.close()
-
-            if first:  
-                first = False
-                desclist = list(moldesc.keys())
-            else:
-                if desclist != list(moldesc.keys()):
-                    print("Error: desclist != list(moldesc.keys())")
-                    return None, None, None
-
-            hfdescriptor[molname] = moldesc
-
-
-    #Build PBE and HF differences and thus descriptors
-    pbeenergylist = ["PBE_Nuclear_Repulsion", \
-                "PBE_One_Electron_Energy", \
-                "PBE_Two_Electron_Energy", \
-                "PBE_Potential_Energy", \
-                "PBE_Kinetic_Energy", \
-                "PBE_E(X)"  , \
-                "PBE_E(C)"  , \
-                "PBE_Dispersion_correction", \
-                "PBE_FINAL_SINGLE_POINT_ENERGY"]
-    
-    hfenergylist = ["HF_Nuclear_Repulsion", \
-              "HF_One_Electron_Energy", \
-              "HF_Two_Electron_Energy", \
-              "HF_Potential_Energy", \
-              "HF_Kinetic_Energy", \
-              "HF_Dispersion_correction", \
-              "HF_FINAL_SINGLE_POINT_ENERGY"]
-
-    for i, val in enumerate(allvalues):
-
-        pbeenergydiff = {}
-        hfenergydiff = {}
-
-        for desc in pbeenergylist:
-            sum = 0.0
-            for j, chemical in enumerate(val["chemicals"]):
-                if chemical not in pbedescriptor:
-                    print(chemical + " not found in PBE descriptors")
-                    sum = float("nan")
-                    break
+    for method in methods:
+        descriptor = {}
+        first = True
+        desclist = []
+        for file in os.listdir(rootdir+'/'+method+'/'):
+            if file.endswith('.out'):
+                molname = file.split('.out')[0]
+                molname = re.split("\.mpi\d+", molname)[0]
+                #if re.search("S\d+", molname):
+                #    molname = molname.replace("S", "")
+                moldesc = {}
+                fp = open(rootdir+'/'+method+'/'+file, 'r')
+                for line in fp:
+                    for val in methods[method]:
+                        if line.find(val) != -1:
+                            keyval = val.replace(":", "").rstrip().lstrip().replace(" ", "_")
+                            sline = line.rstrip().lstrip().split()
+                            for sval in sline:
+                                try:
+                                    firstnumvalue = float(sval)
+                                    break
+                                except:
+                                    continue
+                            
+                            moldesc[method+"_"+keyval] = firstnumvalue
+                            #print(molname, keyval, sval)
+                fp.close()
+                if first:
+                    first = False
+                    desclist = list(moldesc.keys())
                 else:
-                    sum += val["stechio_ceofs"][j]*pbedescriptor[chemical][desc]
-            pbeenergydiff[desc] = sum*autokcalmol
-              
-        for desc in hfenergylist:
-            sum = 0.0
-            for j, chemical in enumerate(val["chemicals"]):
-                if chemical not in hfdescriptor:
-                    print(chemical + " not found in HF descriptors")
-                    sum = float("nan")
-                    break
-                else:
-                    sum += val["stechio_ceofs"][j]*hfdescriptor[chemical][desc]
-            hfenergydiff[desc] = sum*autokcalmol
+                    if desclist != list(moldesc.keys()):
+                        print("Error: desclist != list(moldesc.keys())")
+                        return None, None, None
+       
+                descriptor[molname] = moldesc
+    
+        for i, val in enumerate(allvalues):
+       
+            energydiff = {}
+       
+            for desc in set(desclist):
+                sum = 0.0
+                for j, chemical in enumerate(val["chemicals"]):
+                    if chemical not in descriptor:
+                        print(chemical + " not found in PBE descriptors")
+                        sum = float("nan")
+                        break
+                    else:
+                        sum += val["stechio_ceofs"][j]*descriptor[chemical][desc]
+                energydiff[desc] = sum*autokcalmol
+                  
+       
+            allvalues[i][method+"_energydiff"] = energydiff
 
-        allvalues[i]["pbeenergydiff"] = pbeenergydiff
-        allvalues[i]["hfenergydiff"] = hfenergydiff
+        # check if label or values in descriptor is nan
+        idxtoremovs = []
+        for i, val in enumerate(allvalues):
+            if math.isnan(val["label"]):
+                idxtoremovs.append(i)
+            else:
+                for k,v in val[method+"_energydiff"].items():
+                    if math.isnan(v):
+                        idxtoremovs.append(i)
+                        break
+    
+        for i in sorted(idxtoremovs, reverse=True):
+            print("Molname to remove:", allvalues[i]["chemicals"], "index:", i)
+            del allvalues[i]
 
-    # check if label or values in descriptor is nan
-    idxtoremovs = []
-    for i, val in enumerate(allvalues):
-        if math.isnan(val["label"]):
-            idxtoremovs.append(i)
-        else:
-            for k,v in val["pbeenergydiff"].items():
-                if math.isnan(v):
-                    idxtoremovs.append(i)
-                    break
-            for k,v in val["hfenergydiff"].items():
-                if math.isnan(v):
-                    idxtoremovs.append(i)
-                    break
-
-    for i in sorted(idxtoremovs, reverse=True):
-        print("Molname to remove:", allvalues[i]["chemicals"], "index:", i)
-        del allvalues[i]
-
-    return allvalues, pbedescriptor, hfdescriptor
+    return allvalues
 
 ####################################################################################################
 
