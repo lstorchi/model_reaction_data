@@ -8,6 +8,34 @@ import re
 
 ####################################################################################################
 
+def remove_features_fromset (allvalues, features_to_remove,
+                             methods):
+    """
+    for i, val in enumerate(allvalues):
+        for method in methods:
+            fs = method+"_energydiff"
+            print("BEFORE ", i, fs, len(allvalues[i][fs]))
+    """
+
+    for i, val in enumerate(allvalues):
+        for method in methods:
+            fs = method+"_energydiff"
+            for ftr in features_to_remove:
+                if (ftr in val[fs]):
+                    #print("Removing", ftr, "from", fs)
+                    del allvalues[i][fs][ftr]
+    
+    """
+    for i, val in enumerate(allvalues):
+        for method in methods:
+            fs = method+"_energydiff"
+            print("AFTER ", i, fs, len(allvalues[i][fs]))
+    """
+
+    return allvalues
+
+####################################################################################################
+
 def remove_features (allvalues, features_to_remove, featuressets):
 
     for val in allvalues:
