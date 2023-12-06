@@ -49,7 +49,7 @@ def remove_features (allvalues, features_to_remove, featuressets):
 
 ####################################################################################################
 
-def read_dataset (rootdir, labelfilename, howmanydifs, methods):
+def read_dataset (rootdir, labelfilename, howmanydifs, methods, debug=True):
 
     autokcalmol = 627.5096080305927
 
@@ -67,9 +67,10 @@ def read_dataset (rootdir, labelfilename, howmanydifs, methods):
             all.append(sline[j])
 
         if len(all) % 2 != 0:
-            print("Error: len(all) % 2 != 0")
-            print(line)
-            return None, None, None
+            if debug:
+                print("Error: len(all) % 2 != 0")
+                print(line)
+            return None
         
         for i in range(0, int(len(all)/2)):
             chemicals.append(all[i])
@@ -122,8 +123,9 @@ def read_dataset (rootdir, labelfilename, howmanydifs, methods):
                     desclist = list(moldesc.keys())
                 else:
                     if desclist != list(moldesc.keys()):
-                        print("Error: desclist != list(moldesc.keys())")
-                        return None, None, None
+                        if debug:
+                            print("Error: desclist != list(moldesc.keys())")
+                        return None
        
                 descriptor[molname] = moldesc
     
@@ -135,7 +137,8 @@ def read_dataset (rootdir, labelfilename, howmanydifs, methods):
                 sum = 0.0
                 for j, chemical in enumerate(val["chemicals"]):
                     if chemical not in descriptor:
-                        print(chemical + " not found in PBE descriptors")
+                        if debug:
+                            print(chemical + " not found in PBE descriptors")
                         sum = float("nan")
                         break
                     else:
@@ -157,7 +160,8 @@ def read_dataset (rootdir, labelfilename, howmanydifs, methods):
                         break
     
         for i in sorted(idxtoremovs, reverse=True):
-            print("Molname to remove:", allvalues[i]["chemicals"], "index:", i)
+            if debug:
+                print("Molname to remove:", allvalues[i]["chemicals"], "index:", i)
             del allvalues[i]
 
     return allvalues
@@ -565,7 +569,7 @@ def get_top_correlations_blog(df, threshold=0.4):
     result = []
     for index, value in so.sort_values(ascending=False).items():
         # Exclude duplicates and self-correlations
-        if value > threshold \
+        if value >= threshold \
         and index[0] != index[1] \
         and (index[0], index[1]) not in pairs \
         and (index[1], index[0]) not in pairs:
