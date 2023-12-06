@@ -73,7 +73,11 @@ def read_dataset (rootdir, labelfilename, howmanydifs, methods, debug=True):
             return None
         
         for i in range(0, int(len(all)/2)):
-            chemicals.append(all[i])
+            #appysome filters
+            tostore = all[i]
+            #tostore = tostore.replace(",", "")
+            #tostore = tostore.replace("/$A", "")
+            chemicals.append(tostore)
 
         for i in range(int(len(all)/2), len(all)):
             stechio_ceofs.append(int(all[i]))
