@@ -10,10 +10,28 @@ from sklearn.inspection import permutation_importance
 if __name__ == '__main__':
 
     DEBUG = False
-    setnames = ["W4-11", "MB16-43", "ADIM6" , \
-                "BHPERI", "BSR36", "DARC" , \
-                "IDISP" , "ISOL24", "DC13"]
-    
+    suprasetnames = {"BARRIER_HEIGHTS" : \
+                       ["BH76","BHDIV10","BHPERI",\
+                        "BHROT27","INV24","PX13","WCPT18"], \
+                    "INTRAMOLECULAR_INTERACTIONS" : \
+                       ["ADIM6","AHB21","CARBHB12",\
+                        "CHB6","HAL59","HEAVY28","IL16",\
+                        "PNICO23","RG18","S22","S66",\
+                        "WATER27"] , \
+                    "SMALL_MOLECULES" :\
+                        ["AL2X6","ALK8","ALKBDE10","BH76",\
+                         "DC13","DIPCS10","FH51","G21EA",\
+                         "G21IP","G2RC","HEAVYSB11","NBPRC",\
+                         "PA26","RC21","SIE4x4","TAUT15",\
+                         "W4","11","YBDE18"], \
+                    "INTERMOLECULAR_INTERACTIONS" :\
+                       ["ADIM6","AHB21","CARBHB12",\
+                        "CHB6","HAL59","HEAVY28","IL16",\
+                        "PNICO23","RG18","S22","S66","WATER27"] , \
+                    "LARGE_SYSTEMS" :\
+                        ["BSR36","C60ISO","CDIE20","DARC",\
+                         "ISO34","ISOL24","MB16","43","PArel",\
+                            "RSE43]}"]}    
     howmanydifs = 3
     methods = {"PBE" : ["Nuclear Repulsion  :", \
                         "One Electron Energy:", \
@@ -24,13 +42,24 @@ if __name__ == '__main__':
                         "E(C)               :"  , \
                         "Dispersion correction", \
                         "FINAL SINGLE POINT ENERGY"], 
-                "HF" : ["Nuclear Repulsion  :", \
-                        "One Electron Energy:", \
-                        "Two Electron Energy:", \
-                        "Potential Energy   :", \
-                        "Kinetic Energy     :", \
-                        "Dispersion correction", \
-                        "FINAL SINGLE POINT ENERGY"]
+                "PBE0" : ["Nuclear Repulsion  :", \
+                          "One Electron Energy:", \
+                          "Two Electron Energy:", \
+                          "Potential Energy   :", \
+                          "Kinetic Energy     :", \
+                          "E(X)               :"  , \
+                          "E(C)               :"  , \
+                          "Dispersion correction", \
+                          "FINAL SINGLE POINT ENERGY"] ,
+                "ZORA" : ["Nuclear Repulsion  :", \
+                          "One Electron Energy:", \
+                          "Two Electron Energy:", \
+                          "Potential Energy   :", \
+                          "Kinetic Energy     :", \
+                          "E(X)               :"  , \
+                          "E(C)               :"  , \
+                          "Dispersion correction", \
+                          "FINAL SINGLE POINT ENERGY"]
                 }
     
     allvalues_perset = {}
