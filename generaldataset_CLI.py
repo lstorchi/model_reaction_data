@@ -14,10 +14,8 @@ if __name__ == '__main__':
                        ["BH76","BHDIV10","BHPERI",\
                         "BHROT27","INV24","PX13","WCPT18"], \
                     "INTRAMOLECULAR_INTERACTIONS" : \
-                       ["ADIM6","AHB21","CARBHB12",\
-                        "CHB6","HAL59","HEAVY28","IL16",\
-                        "PNICO23","RG18","S22","S66",\
-                        "WATER27"] , \
+                       ["ACONF","ICONF","IDISP","MCONF",\
+                        "PCONF21","SCONF","UPU23"] , \
                     "SMALL_MOLECULES" :\
                         ["AL2X6","ALK8","ALKBDE10","BH76",\
                          "DC13","DIPCS10","FH51","G21EA",\
@@ -30,7 +28,7 @@ if __name__ == '__main__':
                         "PNICO23","RG18","S22","S66","WATER27"] , \
                     "LARGE_SYSTEMS" :\
                         ["BSR36","C60ISO","CDIE20","DARC",\
-                         "ISO34","ISOL24","MB16","43","PArel",\
+                         "ISO34","ISOL24","MB16-43","PArel",\
                             "RSE43]}"]}    
     howmanydifs = 3
     methods = {"PBE" : ["Nuclear Repulsion  :", \
