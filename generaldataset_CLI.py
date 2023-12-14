@@ -66,27 +66,29 @@ if __name__ == '__main__':
     allvalues = []
     
     toberemoved = []
-    for i, setname in enumerate(setnames):
-          print("Reading dataset: ", setname)
-          rootdir = "../datasets/ML_data/" + setname
-          labelsfilename = "../datasets/ML_data/"+setname+"/labels.txt"
-    
-          values =\
-                commonutils.read_dataset(rootdir, labelsfilename, howmanydifs, methods,
-                                         debug=True)
-          
-          if (values is None) or (len(values) <= 2):
-                print(setname + " No data found for this dataset")
-                print("")
-                toberemoved.append(i)
-          else:
-                allvalues_perset[setname] = values  
-                print("Number of samples: ", len(allvalues_perset[setname]))
-                print("Number of basic PBE descriptors: ", len(allvalues_perset[setname]))
-                print("Number of basic  HF descriptors: ", len(allvalues_perset[setname]))
-          
-                allvalues += allvalues_perset[setname]
-                print("")
+    for supersetname in suprasetnames:
+        setnames = suprasetnames[supersetname]
+        for i, setname in enumerate(setnames):
+              print("Reading dataset: ", setname)
+              rootdir = "../datasets/AllData/" + supersetname + "/" +setname
+              labelsfilename = "../datasets/AllData/" +setname +"_labels.txt"
+        
+              values =\
+                    commonutils.read_dataset(rootdir, labelsfilename, howmanydifs, methods,
+                                             debug=True)
+              
+              if (values is None) or (len(values) <= 2):
+                    print(setname + " No data found for this dataset")
+                    print("")
+                    toberemoved.append(i)
+              else:
+                    allvalues_perset[setname] = values  
+                    print("Number of samples: ", len(allvalues_perset[setname]))
+                    print("Number of basic PBE descriptors: ", len(allvalues_perset[setname]))
+                    print("Number of basic  HF descriptors: ", len(allvalues_perset[setname]))
+              
+                    allvalues += allvalues_perset[setname]
+                    print("")
     
     for i in sorted(toberemoved, reverse=True):
           del setnames[i]
