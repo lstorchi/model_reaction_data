@@ -82,16 +82,21 @@ def read_dataset (rootdir, labelfilename, howmanydifs, methods, debug=True):
         for i in range(int(len(all)/2), len(all)):
             stechio_ceofs.append(int(all[i]))
 
-        label = float(sline[-1*howmanydifs-1])  
-        difs = []
-        for i in range(howmanydifs):
-            difs.append(float(sline[-1*(i+1)]))
-        difs.reverse()
-
-        allvalues.append({"stechio_ceofs" : stechio_ceofs, \
-                          "chemicals" : chemicals, \
-                          "label" : label, \
-                          "difs" : difs})
+        if len(sline) < howmanydifs+2:
+            if debug:
+                print("Error: len(sline) < howmanydifs+2")
+                print(line)
+        else:
+            label = float(sline[-1*howmanydifs-1])  
+            difs = []
+            for i in range(howmanydifs):
+                difs.append(float(sline[-1*(i+1)]))
+            difs.reverse()
+        
+            allvalues.append({"stechio_ceofs" : stechio_ceofs, \
+                              "chemicals" : chemicals, \
+                              "label" : label, \
+                              "difs" : difs})
 
     fp.close()
 

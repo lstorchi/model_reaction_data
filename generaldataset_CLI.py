@@ -21,7 +21,7 @@ if __name__ == '__main__':
                          "DC13","DIPCS10","FH51","G21EA",\
                          "G21IP","G2RC","HEAVYSB11","NBPRC",\
                          "PA26","RC21","SIE4x4","TAUT15",\
-                         "W4","11","YBDE18"], \
+                         "W4-11","YBDE18"], \
                     "INTERMOLECULAR_INTERACTIONS" :\
                        ["ADIM6","AHB21","CARBHB12",\
                         "CHB6","HAL59","HEAVY28","IL16",\
@@ -29,7 +29,7 @@ if __name__ == '__main__':
                     "LARGE_SYSTEMS" :\
                         ["BSR36","C60ISO","CDIE20","DARC",\
                          "ISO34","ISOL24","MB16-43","PArel",\
-                            "RSE43]}"]}    
+                            "RSE43"]}    
     howmanydifs = 3
     methods = {"PBE" : ["Nuclear Repulsion  :", \
                         "One Electron Energy:", \
