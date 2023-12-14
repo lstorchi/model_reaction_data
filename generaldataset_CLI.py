@@ -9,6 +9,7 @@ from sklearn.inspection import permutation_importance
 
 if __name__ == '__main__':
 
+    MODELTYPE = "PLS"
     DEBUG = False
     suprasetnames = {"BARRIER_HEIGHTS" : \
                        ["BH76","BHDIV10","BHPERI",\
@@ -50,6 +51,24 @@ if __name__ == '__main__':
                           "Dispersion correction", \
                           "FINAL SINGLE POINT ENERGY"] ,
                 "ZORA" : ["Nuclear Repulsion  :", \
+                          "One Electron Energy:", \
+                          "Two Electron Energy:", \
+                          "Potential Energy   :", \
+                          "Kinetic Energy     :", \
+                          "E(X)               :"  , \
+                          "E(C)               :"  , \
+                          "Dispersion correction", \
+                          "FINAL SINGLE POINT ENERGY"],
+                "TPSS" : ["Nuclear Repulsion  :", \
+                          "One Electron Energy:", \
+                          "Two Electron Energy:", \
+                          "Potential Energy   :", \
+                          "Kinetic Energy     :", \
+                          "E(X)               :"  , \
+                          "E(C)               :"  , \
+                          "Dispersion correction", \
+                          "FINAL SINGLE POINT ENERGY"],
+                "TPSSh" : ["Nuclear Repulsion  :", \
                           "One Electron Energy:", \
                           "Two Electron Energy:", \
                           "Potential Energy   :", \
@@ -172,25 +191,52 @@ if __name__ == '__main__':
     for setname in fullsetnames:
         mostimportantefeatures_persetname[setname] = []
         moldescriptors_featues, Y, features_names = \
-        commonutils.build_XY_matrix (fulldescriptors[setname], \
+            commonutils.build_XY_matrix (fulldescriptors[setname], \
                                      labels[setname])
     
         maxcomp = moldescriptors_featues.shape[1]
         # search fo the best number od components and build final model
         perc_split = 0.2
-        ncomps, rmses_test, rmses_train, r2s_test, r2s_train = \
-            models.pls_model (0.2, moldescriptors_featues, Y, \
+        ncomps = None 
+        rmses_test = None 
+        rmses_train = None 
+        r2s_test = None 
+        r2s_train = None
+        if MODELTYPE == "PLS":
+            ncomps, rmses_test, rmses_train, r2s_test, r2s_train = \
+                models.pls_model (0.2, moldescriptors_featues, Y, \
                           ncomp_start = 1, ncomp_max = maxcomp)
+        
         r2max_comps = np.argmax(r2s_test)+1
         rmsemin_comps = np.argmin(rmses_test)+1
         compstouse = min(rmsemin_comps, r2max_comps)
     
         perc_split = 0.2
-        rmse_train, rmse_test, r2_train, r2_test, rmse_full, r2_full , \
-            plsmodel, X_train, X_test, y_train, y_test  = \
-                models.pls_model (0.2, moldescriptors_featues, Y, False, compstouse)
+
+        rmse_train = None 
+        rmse_test = None 
+        r2_train = None 
+        r2_test = None 
+        rmse_full = None 
+        r2_full = None
+        model = None 
+        X_train = None 
+        X_test = None 
+        y_train = None  
+        y_test = None
+
+        if MODELTYPE == "PLS":
+            rmse_train, rmse_test, r2_train, r2_test, rmse_full, r2_full , \
+                model, X_train, X_test, y_train, y_test  = \
+                    models.pls_model (0.2, moldescriptors_featues, Y, False, compstouse)
+            
         perc_split = 0.0
-        rmse, r2 = models.pls_model (perc_split, moldescriptors_featues, Y, False, \
+
+        rmse = None
+        r2 = None
+
+        if MODELTYPE == "PLS":
+            rmse, r2 = models.pls_model (perc_split, moldescriptors_featues, Y, False, \
                       compstouse, leaveoneout=True)
         
         print("%40s , %4d , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f"%(\
@@ -201,7 +247,7 @@ if __name__ == '__main__':
     
         scoring = 'neg_mean_squared_error'
     
-        r = permutation_importance(plsmodel, X_test, y_test, n_repeats=30, \
+        r = permutation_importance(model, X_test, y_test, n_repeats=30, \
                                 random_state=0, scoring=scoring)
         
         for i in r.importances_mean.argsort()[::-1]:
@@ -210,7 +256,7 @@ if __name__ == '__main__':
         if DEBUG:
             scoring = ['r2', 'neg_mean_squared_error', 'neg_mean_absolute_error']
         
-            r_multi = permutation_importance(plsmodel, X_test, y_test, n_repeats=30, \
+            r_multi = permutation_importance(model, X_test, y_test, n_repeats=30, \
                                     random_state=0, scoring=scoring)
     
             for metric in r_multi:
@@ -274,19 +320,40 @@ if __name__ == '__main__':
         maxcomp = moldescriptors_featues.shape[1]
         # search fo the best number od components and build final model
         perc_split = 0.2
-        ncomps, rmses_test, rmses_train, r2s_test, r2s_train = \
-            models.pls_model (0.2, moldescriptors_featues, Y, \
+        ncomps = None
+        rmses_test = None
+        rmses_train = None
+        r2s_test = None
+        r2s_train = None
+        if MODELTYPE == "PLS":
+            ncomps, rmses_test, rmses_train, r2s_test, r2s_train = \
+                models.pls_model (0.2, moldescriptors_featues, Y, \
                           ncomp_start = 1, ncomp_max = maxcomp)
+        
         r2max_comps = np.argmax(r2s_test)+1
         rmsemin_comps = np.argmin(rmses_test)+1
         compstouse = min(rmsemin_comps, r2max_comps)
     
         perc_split = 0.2
-        rmse_train, rmse_test, r2_train, r2_test, rmse_full, r2_full , \
-            plsmodel, X_train, X_test, y_train, y_test  = \
-                models.pls_model (0.2, moldescriptors_featues, Y, False, compstouse)
-        perc_split = 0.0
-        rmse, r2 = models.pls_model (perc_split, moldescriptors_featues, Y, False, \
+        rmse_train = None
+        rmse_test = None
+        r2_train = None
+        r2_test = None
+        rmse_full = None
+        r2_full = None
+        model = None
+        X_train = None
+        X_test = None
+        y_train = None
+        y_test = None
+        rmse = None
+        r2 = None
+        if MODELTYPE == "PLS":
+            rmse_train, rmse_test, r2_train, r2_test, rmse_full, r2_full , \
+                model, X_train, X_test, y_train, y_test  = \
+                    models.pls_model (0.2, moldescriptors_featues, Y, False, compstouse)
+            perc_split = 0.0
+            rmse, r2 = models.pls_model (perc_split, moldescriptors_featues, Y, False, \
                       compstouse, leaveoneout=True)
         
         print("%40s , %4d , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f"%(\
