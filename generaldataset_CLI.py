@@ -62,11 +62,12 @@ if __name__ == '__main__':
     
     allvalues_perset = {}
     allvalues = []
-    
-    toberemoved = []
+    fullsetnames = []
+
+    toberemoved = {}
     for supersetname in suprasetnames:
-        setnames = suprasetnames[supersetname]
-        for i, setname in enumerate(setnames):
+        toberemoved[supersetname] = []
+        for i, setname in enumerate(suprasetnames[supersetname]):
               print("Reading dataset: ", setname)
               rootdir = "../datasets/AllData/" + supersetname + "/" +setname
               labelsfilename = "../datasets/AllData/" +setname +"_labels.txt"
@@ -78,22 +79,25 @@ if __name__ == '__main__':
               if (values is None) or (len(values) <= 2):
                     print(setname + " No data found for this dataset")
                     print("")
-                    toberemoved.append(i)
+                    toberemoved[supersetname].append(i)
               else:
-                    allvalues_perset[setname] = values  
-                    print("Number of samples: ", len(allvalues_perset[setname]))
-                    print("Number of basic PBE descriptors: ", len(allvalues_perset[setname]))
-                    print("Number of basic  HF descriptors: ", len(allvalues_perset[setname]))
+                    fullsetname = supersetname+"_"+setname
+                    fullsetnames.append(fullsetname)
+                    allvalues_perset[fullsetname] = values  
+                    print("Number of samples: ", len(allvalues_perset[fullsetname]))
+                    print("Number of basic PBE descriptors: ", len(allvalues_perset[fullsetname]))
+                    print("Number of basic  HF descriptors: ", len(allvalues_perset[fullsetname]))
               
-                    allvalues += allvalues_perset[setname]
+                    allvalues += allvalues_perset[fullsetname]
                     print("")
-    
-    for i in sorted(toberemoved, reverse=True):
-          del setnames[i]
+
+    for supersetname in toberemoved:
+        for i in sorted(toberemoved[supersetname], reverse=True):
+          del suprasetnames[supersetname][i]
     
     if len(allvalues) > 0:
           allvalues_perset["Full"] = allvalues   
-          setnames.append("Full")
+          fullsetnames.append("Full")
     
     print("")
     print("%3s , %10s , "%("#", "SetName"), end="") 
@@ -105,7 +109,7 @@ if __name__ == '__main__':
         else:
             print("%6s , %8s "%("R2 "+method, "RMSE "+method))
 
-    for setname in setnames:
+    for setname in fullsetnames:
         print("%3d , %10s , "%(len(allvalues_perset[setname]), setname), end="")
         for methodid in range(howmanydifs):
             y_pred = []
@@ -134,7 +138,7 @@ if __name__ == '__main__':
     labels = {}
     top_correlation_perset = {}
     
-    for setname in setnames:
+    for setname in fullsetnames:
         fulldescriptors[setname] = []
         labels[setname] = []
         for idx, val in enumerate(allvalues_perset[setname]):
@@ -160,10 +164,10 @@ if __name__ == '__main__':
     
     mostimportantefeatures_persetname = {}
     
-    print("%10s , %4s , %9s , %9s , %9s , %9s , %9s , %9s , %9s , %9s"%(\
+    print("%40s , %4s , %9s , %9s , %9s , %9s , %9s , %9s , %9s , %9s"%(\
          "SetName", "Comp", "RMSETrain", "RMSETest", "RMSEFull", \
             "R2Train", "R2Test", "R2Full", "RMSELOO", "R2LOO"))
-    for setname in setnames:
+    for setname in fullsetnames:
         mostimportantefeatures_persetname[setname] = []
         moldescriptors_featues, Y, features_names = \
         commonutils.build_XY_matrix (fulldescriptors[setname], \
@@ -187,7 +191,7 @@ if __name__ == '__main__':
         rmse, r2 = models.pls_model (perc_split, moldescriptors_featues, Y, False, \
                       compstouse, leaveoneout=True)
         
-        print("%10s , %4d , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f"%(\
+        print("%40s , %4d , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f"%(\
             setname, compstouse, \
             rmse_train, rmse_test, rmse_full, \
             r2_train, r2_test, r2_full, \
@@ -218,7 +222,7 @@ if __name__ == '__main__':
                 print("")
     
     features_to_remove_perset = {}
-    for setname in setnames:
+    for setname in fullsetnames:
         features_to_remove_perset[setname] = []
         if DEBUG:
             print("Most important features for set: ", setname)
@@ -236,14 +240,14 @@ if __name__ == '__main__':
                         if DEBUG:
                             print("Corretlated %35s %9.3f"%(tc[0], tc[2]))
     #remove some features based on importance and correlation
-    for setname in setnames:
+    for setname in fullsetnames:
         commonutils.remove_features_fromset(allvalues_perset[setname], \
                                             features_to_remove_perset[setname], \
                                             methods)
     fulldescriptors = {}
     labels = {}
     
-    for setname in setnames:
+    for setname in fullsetnames:
         fulldescriptors[setname] = []
         labels[setname] = []
         for idx, val in enumerate(allvalues_perset[setname]):
@@ -256,10 +260,10 @@ if __name__ == '__main__':
         moldescriptors_featues, Y, features_names = \
             commonutils.build_XY_matrix (fulldescriptors[setname], labels[setname])
     
-    print("%10s , %4s , %9s , %9s , %9s , %9s , %9s , %9s , %9s , %9s"%(\
+    print("%40s , %4s , %9s , %9s , %9s , %9s , %9s , %9s , %9s , %9s"%(\
         "SetName", "Comp", "RMSETrain", "RMSETest", "RMSEFull", \
         "R2Train", "R2Test", "R2Full", "RMSELOO", "R2LOO"))
-    for setname in setnames:
+    for setname in fullsetnames:
         mostimportantefeatures_persetname[setname] = []
         moldescriptors_featues, Y, features_names = \
         commonutils.build_XY_matrix (fulldescriptors[setname], \
@@ -283,7 +287,7 @@ if __name__ == '__main__':
         rmse, r2 = models.pls_model (perc_split, moldescriptors_featues, Y, False, \
                       compstouse, leaveoneout=True)
         
-        print("%10s , %4d , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f"%(\
+        print("%40s , %4d , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f"%(\
             setname, compstouse, \
             rmse_train, rmse_test, rmse_full, \
             r2_train, r2_test, r2_full, \
