@@ -61,12 +61,13 @@ if __name__ == '__main__':
                 }
     
     allvalues_perset = {}
-    allvalues = []
     fullsetnames = []
 
     toberemoved = {}
     for supersetname in suprasetnames:
         toberemoved[supersetname] = []
+        allvalues_perset[supersetname] = []
+        fullsetnames.append(supersetname)
         for i, setname in enumerate(suprasetnames[supersetname]):
               print("Reading dataset: ", setname)
               rootdir = "../datasets/AllData/" + supersetname + "/" +setname
@@ -88,19 +89,20 @@ if __name__ == '__main__':
                     print("Number of basic PBE descriptors: ", len(allvalues_perset[fullsetname]))
                     print("Number of basic  HF descriptors: ", len(allvalues_perset[fullsetname]))
               
-                    allvalues += allvalues_perset[fullsetname]
+                    allvalues_perset[supersetname] += allvalues_perset[fullsetname]
                     print("")
 
     for supersetname in toberemoved:
         for i in sorted(toberemoved[supersetname], reverse=True):
           del suprasetnames[supersetname][i]
     
-    if len(allvalues) > 0:
-          allvalues_perset["Full"] = allvalues   
-          fullsetnames.append("Full")
+    allvalues_perset["Full"] = []
+    for supersetname in suprasetnames:
+          allvalues_perset["Full"] += allvalues_perset[supersetname]  
+    fullsetnames.append("Full")
     
     print("")
-    print("%3s , %10s , "%("#", "SetName"), end="") 
+    print("%3s , %40s , "%("#", "SetName"), end="") 
     for methodid in range(howmanydifs):
         print("%6s , %8s , "%("R2 "+str(methodid), "RMSE "+str(methodid)), end="")
     for j, method in enumerate(methods):
@@ -110,7 +112,7 @@ if __name__ == '__main__':
             print("%6s , %8s "%("R2 "+method, "RMSE "+method))
 
     for setname in fullsetnames:
-        print("%3d , %10s , "%(len(allvalues_perset[setname]), setname), end="")
+        print("%3d , %40s , "%(len(allvalues_perset[setname]), setname), end="")
         for methodid in range(howmanydifs):
             y_pred = []
             labels = []
