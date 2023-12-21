@@ -373,19 +373,37 @@ if __name__ == '__main__':
                 rmseloo, r2loo)) 
             
     if OUTSUMMARY:
-        print("# , setname , rmse_best_inside , method_best_inside , " + \
-              " rmse_best_our , method_best_our , " + \
-                "rmse_full , rmse_full_rmcorr , " + \
-                "rmse_train , rmse_test , rmse_train_rmcorr ,"+ \
-                " rmse_test_rmcorr , comp , comp_rmcorr")
+        fp = open("summary.csv", "w")
+        fpsub = open("summary_good.csv", "w")
+        fpbad = open("summary_bad.csv", "w")
+
+        print("# , setname , rmse_best_inside ,  " + \
+            " rmse_best_our , " + \
+            "rmse_full , rmse_full_rmcorr , " + \
+            "rmse_train , rmse_test , rmse_train_rmcorr ,"+ \
+            " rmse_test_rmcorr , comp , comp_rmcorr , " + \
+            "method_best_inside,method_best_our ", file=fp)
+
+        print("# , setname , rmse_best_inside ,  " + \
+            " rmse_best_our , " + \
+            "rmse_full , rmse_full_rmcorr , " + \
+            "rmse_train , rmse_test , rmse_train_rmcorr ,"+ \
+            " rmse_test_rmcorr , comp , comp_rmcorr , " + \
+            "method_best_inside,method_best_our ", file=fpsub)
+
+        print("# , setname , rmse_best_inside ,  " + \
+            " rmse_best_our , " + \
+            "rmse_full , rmse_full_rmcorr , " + \
+            "rmse_train , rmse_test , rmse_train_rmcorr ,"+ \
+            " rmse_test_rmcorr , comp , comp_rmcorr , " + \
+            "method_best_inside,method_best_our ", file=fpbad)
+        
         for setname in fullsetnames:
             dim = len(allvalues_perset[setname])
-            print("%4d , %40s , %2s , %9.3f , %5s ,  %9.3f  , "%(dim, \
+            print("%4d ,  %40s , %9.3f , %9.3f  , "%(dim, \
                 setname, \
-                bestinsidemethod[setname], 
                 bestinsidemethod_rmse[setname], \
-                bestourmethod[setname],\
-                bestourmethod_rmse[setname]), end="")
+                bestourmethod_rmse[setname]), end="", file=fp)
         
             print("%9.3f , %9.3f , %9.3f , %9.3f ,%9.3f ,%9.3f , %3d , %3d"%\
                   (all_rmse_full[setname], \
@@ -395,5 +413,51 @@ if __name__ == '__main__':
                    all_rmse_train_rmcorr[setname], \
                    all_rmse_test_rmcorr[setname],
                    all_comp[setname], \
-                   all_comp_rmcorr[setname]))
+                   all_comp_rmcorr[setname]), end="", file=fp)
+        
+            print(" , %5s , %5s"%(bestinsidemethod[setname], \
+                                   bestourmethod[setname]), file=fp)
+        
+            if all_rmse_full[setname] <= bestinsidemethod_rmse[setname] \
+                or all_rmse_full_rmcorr[setname] <= bestinsidemethod_rmse[setname]:
+                print("%4d ,  %40s , %9.3f , %9.3f  , "%(dim, \
+                    setname, \
+                    bestinsidemethod_rmse[setname], \
+                    bestourmethod_rmse[setname]), end="", file=fpsub)
+        
+                print("%9.3f , %9.3f , %9.3f , %9.3f ,%9.3f ,%9.3f , %3d , %3d"%\
+                  (all_rmse_full[setname], \
+                   all_rmse_full_rmcorr[setname], \
+                   all_rmse_train[setname], \
+                   all_rmse_test[setname], \
+                   all_rmse_train_rmcorr[setname], \
+                   all_rmse_test_rmcorr[setname],
+                   all_comp[setname], \
+                   all_comp_rmcorr[setname]), end="", file=fpsub)
+        
+                print(" , %5s , %5s"%(bestinsidemethod[setname], \
+                                   bestourmethod[setname]), file=fpsub)
+            else:
+                print("%4d ,  %40s , %9.3f , %9.3f  , "%(dim, \
+                    setname, \
+                    bestinsidemethod_rmse[setname], \
+                    bestourmethod_rmse[setname]), end="", file=fpbad)
+        
+                print("%9.3f , %9.3f , %9.3f , %9.3f ,%9.3f ,%9.3f , %3d , %3d"%\
+                  (all_rmse_full[setname], \
+                   all_rmse_full_rmcorr[setname], \
+                   all_rmse_train[setname], \
+                   all_rmse_test[setname], \
+                   all_rmse_train_rmcorr[setname], \
+                   all_rmse_test_rmcorr[setname],
+                   all_comp[setname], \
+                   all_comp_rmcorr[setname]), end="", file=fpbad)
+        
+                print(" , %5s , %5s"%(bestinsidemethod[setname], \
+                                   bestourmethod[setname]), file=fpbad)
+            
+        fp.close()
+        fpsub.close()
+        fpbad.close()
+
             
