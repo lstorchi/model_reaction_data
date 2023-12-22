@@ -7,12 +7,63 @@ import numpy as np
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.inspection import permutation_importance
 
+from dataclasses import dataclass
+import prettyprinter as pp
+
+from sklearn.cross_decomposition import PLSRegression
+@dataclass
+class ModelResults:
+    # data considering all features
+    pls_model: PLSRegression = None
+    rmse_full: float = 0.0
+    rmse_train: float = 0.0
+    rmse_test: float = 0.0
+    rmse_loo: float = 0.0
+    r2_full: float = 0.0
+    r2_train: float = 0.0
+    r2_test: float = 0.0
+    r2_loo: float = 0.0
+    num_comp: int = 0
+    fulldescriptors: list = None
+    labels: list = None
+    X_train: np.ndarray = None
+    X_test: np.ndarray = None
+    y_train: np.ndarray = None
+    y_test: np.ndarray = None
+    top_correlation : list = None
+    mostimportantefeatures : list = None
+    features_to_remove : list = None
+    # after removing correlated and 
+    # less important features 
+    pls_model_rmcorr: PLSRegression = None
+    rmse_train_rmcorr : float = 0.0
+    rmse_test_rmcorr : float = 0.0
+    rmse_full_rmcorr : float = 0.0
+    comp_rmcorr : int = 0
+    fulldescriptors_rmcorr : list = None
+    labels_rmcorr : list = None
+    X_train_rmcorr : np.ndarray = None
+    X_test_rmcorr : np.ndarray = None
+    y_train_rmcorr : np.ndarray = None
+    y_test_rmcorr : np.ndarray = None
+    # data realated to inside and our methods
+    inside_methods_rmse: list = None
+    bestinsidemethod_rmse: float = 0.0
+    bestinsidemethod: str = None
+    inside_methods_r2: list = None
+    our_methods_rmse: dict = None
+    bestourmethod_rmse: float = 0.0
+    bestourmethod: str = None
+    our_methods_r2: dict = None
+    our_methods_name : list = None
+
+
 if __name__ == '__main__':
 
     MODELTYPE = "PLS"
     DEBUG = False
     OUTSUMMARY = True
-    CORRCUT = 1.0
+    CORRCUT = 0.98
     suprasetnames = {"BARRIER_HEIGHTS" : \
                        ["BH76","BHDIV10","BHPERI",\
                         "BHROT27","INV24","PX13","WCPT18"], \
@@ -74,6 +125,7 @@ if __name__ == '__main__':
     
     allvalues_perset = {}
     fullsetnames = []
+    models_results = {}
 
     toberemoved = {}
     for supersetname in suprasetnames:
@@ -112,30 +164,22 @@ if __name__ == '__main__':
           allvalues_perset["Full"] += allvalues_perset[supersetname]  
     fullsetnames.append("Full")
 
-    # compute and dump summary statistics for each set precomputed methods
-    bestinsidemethod_rmse = {} 
-    bestinsidemethod = {}
-    bestourmethod_rmse = {}
-    bestourmethod = {}
-    if not OUTSUMMARY:
-        print("")
-        print("%3s , %40s , "%("#", "SetName"), end="") 
-        for methodid in range(howmanydifs):
-            print("%6s , %8s , "%("R2 "+str(methodid), "RMSE "+str(methodid)), end="")
-        for j, method in enumerate(methods):
-            if j< len(methods)-1:
-                print("%6s , %8s , "%("R2 "+method, "RMSE "+method), end="")
-            else:
-                print("%6s , %8s "%("R2 "+method, "RMSE "+method))
-
     for setname in fullsetnames:
-        bestinsidemethod_rmse[setname] = float("inf")
-        bestinsidemethod[setname] = ""
-        bestourmethod_rmse[setname] = float("inf")
-        bestourmethod[setname] = ""
+        models_results[setname] = ModelResults()
 
-        if not OUTSUMMARY:
-            print("%3d , %40s , "%(len(allvalues_perset[setname]), setname), end="")
+    # compute and dump summary statistics for each set precomputed methods
+    for setname in fullsetnames:
+        models_results[setname].inside_methods_rmse = []
+        models_results[setname].inside_methods_r2 = []
+        models_results[setname].our_methods_rmse = {}
+        models_results[setname].our_methods_r2 = {}
+        
+        models_results[setname].bestinsidemethod_rmse = float("inf")
+        models_results[setname].bestinsidemethod = ""
+        models_results[setname].bestourmethod_rmse = float("inf")
+        models_results[setname].bestourmethod = ""
+        models_results[setname].our_methods_name = []
+
         for methodid in range(howmanydifs):
             y_pred = []
             labels = []
@@ -145,11 +189,12 @@ if __name__ == '__main__':
             
             r2 = r2_score(labels, y_pred)
             rmse = mean_squared_error(labels, y_pred, squared=False)
-            if not OUTSUMMARY:
-                print("%6.3f , %8.3f , "%(r2, rmse), end="")
-            if rmse < bestinsidemethod_rmse[setname]:
-                bestinsidemethod_rmse[setname] = rmse
-                bestinsidemethod[setname] = str(methodid)
+            models_results[setname].inside_methods_rmse.append(rmse)
+            models_results[setname].inside_methods_r2.append(r2)
+    
+            if rmse < models_results[setname].bestinsidemethod_rmse:
+                models_results[setname].bestinsidemethod_rmse = rmse
+                models_results[setname].bestinsidemethod = str(methodid)
 
         for j, method in enumerate(methods):
             y_pred = []
@@ -160,70 +205,50 @@ if __name__ == '__main__':
             
             r2 = r2_score(labels, y_pred)
             rmse = mean_squared_error(labels, y_pred, squared=False)
-            if not OUTSUMMARY:
-                if j< len(methods)-1:
-                    print("%6.3f , %8.3f , "%(r2, rmse), end="")
-                else:
-                    print("%6.3f , %8.3f"%(r2, rmse)) 
-            if rmse < bestourmethod_rmse[setname]:
-                bestourmethod_rmse[setname] = rmse
-                bestourmethod[setname] = method
+
+            models_results[setname].our_methods_rmse[method] = rmse
+            models_results[setname].our_methods_r2[method] = r2
+            models_results[setname].our_methods_name.append(method)
+
+            if rmse < models_results[setname].bestourmethod_rmse:
+                models_results[setname].bestourmethod_rmse = rmse
+                models_results[setname].bestourmethod = method
+
     
-    fulldescriptors = {}
-    labels = {}
-    top_correlation_perset = {}
-    
+    # search top correlations and remove correlated features considering
+    # all the sets together and the most important features
     for setname in fullsetnames:
-        fulldescriptors[setname] = []
-        labels[setname] = []
+        models_results[setname].fulldescriptors = []
+        models_results[setname].labels = []
         for idx, val in enumerate(allvalues_perset[setname]):
-            fulldescriptors[setname].append({})
+            models_results[setname].fulldescriptors.append({})
             for method in methods:
-                fulldescriptors[setname][idx].update(val[method+"_energydiff"])
+                models_results[setname].fulldescriptors[idx].update(val[method+"_energydiff"])
     
-            labels[setname].append(val["label"])
+            models_results[setname].labels.append(val["label"])
     
         moldescriptors_featues, Y, features_names = \
-            commonutils.build_XY_matrix (fulldescriptors[setname], labels[setname])
+            commonutils.build_XY_matrix (models_results[setname].fulldescriptors, \
+                                         models_results[setname].labels)
     
         df = pd.DataFrame(moldescriptors_featues, columns=features_names)
     
         top_corr = commonutils.get_top_correlations_blog(df, CORRCUT)
     
-        top_correlation_perset[setname] = top_corr
+        models_results[setname].top_correlation = top_corr
         if DEBUG:
             print("Top correlations for set: ", setname)
             for tc in top_corr:
                 print("%35s %35s %9.3f"%(tc[0], tc[1], tc[2]))
             print("")
-    
-    mostimportantefeatures_persetname = {}
 
-    all_rmse_train = {}
-    all_rmse_test = {}
-    all_rmse_full = {}
-    all_comp = {}
-    if not OUTSUMMARY: 
-        print("%40s , %4s , %9s , %9s , %9s , %9s , %9s , %9s , %9s , %9s"%(\
-         "SetName", "Comp", "RMSETrain", "RMSETest", "RMSEFull", \
-            "R2Train", "R2Test", "R2Full", "RMSELOO", "R2LOO"))
     for setname in fullsetnames:
-        mostimportantefeatures_persetname[setname] = []
         moldescriptors_featues, Y, features_names = \
-            commonutils.build_XY_matrix (fulldescriptors[setname], \
-                                     labels[setname])
+            commonutils.build_XY_matrix (models_results[setname].fulldescriptors, \
+                                    models_results[setname].labels)
     
         # search fo the best number od components and build final model
         perc_split = 0.2
-
-        rmse_train = None
-        rmse_test = None
-        rmse_full = None
-        r2_train = None
-        r2_test = None
-        r2_full = None
-        rmseloo = None
-        r2loo = None
 
         if MODELTYPE == "PLS":
             maxcomp = moldescriptors_featues.shape[1]
@@ -235,39 +260,51 @@ if __name__ == '__main__':
             rmsemin_comps = np.argmin(rmses_test)+1
             compstouse = min(rmsemin_comps, r2max_comps)
 
-            all_comp[setname] = compstouse
-            rmse_train, rmse_test, r2_train, r2_test, rmse_full, r2_full , \
-                model, X_train, X_test, y_train, y_test  = \
-                    models.pls_model (perc_split, moldescriptors_featues, Y, False, compstouse)
+            models_results[setname].num_comp = compstouse
+
+            models_results[setname].rmse_train, \
+            models_results[setname].rmse_test, \
+            models_results[setname].r2_train, \
+            models_results[setname].r2_test, \
+            models_results[setname].rmse_full, \
+            models_results[setname].r2_full , \
+            models_results[setname].pls_model, \
+            models_results[setname].X_train, \
+            models_results[setname].X_test, \
+            models_results[setname].y_train, \
+            models_results[setname].y_test  = \
+                    models.pls_model (perc_split, moldescriptors_featues, \
+                                      Y, False, compstouse)
             
             perc_split = 0.0
 
-            rmseloo, r2loo = models.pls_model (perc_split, moldescriptors_featues, Y, False, \
-                      compstouse, leaveoneout=True)
-        
-        all_rmse_train[setname] = rmse_train
-        all_rmse_test[setname] = rmse_test
-        all_rmse_full[setname] = rmse_full
-        if not OUTSUMMARY:
-            print("%40s , %4d , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f"%(\
-                setname, compstouse, \
-                rmse_train, rmse_test, rmse_full, \
-                r2_train, r2_test, r2_full, \
-                rmseloo, r2loo))
+            models_results[setname].rmse_loo, \
+            models_results[setname].r2_loo = \
+                models.pls_model (perc_split, moldescriptors_featues,\
+                                   Y, False, compstouse, leaveoneout=True)
     
         scoring = 'neg_mean_squared_error'
+        models_results[setname].mostimportantefeatures = []
     
-        r = permutation_importance(model, X_test, y_test, n_repeats=30, \
+        r = permutation_importance(models_results[setname].pls_model,\
+                                models_results[setname].X_test, \
+                                models_results[setname].y_test, \
+                                n_repeats=30, \
                                 random_state=0, scoring=scoring)
         
         for i in r.importances_mean.argsort()[::-1]:
-            mostimportantefeatures_persetname[setname].append(features_names[i])
+            models_results[setname].mostimportantefeatures.append(\
+                features_names[i])
     
         if DEBUG:
             scoring = ['r2', 'neg_mean_squared_error', 'neg_mean_absolute_error']
         
-            r_multi = permutation_importance(model, X_test, y_test, n_repeats=30, \
-                                    random_state=0, scoring=scoring)
+            r_multi = permutation_importance(\
+                models_results[setname].pls_model,\
+                models_results[setname].X_test, \
+                models_results[setname].y_test, \
+                n_repeats=30, random_state=0, \
+                scoring=scoring)
     
             for metric in r_multi:
                 print(f"{metric}"+ " Used")
@@ -279,69 +316,54 @@ if __name__ == '__main__':
                             f" +/- {r.importances_std[i]:.3e}")
                 print("")
     
-    features_to_remove_perset = {}
     for setname in fullsetnames:
-        features_to_remove_perset[setname] = []
+        models_results[setname].features_to_remove = []
         if DEBUG:
             print("Most important features for set: ", setname)
-        for mif in mostimportantefeatures_persetname[setname]:
+        for mif in models_results[setname].mostimportantefeatures:
             if DEBUG:
                 print("%35s"%(mif))
-            for tc in top_correlation_perset[setname]:
-                if tc not in mostimportantefeatures_persetname[setname]:
+            for tc in models_results[setname].top_correlation:
+                if tc not in models_results[setname].mostimportantefeatures:
                     if mif == tc[0]:
-                        features_to_remove_perset[setname].append(tc[1])
+                        models_results[setname].features_to_remove.append(tc[1])
                         if DEBUG:
                             print("Corretlated %35s %9.3f"%(tc[1], tc[2]))
                     elif mif == tc[1]:
-                        features_to_remove_perset[setname].append(tc[0])
+                        models_results[setname].features_to_remove.append(tc[0])
                         if DEBUG:
                             print("Corretlated %35s %9.3f"%(tc[0], tc[2]))
+   
     #remove some features based on importance and correlation
     for setname in fullsetnames:
         commonutils.remove_features_fromset(allvalues_perset[setname], \
-                                            features_to_remove_perset[setname], \
+                                            models_results[setname].features_to_remove, \
                                             methods)
-    all_rmse_train_rmcorr = {}
-    all_rmse_test_rmcorr = {}
-    all_rmse_full_rmcorr = {}
-    all_comp_rmcorr = {}
-    fulldescriptors = {}
-    labels = {}
+        
+    # models using non correlated and most important features
     for setname in fullsetnames:
-        fulldescriptors[setname] = []
-        labels[setname] = []
+        models_results[setname].fulldescriptors_rmcorr = []
+        models_results[setname].labels_rmcorr = []
         for idx, val in enumerate(allvalues_perset[setname]):
-            fulldescriptors[setname].append({})
+            models_results[setname].fulldescriptors_rmcorr.append({})
             for method in methods:
-                fulldescriptors[setname][idx].update(val[method+"_energydiff"])
+                models_results[setname].fulldescriptors_rmcorr[idx].update(val[method+"_energydiff"])
     
-            labels[setname].append(val["label"])
+            models_results[setname].labels_rmcorr.append(val["label"])
     
         moldescriptors_featues, Y, features_names = \
-            commonutils.build_XY_matrix (fulldescriptors[setname], labels[setname])
+            commonutils.build_XY_matrix (models_results[setname].fulldescriptors_rmcorr, \
+                                         models_results[setname].labels_rmcorr)
     
-    if not OUTSUMMARY:
-        print("%40s , %4s , %9s , %9s , %9s , %9s , %9s , %9s , %9s , %9s"%(\
-            "SetName", "Comp", "RMSETrain", "RMSETest", "RMSEFull", \
-            "R2Train", "R2Test", "R2Full", "RMSELOO", "R2LOO"))
     for setname in fullsetnames:
-        mostimportantefeatures_persetname[setname] = []
+        print(setname)
         moldescriptors_featues, Y, features_names = \
-        commonutils.build_XY_matrix (fulldescriptors[setname], \
-                                     labels[setname])
+        commonutils.build_XY_matrix (models_results[setname].fulldescriptors_rmcorr, \
+                                     models_results[setname].labels_rmcorr)
     
         # search fo the best number od components and build final model
         perc_split = 0.2
 
-        rmse_train = None
-        rmse_test = None 
-        rmse_full = None
-        r2_train = None
-        r2_test = None
-        r2_full = None
-        rmseloo = None
-        r2lo = None
         if MODELTYPE == "PLS":
             maxcomp = moldescriptors_featues.shape[1]
             ncomps, rmses_test, rmses_train, r2s_test, r2s_train = \
@@ -352,112 +374,62 @@ if __name__ == '__main__':
             rmsemin_comps = np.argmin(rmses_test)+1
             compstouse = min(rmsemin_comps, r2max_comps)
 
-            all_comp_rmcorr[setname] = compstouse
-            rmse_train, rmse_test, r2_train, r2_test, rmse_full, r2_full , \
-                model, X_train, X_test, y_train, y_test  = \
-                    models.pls_model (perc_split, moldescriptors_featues, Y, False, compstouse)
+            models_results[setname].num_comp_rmcorr = compstouse
+            models_results[setname].rmse_train_rmcorr, \
+            models_results[setname].rmse_test_rmcorr, \
+            models_results[setname].r2_train_rmcorr, \
+            models_results[setname].r2_test_rmcorr, \
+            models_results[setname].rmse_full_rmcorr, \
+            models_results[setname].r2_full_rmcorr , \
+            models_results[setname].pls_model_rmcorr, \
+            models_results[setname].X_train_rmcorr, \
+            models_results[setname].X_test_rmcorr, \
+            models_results[setname].y_train_rmcorr, \
+            models_results[setname].y_test_rmcorr = \
+                    models.pls_model (perc_split, moldescriptors_featues,\
+                                       Y, False, compstouse)
             
             perc_split = 0.0
 
-            rmseloo, r2loo = models.pls_model (perc_split, moldescriptors_featues, Y, False, \
-                      compstouse, leaveoneout=True)
-        
-        all_rmse_train_rmcorr[setname] = rmse_train
-        all_rmse_test_rmcorr[setname] = rmse_test
-        all_rmse_full_rmcorr[setname] = rmse_full
-        if not OUTSUMMARY:
-            print("%40s , %4d , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f , %9.3f"%(\
-                setname, compstouse, \
-                rmse_train, rmse_test, rmse_full, \
-                r2_train, r2_test, r2_full, \
-                rmseloo, r2loo)) 
-            
-    if OUTSUMMARY:
+            models_results[setname].rmse_loo_rmcorr, \
+            models_results[setname].r2_loo_rmcorr = \
+                models.pls_model (perc_split, moldescriptors_featues, \
+                    Y, False, compstouse, leaveoneout=True)
+
+    if not OUTSUMMARY:
+        for setname in fullsetnames:
+            print("Setname: ", setname)
+            pp.pprint(models_results[setname])
+    else:
         fp = open("summary.csv", "w")
         fpsub = open("summary_good.csv", "w")
         fpbad = open("summary_bad.csv", "w")
 
-        print("# , setname , rmse_best_inside ,  " + \
-            " rmse_best_our , " + \
-            "rmse_full , rmse_full_rmcorr , " + \
-            "rmse_train , rmse_test , rmse_train_rmcorr ,"+ \
-            " rmse_test_rmcorr , comp , comp_rmcorr , " + \
-            "method_best_inside,method_best_our ", file=fp)
-
-        print("# , setname , rmse_best_inside ,  " + \
-            " rmse_best_our , " + \
-            "rmse_full , rmse_full_rmcorr , " + \
-            "rmse_train , rmse_test , rmse_train_rmcorr ,"+ \
-            " rmse_test_rmcorr , comp , comp_rmcorr , " + \
-            "method_best_inside,method_best_our ", file=fpsub)
-
-        print("# , setname , rmse_best_inside ,  " + \
-            " rmse_best_our , " + \
-            "rmse_full , rmse_full_rmcorr , " + \
-            "rmse_train , rmse_test , rmse_train_rmcorr ,"+ \
-            " rmse_test_rmcorr , comp , comp_rmcorr , " + \
-            "method_best_inside,method_best_our ", file=fpbad)
+        for f in [fp, fpsub, fpbad]:
+            print("# , " + \
+                "setname , " + \
+                "rmse_best_inside , " + \
+                "rmse_best_our , " + \
+                "rmse_full , " + \
+                "rmse_full_rmcorr , " + \
+                "comp , " + \
+                "comp_rmcorr , " + \
+                "method_best_inside , " + \
+                "method_best_our ", file=f)
         
         for setname in fullsetnames:
             dim = len(allvalues_perset[setname])
-            print("%4d ,  %40s , %9.3f , %9.3f  , "%(dim, \
-                setname, \
-                bestinsidemethod_rmse[setname], \
-                bestourmethod_rmse[setname]), end="", file=fp)
-        
-            print("%9.3f , %9.3f , %9.3f , %9.3f ,%9.3f ,%9.3f , %3d , %3d"%\
-                  (all_rmse_full[setname], \
-                   all_rmse_full_rmcorr[setname], \
-                   all_rmse_train[setname], \
-                   all_rmse_test[setname], \
-                   all_rmse_train_rmcorr[setname], \
-                   all_rmse_test_rmcorr[setname],
-                   all_comp[setname], \
-                   all_comp_rmcorr[setname]), end="", file=fp)
-        
-            print(" , %5s , %5s"%(bestinsidemethod[setname], \
-                                   bestourmethod[setname]), file=fp)
-        
-            if all_rmse_full[setname] <= bestinsidemethod_rmse[setname] \
-                or all_rmse_full_rmcorr[setname] <= bestinsidemethod_rmse[setname]:
-                print("%4d ,  %40s , %9.3f , %9.3f  , "%(dim, \
-                    setname, \
-                    bestinsidemethod_rmse[setname], \
-                    bestourmethod_rmse[setname]), end="", file=fpsub)
-        
-                print("%9.3f , %9.3f , %9.3f , %9.3f ,%9.3f ,%9.3f , %3d , %3d"%\
-                  (all_rmse_full[setname], \
-                   all_rmse_full_rmcorr[setname], \
-                   all_rmse_train[setname], \
-                   all_rmse_test[setname], \
-                   all_rmse_train_rmcorr[setname], \
-                   all_rmse_test_rmcorr[setname],
-                   all_comp[setname], \
-                   all_comp_rmcorr[setname]), end="", file=fpsub)
-        
-                print(" , %5s , %5s"%(bestinsidemethod[setname], \
-                                   bestourmethod[setname]), file=fpsub)
-            else:
-                print("%4d ,  %40s , %9.3f , %9.3f  , "%(dim, \
-                    setname, \
-                    bestinsidemethod_rmse[setname], \
-                    bestourmethod_rmse[setname]), end="", file=fpbad)
-        
-                print("%9.3f , %9.3f , %9.3f , %9.3f ,%9.3f ,%9.3f , %3d , %3d"%\
-                  (all_rmse_full[setname], \
-                   all_rmse_full_rmcorr[setname], \
-                   all_rmse_train[setname], \
-                   all_rmse_test[setname], \
-                   all_rmse_train_rmcorr[setname], \
-                   all_rmse_test_rmcorr[setname],
-                   all_comp[setname], \
-                   all_comp_rmcorr[setname]), end="", file=fpbad)
-        
-                print(" , %5s , %5s"%(bestinsidemethod[setname], \
-                                   bestourmethod[setname]), file=fpbad)
+            print("%d , "%(dim) + \
+                "%s , "%(setname) + \
+                "%9.3f , "%(models_results[setname].bestinsidemethod_rmse) + \
+                "%9.3f , "%(models_results[setname].bestourmethod_rmse) + \
+                "%9.3f , "%(models_results[setname].rmse_full) + \
+                "%9.3f , "%(models_results[setname].rmse_full_rmcorr) + \
+                "%d , "%(models_results[setname].num_comp) + \
+                "%d , "%(models_results[setname].num_comp_rmcorr) + \
+                "%s , "%(models_results[setname].bestinsidemethod) + \
+                "%s "%(models_results[setname].bestourmethod), file=fp)
             
         fp.close()
         fpsub.close()
         fpbad.close()
-
-            
