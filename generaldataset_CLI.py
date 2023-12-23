@@ -63,7 +63,7 @@ if __name__ == '__main__':
     MODELTYPE = "PLS"
     DEBUG = False
     OUTSUMMARY = True
-    CORRCUT = 0.98
+    CORRCUT = 0.99
     suprasetnames = {"BARRIER_HEIGHTS" : \
                        ["BH76","BHDIV10","BHPERI",\
                         "BHROT27","INV24","PX13","WCPT18"], \
@@ -317,29 +317,30 @@ if __name__ == '__main__':
                     print("")
     
     for setname in fullsetnames:
-        models_results[setname].features_to_remove = []
+        models_results[setname].features_to_remove = set()
         if DEBUG:
             print("Most important features for set: ", setname)
         for mif in models_results[setname].mostimportantefeatures:
             if DEBUG:
                 print("%35s"%(mif))
             for tc in models_results[setname].top_correlation:
-                if tc not in models_results[setname].mostimportantefeatures:
-                    if mif == tc[0]:
-                        models_results[setname].features_to_remove.append(tc[1])
-                        if DEBUG:
-                            print("Corretlated %35s %9.3f"%(tc[1], tc[2]))
-                    elif mif == tc[1]:
-                        models_results[setname].features_to_remove.append(tc[0])
-                        if DEBUG:
-                            print("Corretlated %35s %9.3f"%(tc[0], tc[2]))
+                if mif == tc[0]:
+                    models_results[setname].features_to_remove.add(tc[1])
+                    if DEBUG:
+                        print("Corretlated %35s %9.3f"%(tc[1], tc[2]))
+                elif mif == tc[1]:
+                    models_results[setname].features_to_remove.add(tc[0])
+                    if DEBUG:
+                        print("Corretlated %35s %9.3f"%(tc[0], tc[2]))
    
     #remove some features based on importance and correlation
+    DEBUG = True
     for setname in fullsetnames:
-        print(setname, len(models_results[setname].features_to_remove))
-        print(len(models_results[setname].fulldescriptors))
+        if DEBUG:
+            print(setname, len(models_results[setname].features_to_remove))
+            print(models_results[setname].X_train.shape)
         commonutils.remove_features_fromset(allvalues_perset[setname], \
-                                            models_results[setname].features_to_remove, \
+                                            list(models_results[setname].features_to_remove), \
                                             methods)
         
     # models using non correlated and most important features
@@ -352,10 +353,6 @@ if __name__ == '__main__':
                 models_results[setname].fulldescriptors_rmcorr[idx].update(val[method+"_energydiff"])
     
             models_results[setname].labels_rmcorr.append(val["label"])
-    
-        moldescriptors_featues, Y, features_names = \
-            commonutils.build_XY_matrix (models_results[setname].fulldescriptors_rmcorr, \
-                                         models_results[setname].labels_rmcorr)
     
     for setname in fullsetnames:
         moldescriptors_featues, Y, features_names = \
