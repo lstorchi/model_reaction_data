@@ -63,7 +63,7 @@ if __name__ == '__main__':
     MODELTYPE = "PLS"
     DEBUG = False
     OUTSUMMARY = True
-    CORRCUT = 1.0
+    CORRCUT = 0.98
     suprasetnames = {"BARRIER_HEIGHTS" : \
                        ["BH76","BHDIV10","BHPERI",\
                         "BHROT27","INV24","PX13","WCPT18"], \
@@ -283,38 +283,38 @@ if __name__ == '__main__':
                 models.pls_model (perc_split, moldescriptors_featues,\
                                    Y, False, compstouse, leaveoneout=True)
     
-        scoring = 'neg_mean_squared_error'
-        models_results[setname].mostimportantefeatures = []
+            scoring = 'neg_mean_squared_error'
+            models_results[setname].mostimportantefeatures = []
     
-        r = permutation_importance(models_results[setname].pls_model,\
+            r = permutation_importance(models_results[setname].pls_model,\
                                 models_results[setname].X_test, \
                                 models_results[setname].y_test, \
                                 n_repeats=30, \
                                 random_state=0, scoring=scoring)
         
-        for i in r.importances_mean.argsort()[::-1]:
-            models_results[setname].mostimportantefeatures.append(\
-                features_names[i])
+            for i in r.importances_mean.argsort()[::-1]:
+                models_results[setname].mostimportantefeatures.append(\
+                    features_names[i])
     
-        if DEBUG:
-            scoring = ['r2', 'neg_mean_squared_error', 'neg_mean_absolute_error']
+            if DEBUG:
+                scoring = ['r2', 'neg_mean_squared_error', 'neg_mean_absolute_error']
         
-            r_multi = permutation_importance(\
-                models_results[setname].pls_model,\
-                models_results[setname].X_test, \
-                models_results[setname].y_test, \
-                n_repeats=30, random_state=0, \
-                scoring=scoring)
+                r_multi = permutation_importance(\
+                    models_results[setname].pls_model,\
+                    models_results[setname].X_test, \
+                    models_results[setname].y_test, \
+                    n_repeats=30, random_state=0, \
+                    scoring=scoring)
     
-            for metric in r_multi:
-                print(f"{metric}"+ " Used")
-                r = r_multi[metric]
-                for i in r.importances_mean.argsort()[::-1]:
-                    if r.importances_mean[i] - 2 * r.importances_std[i] > 0:
-                        print(f"{features_names[i]:<30}"
-                            f"{r.importances_mean[i]:.3e}"
-                            f" +/- {r.importances_std[i]:.3e}")
-                print("")
+                for metric in r_multi:
+                    print(f"{metric}"+ " Used")
+                    r = r_multi[metric]
+                    for i in r.importances_mean.argsort()[::-1]:
+                        if r.importances_mean[i] - 2 * r.importances_std[i] > 0:
+                            print(f"{features_names[i]:<30}"
+                                f"{r.importances_mean[i]:.3e}"
+                                f" +/- {r.importances_std[i]:.3e}")
+                    print("")
     
     for setname in fullsetnames:
         models_results[setname].features_to_remove = []
@@ -336,6 +336,8 @@ if __name__ == '__main__':
    
     #remove some features based on importance and correlation
     for setname in fullsetnames:
+        print(setname, len(models_results[setname].features_to_remove))
+        print(len(models_results[setname].fulldescriptors))
         commonutils.remove_features_fromset(allvalues_perset[setname], \
                                             models_results[setname].features_to_remove, \
                                             methods)
@@ -374,6 +376,7 @@ if __name__ == '__main__':
             compstouse = min(rmsemin_comps, r2max_comps)
 
             models_results[setname].num_comp_rmcorr = compstouse
+            
             models_results[setname].rmse_train_rmcorr, \
             models_results[setname].rmse_test_rmcorr, \
             models_results[setname].r2_train_rmcorr, \
