@@ -63,7 +63,7 @@ if __name__ == '__main__':
     MODELTYPE = "PLS"
     DEBUG = False
     OUTSUMMARY = True
-    CORRCUT = 0.98
+    CORRCUT = 1.0
     suprasetnames = {"BARRIER_HEIGHTS" : \
                        ["BH76","BHDIV10","BHPERI",\
                         "BHROT27","INV24","PX13","WCPT18"], \
@@ -356,7 +356,6 @@ if __name__ == '__main__':
                                          models_results[setname].labels_rmcorr)
     
     for setname in fullsetnames:
-        print(setname)
         moldescriptors_featues, Y, features_names = \
         commonutils.build_XY_matrix (models_results[setname].fulldescriptors_rmcorr, \
                                      models_results[setname].labels_rmcorr)
@@ -402,10 +401,10 @@ if __name__ == '__main__':
             pp.pprint(models_results[setname])
     else:
         fp = open("summary.csv", "w")
-        fpsub = open("summary_good.csv", "w")
+        fpgood = open("summary_good.csv", "w")
         fpbad = open("summary_bad.csv", "w")
 
-        for f in [fp, fpsub, fpbad]:
+        for f in [fp, fpgood, fpbad]:
             print("# , " + \
                 "setname , " + \
                 "rmse_best_inside , " + \
@@ -429,7 +428,72 @@ if __name__ == '__main__':
                 "%d , "%(models_results[setname].num_comp_rmcorr) + \
                 "%s , "%(models_results[setname].bestinsidemethod) + \
                 "%s "%(models_results[setname].bestourmethod), file=fp)
+            if models_results[setname].rmse_full <  models_results[setname].bestinsidemethod_rmse or \
+               models_results[setname].rmse_full_rmcorr <  models_results[setname].bestinsidemethod_rmse:
+                print("%d , "%(dim) + \
+                    "%s , "%(setname) + \
+                    "%9.3f , "%(models_results[setname].bestinsidemethod_rmse) + \
+                    "%9.3f , "%(models_results[setname].bestourmethod_rmse) + \
+                    "%9.3f , "%(models_results[setname].rmse_full) + \
+                    "%9.3f , "%(models_results[setname].rmse_full_rmcorr) + \
+                    "%d , "%(models_results[setname].num_comp) + \
+                    "%d , "%(models_results[setname].num_comp_rmcorr) + \
+                    "%s , "%(models_results[setname].bestinsidemethod) + \
+                    "%s "%(models_results[setname].bestourmethod), file=fpgood)
+            else:
+                print("%d , "%(dim) + \
+                    "%s , "%(setname) + \
+                    "%9.3f , "%(models_results[setname].bestinsidemethod_rmse) + \
+                    "%9.3f , "%(models_results[setname].bestourmethod_rmse) + \
+                    "%9.3f , "%(models_results[setname].rmse_full) + \
+                    "%9.3f , "%(models_results[setname].rmse_full_rmcorr) + \
+                    "%d , "%(models_results[setname].num_comp) + \
+                    "%d , "%(models_results[setname].num_comp_rmcorr) + \
+                    "%s , "%(models_results[setname].bestinsidemethod) + \
+                    "%s "%(models_results[setname].bestourmethod), file=fpbad)
             
         fp.close()
-        fpsub.close()
+        fpgood.close()
         fpbad.close()
+
+        for superset in suprasetnames:
+            fp = open(superset + "_summary.csv", "w")
+
+            print("# , " + \
+                    "setname , " + \
+                    "rmse_best_inside , " + \
+                    "rmse_best_our , " + \
+                    "rmse_full , " + \
+                    "rmse_full_rmcorr , " + \
+                    "comp , " + \
+                    "comp_rmcorr , " + \
+                    "method_best_inside , " + \
+                    "method_best_our ", file=fp)
+            
+            dim = len(allvalues_perset[superset])
+            print("%d , "%(dim) + \
+                "%s , "%(superset) + \
+                "%9.3f , "%(models_results[superset].bestinsidemethod_rmse) + \
+                "%9.3f , "%(models_results[superset].bestourmethod_rmse) + \
+                "%9.3f , "%(models_results[superset].rmse_full) + \
+                "%9.3f , "%(models_results[superset].rmse_full_rmcorr) + \
+                "%d , "%(models_results[superset].num_comp) + \
+                "%d , "%(models_results[superset].num_comp_rmcorr) + \
+                "%s , "%(models_results[superset].bestinsidemethod) + \
+                "%s "%(models_results[superset].bestourmethod), file=fp)
+            
+            for subset in suprasetnames[superset]:
+                setname = superset + "_" + subset
+                dim = len(allvalues_perset[setname])
+                print("%d , "%(dim) + \
+                    "%s , "%(setname) + \
+                    "%9.3f , "%(models_results[setname].bestinsidemethod_rmse) + \
+                    "%9.3f , "%(models_results[setname].bestourmethod_rmse) + \
+                    "%9.3f , "%(models_results[setname].rmse_full) + \
+                    "%9.3f , "%(models_results[setname].rmse_full_rmcorr) + \
+                    "%d , "%(models_results[setname].num_comp) + \
+                    "%d , "%(models_results[setname].num_comp_rmcorr) + \
+                    "%s , "%(models_results[setname].bestinsidemethod) + \
+                    "%s "%(models_results[setname].bestourmethod), file=fp)
+            
+            fp.close()
