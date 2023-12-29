@@ -11,7 +11,7 @@ from dataclasses import dataclass
 import prettyprinter as pp
 
 from sklearn.cross_decomposition import PLSRegression
-
+import warnings
 
 ###########################################################################
 @dataclass
@@ -216,31 +216,34 @@ def dump_summary (fullsetnames, allvalues_perset, models_results):
 ###########################################################################
 
 if __name__ == '__main__':
-
+    
+    warnings.simplefilter("ignore")
+    
     MODELTYPE = "PLS"
-    DEBUG = False
+    DEBUG = True
     OUTSUMMARY = True
-    CORRCUT = 0.998
+    CORRCUT = 0.999
     suprasetnames = {"BARRIER_HEIGHTS" : \
                        ["BH76","BHDIV10","BHPERI",\
-                        "BHROT27","INV24","PX13","WCPT18"], \
-                    "INTRAMOLECULAR_INTERACTIONS" : \
-                       ["ACONF","ICONF","IDISP","MCONF",\
-                        "PCONF21","SCONF","UPU23"] , \
-                    "SMALL_MOLECULES" :\
-                        ["AL2X6","ALK8","ALKBDE10","BH76",\
-                         "DC13","DIPCS10","FH51","G21EA",\
-                         "G21IP","G2RC","HEAVYSB11","NBPRC",\
-                         "PA26","RC21","SIE4x4","TAUT15",\
-                         "W4-11","YBDE18"], \
-                    "INTERMOLECULAR_INTERACTIONS" :\
-                       ["ADIM6","AHB21","CARBHB12",\
-                        "CHB6","HAL59","HEAVY28","IL16",\
-                        "PNICO23","RG18","S22","S66","WATER27"] , \
-                    "LARGE_SYSTEMS" :\
-                        ["BSR36","C60ISO","CDIE20","DARC",\
-                         "ISO34","ISOL24","MB16-43","PArel",\
-                            "RSE43"]}    
+                        "BHROT27","INV24","PX13","WCPT18"] \
+                   #,"INTRAMOLECULAR_INTERACTIONS" : \
+                   #   ["ACONF","ICONF","IDISP","MCONF",\
+                   #    "PCONF21","SCONF","UPU23"] , \
+                   #"SMALL_MOLECULES" :\
+                   #    ["AL2X6","ALK8","ALKBDE10","BH76",\
+                   #     "DC13","DIPCS10","FH51","G21EA",\
+                   #     "G21IP","G2RC","HEAVYSB11","NBPRC",\
+                   #     "PA26","RC21","SIE4x4","TAUT15",\
+                   #     "W4-11","YBDE18"], \
+                   #"INTERMOLECULAR_INTERACTIONS" :\
+                   #   ["ADIM6","AHB21","CARBHB12",\
+                   #    "CHB6","HAL59","HEAVY28","IL16",\
+                   #    "PNICO23","RG18","S22","S66","WATER27"] , \
+                   #"LARGE_SYSTEMS" :\
+                   #    ["BSR36","C60ISO","CDIE20","DARC",\
+                   #     "ISO34","ISOL24","MB16-43","PArel",\
+                   #        "RSE43"]}    
+                    }
     howmanydifs = 3
     methods = {"PBE" : ["Nuclear Repulsion  :", \
                         "One Electron Energy:", \
@@ -357,7 +360,7 @@ if __name__ == '__main__':
         if DEBUG:
             print("Top correlations for set: ", setname)
             for tc in top_corr:
-                print("%35s %35s %9.3f"%(tc[0], tc[1], tc[2]))
+                print("  %35s %35s %9.3f"%(tc[0], tc[1], tc[2]))
             print("")
 
     for setname in fullsetnames:
@@ -369,6 +372,8 @@ if __name__ == '__main__':
         perc_split = 0.2
 
         if MODELTYPE == "PLS":
+            if DEBUG:
+                print("Setname: ", setname, moldescriptors_featues.shape)   
             maxcomp = moldescriptors_featues.shape[1]
             ncomps, rmses_test, rmses_train, r2s_test, r2s_train = \
                 models.pls_model (0.2, moldescriptors_featues, Y, \
@@ -402,6 +407,7 @@ if __name__ == '__main__':
                                    Y, False, compstouse, leaveoneout=True)
     
             scoring = 'neg_mean_squared_error'
+
             models_results[setname].mostimportantefeatures = []
     
             r = permutation_importance(models_results[setname].pls_model,\
@@ -415,8 +421,8 @@ if __name__ == '__main__':
                     features_names[i])
     
             if DEBUG:
-                scoring = ['r2', 'neg_mean_squared_error', 'neg_mean_absolute_error']
-        
+                scoring = ['neg_mean_squared_error', 'r2']
+ 
                 r_multi = permutation_importance(\
                     models_results[setname].pls_model,\
                     models_results[setname].X_test, \
@@ -429,7 +435,7 @@ if __name__ == '__main__':
                     r = r_multi[metric]
                     for i in r.importances_mean.argsort()[::-1]:
                         if r.importances_mean[i] - 2 * r.importances_std[i] > 0:
-                            print(f"{features_names[i]:<30}"
+                            print(f"{features_names[i]:<35}"
                                 f"{r.importances_mean[i]:.3e}"
                                 f" +/- {r.importances_std[i]:.3e}")
                     print("")
@@ -453,7 +459,6 @@ if __name__ == '__main__':
                         print("Corretlated %35s %9.3f"%(tc[0], tc[2]))
    
     #remove some features based on importance and correlation
-    DEBUG = True               
     for setname in fullsetnames:
         if DEBUG:
             print(setname, " to remove %4d of %4d "%(\
@@ -470,7 +475,8 @@ if __name__ == '__main__':
         for idx, val in enumerate(allvalues_perset[setname]):
             models_results[setname].fulldescriptors_rmcorr.append({})
             for method in methods:
-                models_results[setname].fulldescriptors_rmcorr[idx].update(val[method+"_energydiff"])
+                models_results[setname].fulldescriptors_rmcorr[idx].update(\
+                    val[method+"_energydiff"])
     
             models_results[setname].labels_rmcorr.append(val["label"])
     
@@ -483,6 +489,8 @@ if __name__ == '__main__':
         perc_split = 0.2
 
         if MODELTYPE == "PLS":
+            if DEBUG:
+                print("Setname: ", setname, moldescriptors_featues.shape)
             maxcomp = moldescriptors_featues.shape[1]
             ncomps, rmses_test, rmses_train, r2s_test, r2s_train = \
                 models.pls_model (perc_split, moldescriptors_featues, Y, \
