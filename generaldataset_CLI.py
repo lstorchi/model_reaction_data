@@ -243,7 +243,6 @@ if __name__ == '__main__':
                         ["BSR36","C60ISO","CDIE20","DARC",\
                          "ISO34","ISOL24","MB16-43","PArel",\
                             "RSE43"]}    
-                    #}
     howmanydifs = 3
     methods = {"PBE" : ["Nuclear Repulsion  :", \
                         "One Electron Energy:", \
@@ -459,13 +458,11 @@ if __name__ == '__main__':
                         print("Corretlated %35s %9.3f"%(tc[0], tc[2]))
    
     #remove some features based on importance and correlation
+    #but considering all the Full set
+    featurestorm = list(models_results["Full"].features_to_remove)
     for setname in fullsetnames:
-        if DEBUG:
-            print(setname, " to remove %4d of %4d "%(\
-                len(models_results[setname].features_to_remove),
-                models_results[setname].X_train.shape[1]))
         commonutils.remove_features_fromset(allvalues_perset[setname], \
-                                            list(models_results[setname].features_to_remove), \
+                                            featurestorm, \
                                             methods)
         
     # models using non correlated and most important features
