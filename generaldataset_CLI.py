@@ -114,6 +114,91 @@ def read_and_init (inrootdir, suprasetnames, howmanydifs, methods, \
 
 ###########################################################################
 
+def compute_and_cump_summary_comparison (suprasetnames, \
+                                        allvalues_perset, \
+                                        models_results):
+    
+    fp = open("summary_comparisona.csv", "w")
+
+    print("# , " + \
+            "setname , " + \
+            "rmse_best_inside , " + \
+            "rmse_best_our , " + \
+            "rmse_full , " + \
+            "rmse_full_rmcorr , " + \
+            "rmse_full_using_general , " + \
+            "rmse_full_rmcorr_using_general ,", \
+            "rmse_full_using_full , " + \
+            "rmse_full_rmcorr_using_full" , \
+            file=fp)
+    
+    full_pls_model = models_results["Full"].pls_model
+    full_pls_model_rmcorr = models_results["Full"].pls_model_rmcorr 
+    for ssetname in suprasetnames:
+        general_pls_model = models_results[ssetname].pls_model  
+        general_pls_model_rmcorr = models_results[ssetname].pls_model_rmcorr
+
+        moldescriptors_featues, Y, features_names = \
+            commonutils.build_XY_matrix (models_results[ssetname].fulldescriptors, \
+                                    models_results[ssetname].labels)
+        y_pred_full = full_pls_model.predict(moldescriptors_featues)
+        rmse_full_using_full = mean_squared_error(Y, y_pred_full, squared=False)
+        
+        moldescriptors_featues, Y, features_names = \
+            commonutils.build_XY_matrix (models_results[ssetname].fulldescriptors_rmcorr, \
+                                    models_results[ssetname].labels_rmcorr)
+        y_pred_full = full_pls_model_rmcorr.predict(moldescriptors_featues)
+        rmse_full_rmcorr_using_full = mean_squared_error(Y, y_pred_full, squared=False)
+
+        dim = len(allvalues_perset[ssetname])
+        rmse_full_using_general = models_results[ssetname].rmse_full
+        rmse_full_rmcorr_using_general = models_results[ssetname].rmse_full_rmcorr
+ 
+        print("%d , "%(dim) + \
+            "%s , "%(ssetname) + \
+            "%9.3f , "%(models_results[ssetname].bestinsidemethod_rmse) + \
+            "%9.3f , "%(models_results[ssetname].bestourmethod_rmse) + \
+            "%9.3f , "%(models_results[ssetname].rmse_full) + \
+            "%9.3f , "%(models_results[ssetname].rmse_full_rmcorr) + \
+            "%9.3f , "%(rmse_full_using_general) + \
+            "%9.3f , "%(rmse_full_rmcorr_using_general) + \
+            "%9.3f , "%(rmse_full_using_full) + \
+            "%9.3f "%(rmse_full_rmcorr_using_full), file=fp)
+
+        for lsetname in suprasetnames[ssetname]:
+            setname = ssetname + "_" + lsetname  
+
+            moldescriptors_featues, Y, features_names = \
+             commonutils.build_XY_matrix (models_results[setname].fulldescriptors, \
+                                          models_results[setname].labels)
+            y_pred_full = full_pls_model.predict(moldescriptors_featues)
+            rmse_full_using_full = mean_squared_error(Y, y_pred_full, squared=False)
+            y_pred_full = general_pls_model.predict(moldescriptors_featues)
+            rmse_full_using_general = mean_squared_error(Y, y_pred_full, squared=False)   
+           
+            moldescriptors_featues, Y, features_names = \
+             commonutils.build_XY_matrix (models_results[setname].fulldescriptors_rmcorr, \
+                                          models_results[setname].labels_rmcorr)
+            y_pred_full = full_pls_model_rmcorr.predict(moldescriptors_featues)
+            rmse_full_rmcorr_using_full = mean_squared_error(Y, y_pred_full, squared=False)
+            y_pred_full = general_pls_model_rmcorr.predict(moldescriptors_featues)
+            rmse_full_rmcorr_using_general = mean_squared_error(Y, y_pred_full, squared=False)
+            
+            dim = len(allvalues_perset[setname])
+           
+            print("%d , "%(dim) + \
+                "%s , "%(setname) + \
+                "%9.3f , "%(models_results[setname].bestinsidemethod_rmse) + \
+                "%9.3f , "%(models_results[setname].bestourmethod_rmse) + \
+                "%9.3f , "%(models_results[setname].rmse_full) + \
+                "%9.3f , "%(models_results[setname].rmse_full_rmcorr) + \
+                "%9.3f , "%(rmse_full_using_general) + \
+                "%9.3f , "%(rmse_full_rmcorr_using_general) + \
+                "%9.3f , "%(rmse_full_using_full) + \
+                "%9.3f "%(rmse_full_rmcorr_using_full), file=fp)
+
+###########################################################################
+
 def dump_summary (fullsetnames, allvalues_perset, models_results):
     fp = open("summary.csv", "w")
     fpgood = open("summary_good.csv", "w")
@@ -527,3 +612,8 @@ if __name__ == '__main__':
     else:
         dump_summary (fullsetnames, allvalues_perset, \
                       models_results)
+
+        compute_and_cump_summary_comparison (suprasetnames , \
+                                            allvalues_perset, \
+                                            models_results)
+        
