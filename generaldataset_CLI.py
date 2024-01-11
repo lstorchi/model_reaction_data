@@ -62,7 +62,7 @@ class ModelResults:
 
 ###########################################################################
 
-def read_and_init (inrootdir, suprasetnames, howmanydifs, methods, \
+def read_and_init (inrootdir, supersetnames, howmanydifs, methods, \
                    DEBUG=False):
     
     allvalues_perset = {}
@@ -70,13 +70,13 @@ def read_and_init (inrootdir, suprasetnames, howmanydifs, methods, \
     models_results = {}
 
     toberemoved = {}
-    for supersetname in suprasetnames:
-        toberemoved[supersetname] = []
-        allvalues_perset[supersetname] = []
-        fullsetnames.append(supersetname)
-        for i, setname in enumerate(suprasetnames[supersetname]):
+    for super_setname in supersetnames:
+        toberemoved[super_setname] = []
+        allvalues_perset[super_setname] = []
+        fullsetnames.append(super_setname)
+        for i, setname in enumerate(supersetnames[super_setname]):
               print("Reading dataset: ", setname)
-              rootdir = inrootdir + supersetname + "/" +setname
+              rootdir = inrootdir + super_setname + "/" +setname
               labelsfilename = inrootdir + setname +"_labels.txt"
         
               values =\
@@ -87,24 +87,24 @@ def read_and_init (inrootdir, suprasetnames, howmanydifs, methods, \
               if (values is None) or (len(values) <= 2):
                     print(setname + " No data found for this dataset")
                     print("")
-                    toberemoved[supersetname].append(i)
+                    toberemoved[super_setname].append(i)
               else:
-                    fullsetname = supersetname+"_"+setname
+                    fullsetname = super_setname+"_"+setname
                     fullsetnames.append(fullsetname)
                     allvalues_perset[fullsetname] = values  
                     print("Number of samples: ", len(allvalues_perset[fullsetname]))
                     print("Number of basic descriptors: ", len(allvalues_perset[fullsetname]))
               
-                    allvalues_perset[supersetname] += allvalues_perset[fullsetname]
+                    allvalues_perset[super_setname] += allvalues_perset[fullsetname]
                     print("")
 
-    for supersetname in toberemoved:
-        for i in sorted(toberemoved[supersetname], reverse=True):
-          del suprasetnames[supersetname][i]
+    for super_setname in toberemoved:
+        for i in sorted(toberemoved[super_setname], reverse=True):
+          del supersetnames[super_setname][i]
     
     allvalues_perset["Full"] = []
-    for supersetname in suprasetnames:
-          allvalues_perset["Full"] += allvalues_perset[supersetname]  
+    for super_setname in supersetnames:
+          allvalues_perset["Full"] += allvalues_perset[super_setname]  
     fullsetnames.append("Full")
 
     for setname in fullsetnames:
@@ -114,7 +114,7 @@ def read_and_init (inrootdir, suprasetnames, howmanydifs, methods, \
 
 ###########################################################################
 
-def compute_and_cump_summary_comparison (suprasetnames, \
+def compute_and_cump_summary_comparison (supersetnames, \
                                         allvalues_perset, \
                                         models_results):
     
@@ -134,7 +134,7 @@ def compute_and_cump_summary_comparison (suprasetnames, \
     
     full_pls_model = models_results["Full"].pls_model
     full_pls_model_rmcorr = models_results["Full"].pls_model_rmcorr 
-    for ssetname in suprasetnames:
+    for ssetname in supersetnames:
         general_pls_model = models_results[ssetname].pls_model  
         general_pls_model_rmcorr = models_results[ssetname].pls_model_rmcorr
 
@@ -165,7 +165,7 @@ def compute_and_cump_summary_comparison (suprasetnames, \
             "%9.3f , "%(rmse_full_using_full) + \
             "%9.3f "%(rmse_full_rmcorr_using_full), file=fp)
 
-        for lsetname in suprasetnames[ssetname]:
+        for lsetname in supersetnames[ssetname]:
             setname = ssetname + "_" + lsetname  
 
             moldescriptors_featues, Y, features_names = \
@@ -256,7 +256,7 @@ def dump_summary (fullsetnames, allvalues_perset, models_results):
     fpgood.close()
     fpbad.close()
 
-    for superset in suprasetnames:
+    for superset in supersetnames:
         fp = open(superset + "_summary.csv", "w")
 
         print("# , " + \
@@ -282,7 +282,7 @@ def dump_summary (fullsetnames, allvalues_perset, models_results):
             "%s , "%(models_results[superset].bestinsidemethod) + \
             "%s "%(models_results[superset].bestourmethod), file=fp)
         
-        for subset in suprasetnames[superset]:
+        for subset in supersetnames[superset]:
             setname = superset + "_" + subset
             dim = len(allvalues_perset[setname])
             print("%d , "%(dim) + \
@@ -300,6 +300,28 @@ def dump_summary (fullsetnames, allvalues_perset, models_results):
 
 ###########################################################################
 
+def dump_predictions (supersetnames, allvalues_perset, models_results):
+    
+    full_pls_model = models_results["Full"].pls_model
+    full_pls_model_rmcorr = models_results["Full"].pls_model_rmcorr 
+    for super_setname in supersetnames:
+        general_pls_model = models_results[super_setname].pls_model  
+        general_pls_model_rmcorr = models_results[super_setname].pls_model_rmcorr
+
+        for setname in supersetnames[super_setname]:
+            setname = super_setname + "_" + setname
+            pls_model = models_results[setname].pls_model
+            pls_model_rmcorr = models_results[setname].pls_model_rmcorr
+
+            fp = open(setname+"_predictions.csv", "w")
+
+            print("TODO, predict and dump predictions as well as")
+            print("original date similarly to label file for each set")
+
+            fp.close()
+
+###########################################################################
+
 if __name__ == '__main__':
     
     warnings.simplefilter("ignore")
@@ -308,7 +330,7 @@ if __name__ == '__main__':
     DEBUG = False
     OUTSUMMARY = True
     CORRCUT = 0.999
-    suprasetnames = {"BARRIER_HEIGHTS" : \
+    supersetnames = {"BARRIER_HEIGHTS" : \
                        ["BH76","BHDIV10","BHPERI",\
                         "BHROT27","INV24","PX13","WCPT18"] \
                     ,"INTRAMOLECULAR_INTERACTIONS" : \
@@ -370,7 +392,7 @@ if __name__ == '__main__':
     # read all the data and initialize the data structures
     rootdir = "../datasets/AllData/"   
     allvalues_perset, fullsetnames, models_results = \
-        read_and_init (rootdir, suprasetnames, howmanydifs, methods, \
+        read_and_init (rootdir, supersetnames, howmanydifs, methods, \
                        DEBUG=DEBUG)
 
     # compute and dump summary statistics for each set precomputed methods
@@ -613,7 +635,11 @@ if __name__ == '__main__':
         dump_summary (fullsetnames, allvalues_perset, \
                       models_results)
 
-        compute_and_cump_summary_comparison (suprasetnames , \
+        compute_and_cump_summary_comparison (supersetnames , \
                                             allvalues_perset, \
                                             models_results)
+        
+        dump_predictions (supersetnames, \
+                        allvalues_perset, \
+                        models_results)        
         
