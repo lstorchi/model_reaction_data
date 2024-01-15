@@ -313,7 +313,30 @@ def dump_predictions (supersetnames, allvalues_perset, models_results):
             pls_model = models_results[setname].pls_model
             pls_model_rmcorr = models_results[setname].pls_model_rmcorr
 
+            moldescriptors_featues, Y, features_names = \
+             commonutils.build_XY_matrix (models_results[setname].fulldescriptors, \
+                                          models_results[setname].labels)
+            y_pred_full = full_pls_model.predict(moldescriptors_featues)
+            y_pred_general = general_pls_model.predict(moldescriptors_featues)
+            y_pred = pls_model.predict(moldescriptors_featues)
+
+            moldescriptors_featues, Y, features_names = \
+             commonutils.build_XY_matrix (models_results[setname].fulldescriptors_rmcorr, \
+                                          models_results[setname].labels_rmcorr)
+            y_pred_full_rmcorr = full_pls_model_rmcorr.predict(moldescriptors_featues)
+            y_pred_general_rmcorr = general_pls_model_rmcorr.predict(moldescriptors_featues)
+            y_pred_rmcorr = pls_model_rmcorr.predict(moldescriptors_featues)
+
             fp = open(setname+"_predictions.csv", "w")
+
+            for mainidx in range(len(allvalues_perset[setname])):
+                for c in allvalues_perset[setname][mainidx]["chemicals"]:
+                    print(c, " , ", end="")
+                for s in allvalues_perset[setname][mainidx]["stechio_ceofs"]:
+                    print(s, " , ", end="")
+                print("")
+
+            print(allvalues_perset[setname][chemicals])
 
             print("TODO, predict and dump predictions as well as")
             print("original date similarly to label file for each set")
@@ -330,6 +353,10 @@ if __name__ == '__main__':
     DEBUG = False
     OUTSUMMARY = True
     CORRCUT = 0.999
+    supersetnames = {"BARRIER_HEIGHTS" : \
+                     ["BH76","BHDIV10"]}
+                      
+    """
     supersetnames = {"BARRIER_HEIGHTS" : \
                        ["BH76","BHDIV10","BHPERI",\
                         "BHROT27","INV24","PX13","WCPT18"] \
@@ -350,6 +377,7 @@ if __name__ == '__main__':
                         ["BSR36","C60ISO","CDIE20","DARC",\
                          "ISO34","ISOL24","MB16-43","PArel",\
                             "RSE43"]}    
+    """
     howmanydifs = 3
     methods = {"PBE" : ["Nuclear Repulsion  :", \
                         "One Electron Energy:", \
