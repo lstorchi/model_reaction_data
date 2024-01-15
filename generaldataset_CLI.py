@@ -13,6 +13,8 @@ import prettyprinter as pp
 from sklearn.cross_decomposition import PLSRegression
 import warnings
 
+from copy import deepcopy
+
 ###########################################################################
 @dataclass
 class ModelResults:
@@ -300,7 +302,8 @@ def dump_summary (fullsetnames, allvalues_perset, models_results):
 
 ###########################################################################
 
-def dump_predictions (supersetnames, allvalues_perset, models_results):
+def dump_predictions (supersetnames, methods, \
+                      allvalues_perset, models_results):
     
     full_pls_model = models_results["Full"].pls_model
     full_pls_model_rmcorr = models_results["Full"].pls_model_rmcorr 
@@ -329,17 +332,45 @@ def dump_predictions (supersetnames, allvalues_perset, models_results):
 
             fp = open(setname+"_predictions.csv", "w")
 
+            print("# , " + \
+                    "chemicals , " + \
+                    "stechio_ceofs , " + \
+                    "label , ", end="", file=fp)
+            mainidx = 0
+            for i, d in enumerate(allvalues_perset[setname][mainidx]["difs"]):
+                print(" dif%d , "%(i+1), end="", file=fp)
+            for m in methods:
+                print(m + "  , ", end="", file=fp)
+            print("y_pred , ", end="", file=fp)
+            print("y_pred_general , ", end="", file=fp)
+            print("y_pred_full , ", end="", file=fp)
+            print("y_pred_rmcorr , ", end="", file=fp)
+            print("y_pred_general_rmcorr , ", end="", file=fp)
+            print("y_pred_full_rmcorr ", file=fp)
+            
             for mainidx in range(len(allvalues_perset[setname])):
+                print(mainidx+1, " , " , end="", file=fp)
                 for c in allvalues_perset[setname][mainidx]["chemicals"]:
-                    print(c, " , ", end="")
+                    print(c, " ", end="", file=fp)
+                print(" , ", end="", file=fp)
                 for s in allvalues_perset[setname][mainidx]["stechio_ceofs"]:
-                    print(s, " , ", end="")
-                print("")
-
-            print(allvalues_perset[setname][chemicals])
-
-            print("TODO, predict and dump predictions as well as")
-            print("original date similarly to label file for each set")
+                    print(s, " ", end="", file=fp)
+                print(" , ", end="", file=fp)
+                print(allvalues_perset[setname][mainidx]["label"], " , ", \
+                      end="", file=fp)
+                for d in allvalues_perset[setname][mainidx]["difs"]:
+                    print(d, " , ", end="", file=fp) 
+                for m in methods:
+                    print(allvalues_perset[setname][mainidx]\
+                          [m+"_energydiff"][m+"_FINAL_SINGLE_POINT_ENERGY"], \
+                            " , ", end="", file=fp)
+                print(y_pred[mainidx][0], " , ", end="", file=fp)
+                print(y_pred_general[mainidx][0], " , ", end="", file=fp)
+                print(y_pred_full[mainidx][0], " , ", end="", file=fp)
+                print(y_pred_rmcorr[mainidx][0], " , ", end="", file=fp)
+                print(y_pred_general_rmcorr[mainidx][0], " , ", end="", file=fp)
+                print(y_pred_full_rmcorr[mainidx][0], end="", file=fp)
+                print("", file=fp)
 
             fp.close()
 
@@ -353,6 +384,7 @@ if __name__ == '__main__':
     DEBUG = False
     OUTSUMMARY = True
     CORRCUT = 0.999
+    """
     supersetnames = {"BARRIER_HEIGHTS" : \
                      ["BH76","BHDIV10"]}
                       
@@ -377,7 +409,6 @@ if __name__ == '__main__':
                         ["BSR36","C60ISO","CDIE20","DARC",\
                          "ISO34","ISOL24","MB16-43","PArel",\
                             "RSE43"]}    
-    """
     howmanydifs = 3
     methods = {"PBE" : ["Nuclear Repulsion  :", \
                         "One Electron Energy:", \
@@ -595,16 +626,19 @@ if __name__ == '__main__':
     #remove some features based on importance and correlation
     #but considering all the Full set
     featurestorm = list(models_results["Full"].features_to_remove)
+    allvalues_perset_orig =  deepcopy(allvalues_perset)
     for setname in fullsetnames:
         commonutils.remove_features_fromset(allvalues_perset[setname], \
                                             featurestorm, \
                                             methods)
-        
+    allvalues_perset_rmcorr = deepcopy(allvalues_perset)
+    allvalues_perset = deepcopy(allvalues_perset_orig) 
+
     # models using non correlated and most important features
     for setname in fullsetnames:
         models_results[setname].fulldescriptors_rmcorr = []
         models_results[setname].labels_rmcorr = []
-        for idx, val in enumerate(allvalues_perset[setname]):
+        for idx, val in enumerate(allvalues_perset_rmcorr[setname]):
             models_results[setname].fulldescriptors_rmcorr.append({})
             for method in methods:
                 models_results[setname].fulldescriptors_rmcorr[idx].update(\
@@ -668,6 +702,7 @@ if __name__ == '__main__':
                                             models_results)
         
         dump_predictions (supersetnames, \
+                        methods, \
                         allvalues_perset, \
                         models_results)        
         
