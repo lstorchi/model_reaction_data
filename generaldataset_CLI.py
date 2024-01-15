@@ -332,43 +332,43 @@ def dump_predictions (supersetnames, methods, \
 
             fp = open(setname+"_predictions.csv", "w")
 
-            print("# , " + \
-                    "chemicals , " + \
-                    "stechio_ceofs , " + \
-                    "label , ", end="", file=fp)
+            print("#;" + \
+                    "chemicals;" + \
+                    "stechio_ceofs;" + \
+                    "label;", end="", file=fp)
             mainidx = 0
             for i, d in enumerate(allvalues_perset[setname][mainidx]["difs"]):
-                print(" dif%d , "%(i+1), end="", file=fp)
+                print("dif%d;"%(i+1), end="", file=fp)
             for m in methods:
-                print(m + "  , ", end="", file=fp)
-            print("y_pred , ", end="", file=fp)
-            print("y_pred_general , ", end="", file=fp)
-            print("y_pred_full , ", end="", file=fp)
-            print("y_pred_rmcorr , ", end="", file=fp)
-            print("y_pred_general_rmcorr , ", end="", file=fp)
-            print("y_pred_full_rmcorr ", file=fp)
+                print(m + ";", end="", file=fp)
+            print("y_pred;", end="", file=fp)
+            print("y_pred_general;", end="", file=fp)
+            print("y_pred_full;", end="", file=fp)
+            print("y_pred_rmcorr;", end="", file=fp)
+            print("y_pred_general_rmcorr;", end="", file=fp)
+            print("y_pred_full_rmcorr", file=fp)
             
             for mainidx in range(len(allvalues_perset[setname])):
-                print(mainidx+1, " , " , end="", file=fp)
+                print(mainidx+1, " ; " , end="", file=fp)
                 for c in allvalues_perset[setname][mainidx]["chemicals"]:
                     print(c, " ", end="", file=fp)
-                print(" , ", end="", file=fp)
+                print(" ; ", end="", file=fp)
                 for s in allvalues_perset[setname][mainidx]["stechio_ceofs"]:
                     print(s, " ", end="", file=fp)
-                print(" , ", end="", file=fp)
-                print(allvalues_perset[setname][mainidx]["label"], " , ", \
+                print(" ; ", end="", file=fp)
+                print(allvalues_perset[setname][mainidx]["label"], " ; ", \
                       end="", file=fp)
                 for d in allvalues_perset[setname][mainidx]["difs"]:
-                    print(d, " , ", end="", file=fp) 
+                    print(d, " ; ", end="", file=fp) 
                 for m in methods:
                     print(allvalues_perset[setname][mainidx]\
                           [m+"_energydiff"][m+"_FINAL_SINGLE_POINT_ENERGY"], \
-                            " , ", end="", file=fp)
-                print(y_pred[mainidx][0], " , ", end="", file=fp)
-                print(y_pred_general[mainidx][0], " , ", end="", file=fp)
-                print(y_pred_full[mainidx][0], " , ", end="", file=fp)
-                print(y_pred_rmcorr[mainidx][0], " , ", end="", file=fp)
-                print(y_pred_general_rmcorr[mainidx][0], " , ", end="", file=fp)
+                            " ; ", end="", file=fp)
+                print(y_pred[mainidx][0], " ; ", end="", file=fp)
+                print(y_pred_general[mainidx][0], " ; ", end="", file=fp)
+                print(y_pred_full[mainidx][0], " ; ", end="", file=fp)
+                print(y_pred_rmcorr[mainidx][0], " ; ", end="", file=fp)
+                print(y_pred_general_rmcorr[mainidx][0], " ; ", end="", file=fp)
                 print(y_pred_full_rmcorr[mainidx][0], end="", file=fp)
                 print("", file=fp)
 
