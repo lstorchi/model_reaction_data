@@ -641,8 +641,9 @@ if __name__ == '__main__':
         for idx, val in enumerate(allvalues_perset_rmcorr[setname]):
             models_results[setname].fulldescriptors_rmcorr.append({})
             for method in methods:
-                models_results[setname].fulldescriptors_rmcorr[idx].update(\
-                    val[method+"_energydiff"])
+                if method+"_energydiff" in val:
+                    models_results[setname].fulldescriptors_rmcorr[idx].update(\
+                        val[method+"_energydiff"])
     
             models_results[setname].labels_rmcorr.append(val["label"])
     
