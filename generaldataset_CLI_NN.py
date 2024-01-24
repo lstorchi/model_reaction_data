@@ -283,7 +283,8 @@ if __name__ == '__main__':
                 print("  Sample: ", idx)
                 pp.pprint(models_results[setname].fulldescriptors_rmcorr[idx])
                 pp.pprint(models_results[setname].fulldescriptors[idx])
-d
-       
 
+    # compute NN global model using all features and using the less 
+    # correlated ones 
+    
  
