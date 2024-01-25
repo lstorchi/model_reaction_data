@@ -201,6 +201,7 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,
     r2s_test = []
     r2s_train = []
     models = []
+    modeidxs = []
 
     if search:
         midx = 0
@@ -237,6 +238,7 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,
                     mses_test.append(mse_test)
                 
                     models.append((modelshape, nepoch, nbatch_size))
+                    modeidxs.append(midx)
                     midx += 1
 
                     commonutils.printProgressBar(midx, maxidx, \
@@ -288,19 +290,36 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,
         history = model.fit(X_train, y_train, epochs=nepoch,  batch_size=batch_size, \
             verbose=0)
         
-        y_pred = model.predict(X_train)
+        y_pred_train = model.predict(X_train)
         y_pred_test = model.predict(X_test)
         
-        mse_train = mean_squared_error(y_train, y_pred)
-        mse_test = mean_squared_error(y_test, y_pred_test)
-        r2_train = r2_score(y_train, y_pred)
+        rmse_train = mean_squared_error(y_train, y_pred_train, squared=False)
+        rmse_test = mean_squared_error(y_test, y_pred_test, squared=False)
+        r2_train = r2_score(y_train, y_pred_train)
         r2_test = r2_score(y_test, y_pred_test)
 
         y_pred = model.predict(X)
-        mse_full =  mean_squared_error(Y, y_pred)
+        rmse_full =  mean_squared_error(Y, y_pred, squared=False)
         r2_full = r2_score(Y, y_pred)
 
-        return mse_train, mse_test, mse_full, r2_train, r2_test, r2_full, model
+        results = {
+            "rmse_train" : rmse_train,
+            "rmse_test" : rmse_test,
+            "rmse_full" : rmse_full,
+            "r2_train" : r2_train,
+            "r2_test" : r2_test,
+            "r2_full" : r2_full,
+            "model" : model,
+            "history" : history,
+            "y_predi_train" : y_pred_train,
+            "y_train": y_train,
+            "y_pred_test" : y_pred_test,
+            "y_test" : y_test,
+            "y_pred_full" : y_pred,
+            "y_full" : Y
+        }
+
+        return results
             
     return
 

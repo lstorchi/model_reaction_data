@@ -1,5 +1,6 @@
 import commonutils
 import models
+import matplotlib.pyplot as plt
 
 import pandas as pd
 import numpy as np
@@ -12,6 +13,8 @@ import prettyprinter as pp
 
 from sklearn.cross_decomposition import PLSRegression
 import warnings
+
+from sklearn import preprocessing
 
 from copy import deepcopy
 
@@ -286,5 +289,103 @@ if __name__ == '__main__':
 
     # compute NN global model using all features and using the less 
     # correlated ones 
+    nepochs = [10, 50, 100]
+    batch_sizes = [4, 8, 16, 32]
+    modelshapes = [[4, 4], [8, 8], [16, 16], \
+                [32, 32], [64, 64], [128, 128], \
+                [4, 4, 4], [8, 8, 8], [16, 16, 16], \
+                [32, 32, 32], [64, 64, 64], \
+                [128, 128, 128], [4, 4, 4, 4], \
+                [8, 8, 8, 8], [16, 16, 16, 16], \
+                [32, 32, 32, 32], [64, 64, 64, 64], \
+                [128, 128, 128, 128]]
+    setname = "Full"
+    moldescriptors_featues, Y, features_names = \
+            commonutils.build_XY_matrix (models_results[setname].fulldescriptors, \
+                                    models_results[setname].labels)
+    scalerx = preprocessing.StandardScaler().fit(moldescriptors_featues)
+    moldescriptors_featues = scalerx.transform(moldescriptors_featues) 
+    scalery = preprocessing.StandardScaler().fit(Y.reshape(-1, 1))
+    Y = scalery.transform(Y.reshape(-1, 1))
+    modelminrmse, modelsmaxr2 = \
+        models.nn_model(0.2, moldescriptors_featues, Y, \
+                    nepochs, modelshapes, batch_sizes, inputshape=-1,\
+                    search=True)
     
+    print("Best NN model for set: ", setname)
+    print("  RMSE: ", modelminrmse)
+    print("    R2: ", modelsmaxr2)
+    results = models.nn_model(0.2, moldescriptors_featues, Y, \
+                    [modelminrmse[1]], \
+                    [modelminrmse[0]], \
+                    [modelminrmse[2]], \
+                    inputshape=-1,\
+                    search=False)
+    
+    print("NN model for set: ", setname)
+    print(" RMSE train: ", results["rmse_train"])
+    print("  RMSE test: ", results["rmse_test"])
+    print("  RMSE full: ", results["rmse_full"])    
+    print("   R2 train: ", results["r2_train"])
+    print("    R2 test: ", results["r2_test"])
+    print("    R2 full: ", results["r2_full"])
+
+    y_pred = results["y_pred_full"] 
+    labels = results["y_full"]
+    y_pred = scalery.inverse_transform(y_pred)
+    labels = scalery.inverse_transform(labels)
+
+    rmse = mean_squared_error(labels, y_pred, squared=False)
+    print("  denorm RMSE full: ", rmse)
+    plt.plot(labels, y_pred, 'o') 
+    plt.xlabel("True values")
+    plt.ylabel("Predicted values")
+    plt.savefig("NN_fullset.png")   
+
+    moldescriptors_featues, Y, features_names = \
+            commonutils.build_XY_matrix (\
+                models_results[setname].fulldescriptors_rmcorr, \
+                                    models_results[setname].labels_rmcorr)
+    scalerx = preprocessing.StandardScaler().fit(moldescriptors_featues)
+    moldescriptors_featues = scalerx.transform(moldescriptors_featues)
+    scalery = preprocessing.StandardScaler().fit(Y.reshape(-1, 1))
+    Y = scalery.transform(Y.reshape(-1, 1))
+    print("Start Grid search ")
+    modelminrmse, modelsmaxr2 = \
+        models.nn_model(0.2, moldescriptors_featues, Y, \
+                    nepochs, modelshapes, batch_sizes, inputshape=-1,\
+                    search=True)
+    
+    print("Best NN model for set: ", setname)
+    print("  RMSE: ", modelminrmse)
+    print("    R2: ", modelsmaxr2)
+
+    results = models.nn_model(0.2, moldescriptors_featues, Y, \
+                    [modelminrmse[1]], \
+                    [modelminrmse[0]], \
+                    [modelminrmse[2]], \
+                    inputshape=-1,\
+                    search=False)
+    
+    print("NN model for set: ", setname)
+    print(" RMSE train: ", results["rmse_train"])
+    print("  RMSE test: ", results["rmse_test"])
+    print("  RMSE full: ", results["rmse_full"])
+    print("   R2 train: ", results["r2_train"])
+    print("    R2 test: ", results["r2_test"])
+    print("    R2 full: ", results["r2_full"])
+
+    y_pred = results["y_pred_full"] 
+    labels = results["y_full"]
+    y_pred = scalery.inverse_transform(y_pred)
+    labels = scalery.inverse_transform(labels)
+
+    rmse = mean_squared_error(labels, y_pred, squared=False)
+    print("  denorm RMSE full: ", rmse)
+    plt.clf()
+    plt.plot(labels, y_pred, 'o') 
+    plt.xlabel("True values")
+    plt.ylabel("Predicted values")
+    plt.savefig("NN_fullset_rmcorr.png")   
+
  
