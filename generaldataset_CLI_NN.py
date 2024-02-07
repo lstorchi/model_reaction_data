@@ -388,4 +388,24 @@ if __name__ == '__main__':
     plt.ylabel("Predicted values")
     plt.savefig("NN_fullset_rmcorr.png")   
 
+    for setname in fullsetnames:
+        print("Set: ", setname)
+        X, Y, features_names = \
+            commonutils.build_XY_matrix (\
+                models_results[setname].fulldescriptors_rmcorr, \
+                                    models_results[setname].labels_rmcorr)
+        X_t = scalerx.transform(X)
+        Y_t = scalery.transform(Y.reshape(-1, 1))
+        Y_pred_t = results["model"].predict(X_t)
+        Y_pred = scalery.inverse_transform(Y_pred_t)
+        rmse_full =  mean_squared_error(Y, Y_pred, squared=False)
+        r2_full = r2_score(Y, Y_pred)
+        print("       Best inside method: ", models_results[setname].bestinsidemethod)
+        print("  Best inside method RMSE: ", models_results[setname].bestinsidemethod_rmse)
+        print("          Best our method: ", models_results[setname].bestourmethod)
+        print("     Best our method RMSE: ", models_results[setname].bestourmethod_rmse)
+        print("                RMSE full: ", rmse_full)
+        print("                  R2 full: ", r2_full)
+       
+
  
