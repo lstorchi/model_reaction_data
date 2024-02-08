@@ -21,6 +21,51 @@ from copy import deepcopy
 
 ###########################################################################
 
+def dump_predictions (fullsetnames, methods, \
+                      allvalues_perset, models_results):
+    
+    for setname in fullsetnames:
+        y_pred = models_results[setname].y_pred
+        y_pred_rmcorr = models_results[setname].y_pred_rmcorr
+
+        fp = open(setname+"_predictions.csv", "w")
+
+        print("#;" + \
+                "chemicals;" + \
+                "stechio_ceofs;" + \
+                "label;", end="", file=fp)
+        mainidx = 0
+        for i, d in enumerate(allvalues_perset[setname][mainidx]["difs"]):
+            print("dif%d;"%(i+1), end="", file=fp)
+        for m in methods:
+            print(m + ";", end="", file=fp)
+        print("y_pred;", end="", file=fp)
+        print("y_pred_rmcorr;", end="", file=fp)
+        
+        for mainidx in range(len(allvalues_perset[setname])):
+            print(mainidx+1, " ; " , end="", file=fp)
+            for c in allvalues_perset[setname][mainidx]["chemicals"]:
+                print(c, " ", end="", file=fp)
+            print(" ; ", end="", file=fp)
+            for s in allvalues_perset[setname][mainidx]["stechio_ceofs"]:
+                print(s, " ", end="", file=fp)
+            print(" ; ", end="", file=fp)
+            print(allvalues_perset[setname][mainidx]["label"], " ; ", \
+                  end="", file=fp)
+            for d in allvalues_perset[setname][mainidx]["difs"]:
+                print(d, " ; ", end="", file=fp) 
+            for m in methods:
+                print(allvalues_perset[setname][mainidx]\
+                      [m+"_energydiff"][m+"_FINAL_SINGLE_POINT_ENERGY"], \
+                        " ; ", end="", file=fp)
+            print(y_pred[mainidx], " ; ", end="", file=fp)
+            print(y_pred_rmcorr[mainidx], " ; ", end="", file=fp)
+            print("", file=fp)
+
+        fp.close()
+
+###########################################################################
+
 def read_and_init (inrootdir, supersetnames, howmanydifs, methods, \
                    DEBUG=False):
     
@@ -74,6 +119,9 @@ def read_and_init (inrootdir, supersetnames, howmanydifs, methods, \
 ###########################################################################
 @dataclass
 class ModelResults:
+    # predicted values
+    y_pred: list = None
+    y_pred_tmcorr: list = None
     # data related to full set
     fulldescriptors: list = None
     labels: list = None
@@ -98,7 +146,7 @@ if __name__ == '__main__':
     warnings.simplefilter("ignore")
     
     DEBUG = False
-    CORRCUT = 0.98
+    CORRCUT = 0.99
 
     supersetnames = {"BARRIER_HEIGHTS" : \
                        ["BH76","BHDIV10","BHPERI",\
@@ -323,13 +371,13 @@ if __name__ == '__main__':
                     inputshape=-1,\
                     search=False)
     
-    print("NN model for set: ", setname, file=sys.stderr)
-    print(" RMSE train: ", results["rmse_train"], file=sys.stderr)
-    print("  RMSE test: ", results["rmse_test"], file=sys.stderr)
-    print("  RMSE full: ", results["rmse_full"], file=sys.stderr)    
-    print("   R2 train: ", results["r2_train"], file=sys.stderr)
-    print("    R2 test: ", results["r2_test"], file=sys.stderr)
-    print("    R2 full: ", results["r2_full"], file=sys.stderr)
+    print("NN model for set ", setname, file=sys.stderr)
+    print("       RMSE train: ", results["rmse_train"], file=sys.stderr)
+    print("        RMSE test: ", results["rmse_test"], file=sys.stderr)
+    print("        RMSE full: ", results["rmse_full"], file=sys.stderr)    
+    print("         R2 train: ", results["r2_train"], file=sys.stderr)
+    print("          R2 test: ", results["r2_test"], file=sys.stderr)
+    print("          R2 full: ", results["r2_full"], file=sys.stderr)
 
     y_pred = results["y_pred_full"] 
     labels = results["y_full"]
@@ -338,13 +386,38 @@ if __name__ == '__main__':
 
     rmse = mean_squared_error(labels, y_pred, squared=False)
     r2 = r2_score(labels, y_pred)
-    print("  denorm RMSE full: ", rmse, file=sys.stderr)
-    print("   denorm  R2 full: ", r2, file=sys.stderr)
+    print(" denorm RMSE full: ", rmse, file=sys.stderr)
+    print("  denorm  R2 full: ", r2, file=sys.stderr)
     plt.clf()
     plt.plot(labels, y_pred, 'o') 
     plt.xlabel("True values")
     plt.ylabel("Predicted values")
-    plt.savefig("NN_fullset.png")   
+    plt.savefig("NN_fullset.png")
+
+    for setname in fullsetnames:
+        print("Set: ", setname, file=sys.stderr)
+        X, Y, features_names = \
+            commonutils.build_XY_matrix (\
+                models_results[setname].fulldescriptors, \
+                                    models_results[setname].labels)
+        X_t = scalerx.transform(X)
+        Y_t = scalery.transform(Y.reshape(-1, 1))
+        Y_pred_t = results["model"].predict(X_t)
+        Y_pred = scalery.inverse_transform(Y_pred_t)
+        models_results[setname].y_pred = Y_pred
+        rmse_full =  mean_squared_error(Y, Y_pred, squared=False)
+        r2_full = r2_score(Y, Y_pred)
+        print("       Best inside method: ", models_results[setname].bestinsidemethod, file=sys.stderr)
+        print("  Best inside method RMSE: ", models_results[setname].bestinsidemethod_rmse, file=sys.stderr)
+        print("          Best our method: ", models_results[setname].bestourmethod, file=sys.stderr)
+        print("     Best our method RMSE: ", models_results[setname].bestourmethod_rmse, file=sys.stderr)
+        print("                RMSE full: ", rmse_full, file=sys.stderr)
+        print("                  R2 full: ", r2_full, file=sys.stderr)
+        plt.clf()
+        plt.plot(Y, Y_pred, 'o') 
+        plt.xlabel("True values")
+        plt.ylabel("Predicted values")
+        plt.savefig("NN_"+setname+".png")     
 
     moldescriptors_featues, Y, features_names = \
             commonutils.build_XY_matrix (\
@@ -371,13 +444,13 @@ if __name__ == '__main__':
                     inputshape=-1,\
                     search=False)
     
-    print("NN model for set: ", setname, file=sys.stderr)
-    print(" RMSE train: ", results["rmse_train"], file=sys.stderr)
-    print("  RMSE test: ", results["rmse_test"], file=sys.stderr)
-    print("  RMSE full: ", results["rmse_full"], file=sys.stderr)
-    print("   R2 train: ", results["r2_train"], file=sys.stderr)
-    print("    R2 test: ", results["r2_test"], file=sys.stderr)
-    print("    R2 full: ", results["r2_full"], file=sys.stderr)
+    print("NN model for set ", setname, file=sys.stderr)
+    print("       RMSE train: ", results["rmse_train"], file=sys.stderr)
+    print("        RMSE test: ", results["rmse_test"], file=sys.stderr)
+    print("        RMSE full: ", results["rmse_full"], file=sys.stderr)
+    print("         R2 train: ", results["r2_train"], file=sys.stderr)
+    print("          R2 test: ", results["r2_test"], file=sys.stderr)
+    print("          R2 full: ", results["r2_full"], file=sys.stderr)
 
     y_pred = results["y_pred_full"] 
     labels = results["y_full"]
@@ -385,9 +458,9 @@ if __name__ == '__main__':
     labels = scalery.inverse_transform(labels)
 
     rmse = mean_squared_error(labels, y_pred, squared=False)
-    print("  denorm RMSE full: ", rmse, file=sys.stderr)
     r2 = r2_score(labels, y_pred)
-    print("   denorm  R2 full: ", r2, file=sys.stderr)
+    print(" denorm RMSE full: ", rmse, file=sys.stderr)
+    print("  denorm  R2 full: ", r2, file=sys.stderr)
     plt.clf()
     plt.plot(labels, y_pred, 'o') 
     plt.xlabel("True values")
@@ -404,6 +477,7 @@ if __name__ == '__main__':
         Y_t = scalery.transform(Y.reshape(-1, 1))
         Y_pred_t = results["model"].predict(X_t)
         Y_pred = scalery.inverse_transform(Y_pred_t)
+        models_results[setname].y_pred_rmcorr = Y_pred
         rmse_full =  mean_squared_error(Y, Y_pred, squared=False)
         r2_full = r2_score(Y, Y_pred)
         print("       Best inside method: ", models_results[setname].bestinsidemethod, file=sys.stderr)
@@ -417,6 +491,6 @@ if __name__ == '__main__':
         plt.xlabel("True values")
         plt.ylabel("Predicted values")
         plt.savefig("NN_"+setname+"_rmcorr.png")   
-       
 
- 
+    dump_predictions (fullsetnames, methods, \
+                      allvalues_perset, models_results)
