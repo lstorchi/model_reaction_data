@@ -13,6 +13,7 @@ import prettyprinter as pp
 
 from sklearn.cross_decomposition import PLSRegression
 import warnings
+import sys
 
 from sklearn import preprocessing
 
@@ -312,9 +313,9 @@ if __name__ == '__main__':
                     nepochs, modelshapes, batch_sizes, inputshape=-1,\
                     search=True)
     
-    print("Best NN model for set: ", setname)
-    print("  RMSE: ", modelminrmse)
-    print("    R2: ", modelsmaxr2)
+    print("Best NN model for set: ", setname, file=sys.stderr)
+    print("  RMSE: ", modelminrmse, file=sys.stderr)
+    print("    R2: ", modelsmaxr2, file=sys.stderr)
     results = models.nn_model(0.2, moldescriptors_featues, Y, \
                     [modelminrmse[1]], \
                     [modelminrmse[0]], \
@@ -322,13 +323,13 @@ if __name__ == '__main__':
                     inputshape=-1,\
                     search=False)
     
-    print("NN model for set: ", setname)
-    print(" RMSE train: ", results["rmse_train"])
-    print("  RMSE test: ", results["rmse_test"])
-    print("  RMSE full: ", results["rmse_full"])    
-    print("   R2 train: ", results["r2_train"])
-    print("    R2 test: ", results["r2_test"])
-    print("    R2 full: ", results["r2_full"])
+    print("NN model for set: ", setname, file=sys.stderr)
+    print(" RMSE train: ", results["rmse_train"], file=sys.stderr)
+    print("  RMSE test: ", results["rmse_test"], file=sys.stderr)
+    print("  RMSE full: ", results["rmse_full"], file=sys.stderr)    
+    print("   R2 train: ", results["r2_train"], file=sys.stderr)
+    print("    R2 test: ", results["r2_test"], file=sys.stderr)
+    print("    R2 full: ", results["r2_full"], file=sys.stderr)
 
     y_pred = results["y_pred_full"] 
     labels = results["y_full"]
@@ -336,7 +337,10 @@ if __name__ == '__main__':
     labels = scalery.inverse_transform(labels)
 
     rmse = mean_squared_error(labels, y_pred, squared=False)
-    print("  denorm RMSE full: ", rmse)
+    r2 = r2_score(labels, y_pred)
+    print("  denorm RMSE full: ", rmse, file=sys.stderr)
+    print("   denorm  R2 full: ", r2, file=sys.stderr)
+    plt.clf()
     plt.plot(labels, y_pred, 'o') 
     plt.xlabel("True values")
     plt.ylabel("Predicted values")
@@ -356,9 +360,9 @@ if __name__ == '__main__':
                     nepochs, modelshapes, batch_sizes, inputshape=-1,\
                     search=True)
     
-    print("Best NN model for set: ", setname)
-    print("  RMSE: ", modelminrmse)
-    print("    R2: ", modelsmaxr2)
+    print("Best NN model for set: ", setname, file=sys.stderr)
+    print("  RMSE: ", modelminrmse, file=sys.stderr)
+    print("    R2: ", modelsmaxr2, file=sys.stderr)
 
     results = models.nn_model(0.2, moldescriptors_featues, Y, \
                     [modelminrmse[1]], \
@@ -367,13 +371,13 @@ if __name__ == '__main__':
                     inputshape=-1,\
                     search=False)
     
-    print("NN model for set: ", setname)
-    print(" RMSE train: ", results["rmse_train"])
-    print("  RMSE test: ", results["rmse_test"])
-    print("  RMSE full: ", results["rmse_full"])
-    print("   R2 train: ", results["r2_train"])
-    print("    R2 test: ", results["r2_test"])
-    print("    R2 full: ", results["r2_full"])
+    print("NN model for set: ", setname, file=sys.stderr)
+    print(" RMSE train: ", results["rmse_train"], file=sys.stderr)
+    print("  RMSE test: ", results["rmse_test"], file=sys.stderr)
+    print("  RMSE full: ", results["rmse_full"], file=sys.stderr)
+    print("   R2 train: ", results["r2_train"], file=sys.stderr)
+    print("    R2 test: ", results["r2_test"], file=sys.stderr)
+    print("    R2 full: ", results["r2_full"], file=sys.stderr)
 
     y_pred = results["y_pred_full"] 
     labels = results["y_full"]
@@ -381,7 +385,9 @@ if __name__ == '__main__':
     labels = scalery.inverse_transform(labels)
 
     rmse = mean_squared_error(labels, y_pred, squared=False)
-    print("  denorm RMSE full: ", rmse)
+    print("  denorm RMSE full: ", rmse, file=sys.stderr)
+    r2 = r2_score(labels, y_pred)
+    print("   denorm  R2 full: ", r2, file=sys.stderr)
     plt.clf()
     plt.plot(labels, y_pred, 'o') 
     plt.xlabel("True values")
@@ -389,7 +395,7 @@ if __name__ == '__main__':
     plt.savefig("NN_fullset_rmcorr.png")   
 
     for setname in fullsetnames:
-        print("Set: ", setname)
+        print("Set: ", setname, file=sys.stderr)
         X, Y, features_names = \
             commonutils.build_XY_matrix (\
                 models_results[setname].fulldescriptors_rmcorr, \
@@ -400,12 +406,17 @@ if __name__ == '__main__':
         Y_pred = scalery.inverse_transform(Y_pred_t)
         rmse_full =  mean_squared_error(Y, Y_pred, squared=False)
         r2_full = r2_score(Y, Y_pred)
-        print("       Best inside method: ", models_results[setname].bestinsidemethod)
-        print("  Best inside method RMSE: ", models_results[setname].bestinsidemethod_rmse)
-        print("          Best our method: ", models_results[setname].bestourmethod)
-        print("     Best our method RMSE: ", models_results[setname].bestourmethod_rmse)
-        print("                RMSE full: ", rmse_full)
-        print("                  R2 full: ", r2_full)
+        print("       Best inside method: ", models_results[setname].bestinsidemethod, file=sys.stderr)
+        print("  Best inside method RMSE: ", models_results[setname].bestinsidemethod_rmse, file=sys.stderr)
+        print("          Best our method: ", models_results[setname].bestourmethod, file=sys.stderr)
+        print("     Best our method RMSE: ", models_results[setname].bestourmethod_rmse, file=)
+        print("                RMSE full: ", rmse_full, file=sys.stderr)
+        print("                  R2 full: ", r2_full, file=sys.stderr)
+        plt.clf()
+        plt.plot(Y, Y_pred, 'o') 
+        plt.xlabel("True values")
+        plt.ylabel("Predicted values")
+        plt.savefig("NN_"+setname+"_rmcorr.png")   
        
 
  
