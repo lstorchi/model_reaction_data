@@ -409,7 +409,7 @@ if __name__ == '__main__':
         print("       Best inside method: ", models_results[setname].bestinsidemethod, file=sys.stderr)
         print("  Best inside method RMSE: ", models_results[setname].bestinsidemethod_rmse, file=sys.stderr)
         print("          Best our method: ", models_results[setname].bestourmethod, file=sys.stderr)
-        print("     Best our method RMSE: ", models_results[setname].bestourmethod_rmse, file=)
+        print("     Best our method RMSE: ", models_results[setname].bestourmethod_rmse, file=sys.stderr)
         print("                RMSE full: ", rmse_full, file=sys.stderr)
         print("                  R2 full: ", r2_full, file=sys.stderr)
         plt.clf()
