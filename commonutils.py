@@ -567,7 +567,6 @@ def get_top_correlations_blog(df, threshold=0.4):
     """
     orig_corr = df.corr()
     c = orig_corr.abs()
-
     so = c.unstack()
 
     #print("|    Variable 1    |    Variable 2    | Correlation Coefficient    |")
@@ -577,11 +576,13 @@ def get_top_correlations_blog(df, threshold=0.4):
     pairs=set()
     result = []
     for index, value in so.sort_values(ascending=False).items():
+        #print(index, value)
         # Exclude duplicates and self-correlations
-        if value >= threshold \
-        and index[0] != index[1] \
-        and (index[0], index[1]) not in pairs \
-        and (index[1], index[0]) not in pairs:
+        if (value >= threshold) \
+            and (index[0] != index[1]) \
+            and ((index[0], index[1]) not in pairs):
+            #\
+            #and ((index[1], index[0]) not in pairs):
             
             #print(f'|    {index[0]}    |    {index[1]}    |    {orig_corr.loc[(index[0], index[1])]}    |')
             #result.loc[i, ['Variable 1', 'Variable 2', 'Correlation Coefficient']] = \
