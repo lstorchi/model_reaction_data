@@ -298,11 +298,14 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,
                             verbose=0)
         
         y_pred_train = model.predict(X_train)
+        y_pred_valid = model.predict(X_val)
         y_pred_test = model.predict(X_test)
         
         rmse_train = mean_squared_error(y_train, y_pred_train, squared=False)
+        rmse_valid = mean_squared_error(y_val, y_pred_valid, squared=False)
         rmse_test = mean_squared_error(y_test, y_pred_test, squared=False)
         r2_train = r2_score(y_train, y_pred_train)
+        r2_valid = r2_score(y_val, y_pred_valid)
         r2_test = r2_score(y_test, y_pred_test)
 
         y_pred = model.predict(X)
@@ -311,15 +314,19 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,
 
         results = {
             "rmse_train" : rmse_train,
+            "rmse_valid" : rmse_valid,
             "rmse_test" : rmse_test,
             "rmse_full" : rmse_full,
             "r2_train" : r2_train,
+            "r2_valid" : r2_valid,
             "r2_test" : r2_test,
             "r2_full" : r2_full,
             "model" : model,
             "history" : history,
-            "y_predi_train" : y_pred_train,
+            "y_pred_train" : y_pred_train,
             "y_train": y_train,
+            "y_pred_valid" : y_pred_valid,
+            "y_valid" : y_val,
             "y_pred_test" : y_pred_test,
             "y_test" : y_test,
             "y_pred_full" : y_pred,
