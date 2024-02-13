@@ -286,9 +286,16 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,
         
         model.add(keras.layers.Dense(units = 1, activation = 'linear'))
         model.compile(loss='mse', optimizer="adam", metrics='mse')
+
+        X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, \
+                                    test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
+    
         
-        history = model.fit(X_train, y_train, epochs=nepoch,  batch_size=batch_size, \
-            verbose=0)
+        history = model.fit(X_train, y_train, \
+                            epochs=nepoch,  \
+                            batch_size=batch_size, \
+                            validation_data=(X_val, y_val),
+                            verbose=0)
         
         y_pred_train = model.predict(X_train)
         y_pred_test = model.predict(X_test)
