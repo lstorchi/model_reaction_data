@@ -69,6 +69,8 @@ def read_dataset (rootdir, labelfilename, howmanydifs, methods, debug=True):
         if len(all) % 2 != 0:
             if debug:
                 print("Error: len(all) % 2 != 0")
+                print("file format error in line:", line)
+                print("chemicals differ from stechio_ceofs")
                 print(line)
             return None
         
@@ -134,6 +136,10 @@ def read_dataset (rootdir, labelfilename, howmanydifs, methods, debug=True):
                     if desclist != list(moldesc.keys()):
                         if debug:
                             print("Error: desclist != list(moldesc.keys())")
+                            print("Looking for ",desclist)
+                            print("Found ", moldesc.keys())
+                            print("Cannot find featires in Molname:", \
+                                  rootdir+'/'+method+'/'+file)
                         return None
        
                 descriptor[molname] = moldesc
