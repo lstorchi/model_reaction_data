@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.inspection import permutation_importance
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_percentage_error
 from sklearn.model_selection import (LeaveOneOut, cross_val_predict,
                                      cross_val_score, train_test_split)
 
@@ -190,6 +190,8 @@ def pls_model (perc_split, Xin, Yin, search = True, ncomp_start = 1, ncomp_max =
 def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,\
              search=True):
 
+    loss_metric = 'mape'
+
     X_train, X_test, y_train, y_test = train_test_split(X, Y, \
                                     test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
     
@@ -198,6 +200,8 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,
 
     mses_test = []
     mses_train = []
+    mapes_test = []
+    mapes_train = []
     r2s_test = []
     r2s_train = []
     models = []
@@ -217,7 +221,7 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,
                         model.add(keras.layers.Dense(units = n, activation = 'relu'))
                 
                     model.add(keras.layers.Dense(units = 1, activation = 'linear'))
-                    model.compile(loss='mse', optimizer="adam", metrics='mse')
+                    model.compile(loss=loss_metric, optimizer="adam", metrics=['mse', 'mape'])
                     #ann_viz(model, title="Discriminator Model",\
                     #         view=True)
                     
@@ -231,7 +235,11 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,
                     mse_test = mean_squared_error(y_test, y_pred_test)
                     r2_train = r2_score(y_train, y_pred)
                     r2_test = r2_score(y_test, y_pred_test)
-                
+                    mape_train = mean_absolute_percentage_error(y_train, y_pred)
+                    mape_test = mean_absolute_percentage_error(y_test, y_pred_test)
+
+                    mapes_train.append(mape_train)
+                    mapes_test.append(mape_test)
                     r2s_train.append(r2_train)
                     mses_train.append(mse_train)
                     r2s_test.append(r2_test)
@@ -245,34 +253,9 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,
                                     prefix = 'Progress:', \
                                     suffix = 'Complete', length = 50)
                     
-
-        if SHOWPLOTS:
-            plt.clf()
-            plt.rcParams.update({'font.size': 15})
-            #pyplot.plot(ncomps, r2s, '-o', color='black')
-            plt.plot(modeidxs, mses_test, '-o', color='black')
-            plt.plot(modeidxs, mses_train, '-o', color='red')
-            plt.xlabel('Model Index')
-            plt.ylabel('MSE')
-            plt.xticks(modeidxs)
-            #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
-            plt.show()
-           
-            plt.clf()
-            plt.rcParams.update({'font.size': 15})
-            #pyplot.plot(ncomps, r2s, '-o', color='black')
-            plt.plot(modeidxs, r2s_test, '-o', color='black')
-            plt.plot(modeidxs, r2s_train, '-o', color='red')
-            plt.xlabel('Model Index')
-            plt.ylabel('R2')
-            plt.xticks(modeidxs)
-            #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
-            plt.show()
-
-        index_min = np.argmin(mses_test)
-        index_max = np.argmax(r2s_test)
-
-        return models[index_min], models[index_max]
+        index_min_mape = np.argmin(mapes_test)
+        index_min_mse = np.argmin(mses_test)
+        return models[index_min_mape], models[index_min_mse]
     else:
         modelshape = modelshapes[0]
         nepoch = nepochs[0]
@@ -285,7 +268,7 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,
             model.add(keras.layers.Dense(units = n, activation = 'relu'))
         
         model.add(keras.layers.Dense(units = 1, activation = 'linear'))
-        model.compile(loss='mse', optimizer="adam", metrics='mse')
+        model.compile(loss=loss_metric, optimizer="adam", metrics=['mse', 'mape'])
 
         X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, \
                                     test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
@@ -300,27 +283,9 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,
         y_pred_train = model.predict(X_train)
         y_pred_valid = model.predict(X_val)
         y_pred_test = model.predict(X_test)
-        
-        rmse_train = mean_squared_error(y_train, y_pred_train, squared=False)
-        rmse_valid = mean_squared_error(y_val, y_pred_valid, squared=False)
-        rmse_test = mean_squared_error(y_test, y_pred_test, squared=False)
-        r2_train = r2_score(y_train, y_pred_train)
-        r2_valid = r2_score(y_val, y_pred_valid)
-        r2_test = r2_score(y_test, y_pred_test)
-
         y_pred = model.predict(X)
-        rmse_full =  mean_squared_error(Y, y_pred, squared=False)
-        r2_full = r2_score(Y, y_pred)
 
         results = {
-            "rmse_train" : rmse_train,
-            "rmse_valid" : rmse_valid,
-            "rmse_test" : rmse_test,
-            "rmse_full" : rmse_full,
-            "r2_train" : r2_train,
-            "r2_valid" : r2_valid,
-            "r2_test" : r2_test,
-            "r2_full" : r2_full,
             "model" : model,
             "history" : history,
             "y_pred_train" : y_pred_train,
@@ -335,7 +300,7 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,
 
         return results
             
-    return
+    return None
 
 ####################################################################################################
 
