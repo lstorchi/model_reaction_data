@@ -12,11 +12,11 @@ from sklearn.model_selection import LeaveOneOut
 from tensorflow import keras
 import tensorflow as tf
 
-import tensorflow.keras.optimizers as tko
-import tensorflow.keras.activations as tka
-import tensorflow.keras.losses as tkl
-from tensorflow.keras.layers import Input, Dense
-from tensorflow.keras.models import Model
+import keras.optimizers as tko
+import keras.activations as tka
+import keras.losses as tkl
+from keras.layers import Input, Dense
+from keras.models import Model
 
 from sklearn import preprocessing
 
