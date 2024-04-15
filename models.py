@@ -32,7 +32,8 @@ DEBUG = False
 
 ####################################################################################################
 
-def pls_model (perc_split, Xin, Yin, search = True, ncomp_start = 1, ncomp_max = 15,
+def pls_model (perc_split, Xin, Yin, supersetlist, setlist, \
+               search = True, ncomp_start = 1, ncomp_max = 15, \
                leaveoneout=False, normlize = False):
 
     X = None
@@ -54,7 +55,9 @@ def pls_model (perc_split, Xin, Yin, search = True, ncomp_start = 1, ncomp_max =
 
     if not leaveoneout:
 
-        X_train, X_test, y_train, y_test = train_test_split(X, Y, \
+        X_train, X_test, y_train, y_test, supersetlist_train, \
+            supersetlist_test, setlist_train, setlist_test \
+                = train_test_split(X, Y, supersetlist, setlist, \
                                     test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
     
     if search == True:
@@ -64,6 +67,7 @@ def pls_model (perc_split, Xin, Yin, search = True, ncomp_start = 1, ncomp_max =
         r2s_test = []
         r2s_train = []
         ncomps = []
+        wtmads = []
     
         for ncomp in range(ncomp_start, ncomp_max+1):
             pls = PLSRegression(ncomp)
@@ -71,7 +75,12 @@ def pls_model (perc_split, Xin, Yin, search = True, ncomp_start = 1, ncomp_max =
     
             y_pred = pls.predict(X_train)
             y_pred_test = pls.predict(X_test)
-    
+            
+            pred = pls.predict(X)
+            wtmad = commonutils.wtmad_calc(supersetlist, setlist, \
+                                           pred, Y, includeFull = True)
+            wtmad_value = wtmad[wtmad["Superset"] == "Full"].values[0][-1]
+
             rmse_train = mean_squared_error(y_train, y_pred, squared=False)
             rmse_test = mean_squared_error(y_test, y_pred_test, squared=False)
     
@@ -83,6 +92,7 @@ def pls_model (perc_split, Xin, Yin, search = True, ncomp_start = 1, ncomp_max =
             r2s_test.append(r2_test)
             rmses_test.append(rmse_test)
             ncomps.append(ncomp)
+            wtmads.append(wtmad_value)
 
         if SHOWPLOTS: 
             plt.clf()
@@ -107,7 +117,8 @@ def pls_model (perc_split, Xin, Yin, search = True, ncomp_start = 1, ncomp_max =
             #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
             plt.show()
 
-        return ncomps, rmses_test, rmses_train, r2s_test, r2s_train
+        return ncomps, rmses_test, rmses_train, \
+            r2s_test, r2s_train, wtmads
 
     else:
 
