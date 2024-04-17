@@ -62,10 +62,8 @@ def pls_model (perc_split, Xin, Yin, supersetlist, setlist, \
     
     if search == True:
 
-        rmses_test = []
-        rmses_train = []
-        r2s_test = []
-        r2s_train = []
+        rmses = []
+        r2s = []
         ncomps = []
         wtmads = []
     
@@ -79,46 +77,16 @@ def pls_model (perc_split, Xin, Yin, supersetlist, setlist, \
             pred = pls.predict(X)
             wtmad = commonutils.wtmad_calc(supersetlist, setlist, \
                                            pred, Y, includeFull = True)
-            wtmad_value = wtmad[wtmad["Superset"] == "Full"].values[0][-1]
-
-            rmse_train = mean_squared_error(y_train, y_pred, squared=False)
-            rmse_test = mean_squared_error(y_test, y_pred_test, squared=False)
+            wtmad_value = wtmad["Full"]
+            rmse = mean_squared_error(Y, pred, squared=False)
+            r2 = r2_score(Y, pred)
     
-            r2_train = r2_score(y_train, y_pred)
-            r2_test = r2_score(y_test, y_pred_test)
-    
-            r2s_train.append(r2_train)
-            rmses_train.append(rmse_train)
-            r2s_test.append(r2_test)
-            rmses_test.append(rmse_test)
+            r2s.append(r2)
+            rmses.append(rmse)
             ncomps.append(ncomp)
             wtmads.append(wtmad_value)
 
-        if SHOWPLOTS: 
-            plt.clf()
-            plt.rcParams.update({'font.size': 15})
-            #pyplot.plot(ncomps, r2s, '-o', color='black')
-            plt.plot(ncomps, rmses_test, '-o', color='black')
-            plt.plot(ncomps, rmses_train, '-o', color='red')
-            plt.xlabel('Number of Components')
-            plt.ylabel('RMS')
-            plt.xticks(ncomps)
-            #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
-            plt.show()
-        
-            plt.clf()
-            plt.rcParams.update({'font.size': 15})
-            #pyplot.plot(ncomps, r2s, '-o', color='black')
-            plt.plot(ncomps, r2s_test, '-o', color='black')
-            plt.plot(ncomps, r2s_train, '-o', color='red')
-            plt.xlabel('Number of Components')
-            plt.ylabel('R2')
-            plt.xticks(ncomps)
-            #plt.savefig("PLS_components_MSE.png", bbox_inches="tight", dpi=600)
-            plt.show()
-
-        return ncomps, rmses_test, rmses_train, \
-            r2s_test, r2s_train, wtmads
+        return ncomps, rmses, r2s, wtmads
 
     else:
 

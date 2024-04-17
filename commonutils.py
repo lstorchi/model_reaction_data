@@ -953,14 +953,8 @@ def wtmad_calc(supersetlist, setlist, predicted, labels, includeFull = True):
 
     # This part creates the final dataframe with the results
 
-    n = len(wtmad2[0])
-    column_names = [f'WTMAD-2_{i}' for i in keys_list]
+    result = {}
+    for i, superset in enumerate(supersets):
+        result[superset] = wtmad2[i][0]
 
-    df_wtmad2 = pd.DataFrame({
-                            'Superset': supersets,
-                            **{column_names[i]: [item[i] for item in wtmad2] for i in range(n)}
-                            })
-                
-    #print(df_wtmad2, "\n")
-
-    return df_wtmad2
+    return result
