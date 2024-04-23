@@ -166,23 +166,18 @@ def pls_model (perc_split, Xin, Yin, supersetlist, setlist, \
 
 ####################################################################################################
 
-def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,\
+def nn_model(perc_split, X, scalex, Y, scaley, supersetlist, setlist, \
+             nepochs, modelshapes, batch_sizes, inputshape=-1,\
              search=True):
 
-    loss_metric = 'mape'
-
     X_train, X_test, y_train, y_test = train_test_split(X, Y, \
-                                    test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
+        test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
     
     if inputshape == -1:
         inputshape = X_train.shape[1]
 
-    mses_test = []
-    mses_train = []
-    mapes_test = []
-    mapes_train = []
-    r2s_test = []
-    r2s_train = []
+    mapes = []
+    wtamds = []
     models = []
     modeidxs = []
 
@@ -197,33 +192,28 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,
                     model.add(keras.layers.Input(shape=(inputshape)))
                 
                     for n in modelshape:
-                        model.add(keras.layers.Dense(units = n, activation = 'relu'))
+                        model.add(keras.layers.Dense(units = n, \
+                                                     activation = 'relu'))
                 
-                    model.add(keras.layers.Dense(units = 1, activation = 'linear'))
-                    model.compile(loss=loss_metric, optimizer="adam", metrics=['mse', 'mape'])
-                    #ann_viz(model, title="Discriminator Model",\
-                    #         view=True)
+                    model.add(keras.layers.Dense(units = 1, \
+                                                 activation = 'linear'))
+                    model.compile(loss='mape', optimizer="adam", \
+                                  metrics=['mse', 'mape'])
                     
-                    model.fit(X_train, y_train, epochs=nepoch,  batch_size=nbatch_size, \
-                        verbose=0)
+                    model.fit(X_train, y_train, epochs=nepoch,  \
+                            batch_size=nbatch_size, \
+                            verbose=0)
                 
-                    y_pred = model.predict(X_train, verbose=0)
-                    y_pred_test = model.predict(X_test, verbose=0)
-                
-                    mse_train = mean_squared_error(y_train, y_pred)
-                    mse_test = mean_squared_error(y_test, y_pred_test)
-                    r2_train = r2_score(y_train, y_pred)
-                    r2_test = r2_score(y_test, y_pred_test)
-                    mape_train = mean_absolute_percentage_error(y_train, y_pred)
-                    mape_test = mean_absolute_percentage_error(y_test, y_pred_test)
+                    y_pred = model.predict(X, verbose=0)
+                    y_pred_rescaled = scaley.inverse_transform(y_pred)
+                    wtmad = commonutils.wtmad_calc(supersetlist, setlist, \
+                                                   y_pred_rescaled, Y, includeFull = True)   
+                    wtamd = wtmad["Full"]
+                    mape = mean_absolute_percentage_error(Y, y_pred)
 
-                    mapes_train.append(mape_train)
-                    mapes_test.append(mape_test)
-                    r2s_train.append(r2_train)
-                    mses_train.append(mse_train)
-                    r2s_test.append(r2_test)
-                    mses_test.append(mse_test)
-                
+                    mapes.append(mape)
+                    wtamds.append(wtamd)
+
                     models.append((modelshape, nepoch, nbatch_size))
                     modeidxs.append(midx)
                     midx += 1
@@ -232,9 +222,10 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,
                                     prefix = 'Progress:', \
                                     suffix = 'Complete', length = 50)
                     
-        index_min_mape = np.argmin(mapes_test)
-        index_min_mse = np.argmin(mses_test)
-        return models[index_min_mape], models[index_min_mse]
+        index_min_mape = np.argmin(mapes)
+        index_min_wtamd = np.argmin(wtamds)
+
+        return models[index_min_mape], models[index_min_wtamd]
     else:
         modelshape = modelshapes[0]
         nepoch = nepochs[0]
@@ -247,12 +238,28 @@ def nn_model(perc_split, X, Y, nepochs, modelshapes, batch_sizes, inputshape=-1,
             model.add(keras.layers.Dense(units = n, activation = 'relu'))
         
         model.add(keras.layers.Dense(units = 1, activation = 'linear'))
-        model.compile(loss=loss_metric, optimizer="adam", metrics=['mse', 'mape'])
+        model.compile(loss='mape', optimizer="adam", metrics=['mse', 'mape'])
+        """
+        cannot easily define this as yje training loss at the end of 
+        each epoch is the mean of the batch losses.
+        lossmetric == "wtamd":
+            def wtamd_loss(scaley, setlist, supersetlist):
+                def loss(y_true, y_pred):
+                    y_pred_rescaled = scaley.inverse_transform(y_pred)
+                    y_true_rescaled = scaley.inverse_transform(y_true)
+                    wtamad = commonutils.wtmad_calc(supersetlist, setlist, \
+                                                y_pred_rescaled, y_true_rescaled, \
+                                                includeFull = True)
+                    wtamd = wtamad["Full"]
 
+                    return 
+                return loss
+            model.compile(loss=wtamd_loss(scaley, setlist, supersetlist), \
+                          optimizer="adam", metrics=['mse', 'mape'])
+        """
         X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, \
                                     test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
     
-        
         history = model.fit(X_train, y_train, \
                             epochs=nepoch,  \
                             batch_size=batch_size, \
