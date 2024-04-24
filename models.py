@@ -240,6 +240,7 @@ def nn_model(perc_split, X, scalex, Y, scaley, supersetlist, setlist, \
                     
         index_min_mape = np.argmin(mapes)
         index_min_wtamd = np.argmin(wtamds)
+        index_min_rmse = np.argmin(rmses)
         
         avg = np.average(mapes)
         print("Average MAPE: ", avg)
@@ -256,8 +257,12 @@ def nn_model(perc_split, X, scalex, Y, scaley, supersetlist, setlist, \
         plt.clf()
         plt.hist(rmses, bins=50)
         plt.show()
+        plt.clf()
+        plt.hist(wtamds, bins=50)
+        plt.show()
+        
 
-        return models[index_min_mape], models[index_min_wtamd]
+        return models[index_min_mape], models[index_min_wtamd], models[index_min_rmse]
     else:
         modelshape = modelshapes[0]
         nepoch = nepochs[0]
