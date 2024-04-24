@@ -180,7 +180,7 @@ def nn_model(perc_split, X, scalex, Y, scaley, supersetlist, setlist, \
     X_test = X
     y_train = Y
     y_test = Y
-    
+
     if split:
         X_train, X_test, y_train, y_test = train_test_split(X, Y, \
             test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
@@ -189,6 +189,7 @@ def nn_model(perc_split, X, scalex, Y, scaley, supersetlist, setlist, \
         inputshape = X_train.shape[1]
 
     mapes = []
+    rmses = []
     wtamds = []
     models = []
     modeidxs = []
@@ -215,16 +216,19 @@ def nn_model(perc_split, X, scalex, Y, scaley, supersetlist, setlist, \
                     model.fit(X_train, y_train, epochs=nepoch,  \
                             batch_size=nbatch_size, \
                             verbose=0)
-                
+                    
+                    Y_rescaled = scaley.inverse_transform(Y)
                     y_pred = model.predict(X, verbose=0)
                     y_pred_rescaled = scaley.inverse_transform(y_pred)
                     wtmad = commonutils.wtmad_calc(supersetlist, setlist, \
-                                                   y_pred_rescaled, Y, includeFull = True)   
+                                                   y_pred_rescaled, Y_rescaled, includeFull = True)   
                     wtamd = wtmad["Full"]
-                    mape = mean_absolute_percentage_error(Y, y_pred)
+                    mape = mean_absolute_percentage_error(Y, y_pred_rescaled)
+                    rmse = mean_squared_error(Y_rescaled        , y_pred_rescaled, squared=False)
 
                     mapes.append(mape)
                     wtamds.append(wtamd)
+                    rmses.append(rmse)
 
                     models.append((modelshape, nepoch, nbatch_size))
                     modeidxs.append(midx)
@@ -236,6 +240,22 @@ def nn_model(perc_split, X, scalex, Y, scaley, supersetlist, setlist, \
                     
         index_min_mape = np.argmin(mapes)
         index_min_wtamd = np.argmin(wtamds)
+        
+        avg = np.average(mapes)
+        print("Average MAPE: ", avg)
+        std = np.std(mapes)
+        print("    STD MAPE: ", std)
+        avg = np.average(rmses)
+        print("Average RMSE: ", avg)
+        std = np.std(rmses)
+        print("    STD RMSE: ", std)
+        #plot hitogram
+        plt.clf()
+        plt.hist(mapes, bins=50)
+        plt.show()
+        plt.clf()
+        plt.hist(rmses, bins=50)
+        plt.show()
 
         return models[index_min_mape], models[index_min_wtamd]
     else:
