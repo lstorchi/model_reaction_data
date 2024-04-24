@@ -34,7 +34,7 @@ DEBUG = False
 
 def pls_model (perc_split, Xin, Yin, supersetlist, setlist, \
                search = True, ncomp_start = 1, ncomp_max = 15, \
-               leaveoneout=False, normlize = False):
+               leaveoneout=False, normlize = False, split =True):
 
     X = None
     Y = None
@@ -55,9 +55,15 @@ def pls_model (perc_split, Xin, Yin, supersetlist, setlist, \
 
     if not leaveoneout:
 
-        X_train, X_test, y_train, y_test, supersetlist_train, \
-            supersetlist_test, setlist_train, setlist_test \
-                = train_test_split(X, Y, supersetlist, setlist, \
+        X_train = X
+        X_test = X
+        y_train = Y
+        y_test = Y
+        
+        if split:
+            X_train, X_test, y_train, y_test, supersetlist_train, \
+                supersetlist_test, setlist_train, setlist_test \
+                    = train_test_split(X, Y, supersetlist, setlist, \
                                     test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
     
     if search == True:
