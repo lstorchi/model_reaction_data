@@ -176,6 +176,7 @@ def nn_model(perc_split, X, scalex, Y, scaley, supersetlist, setlist, \
              nepochs, modelshapes, batch_sizes, inputshape=-1,\
              search=True, split=True):
 
+    loss_metric = "mse"
     X_train = X
     X_test = X
     y_train = Y
@@ -210,7 +211,7 @@ def nn_model(perc_split, X, scalex, Y, scaley, supersetlist, setlist, \
                 
                     model.add(keras.layers.Dense(units = 1, \
                                                  activation = 'linear'))
-                    model.compile(loss='mape', optimizer="adam", \
+                    model.compile(loss=loss_metric, optimizer="adam", \
                                   metrics=['mse', 'mape'])
                     
                     model.fit(X_train, y_train, epochs=nepoch,  \
@@ -260,7 +261,7 @@ def nn_model(perc_split, X, scalex, Y, scaley, supersetlist, setlist, \
         plt.clf()
         plt.hist(wtamds, bins=50)
         plt.show()
-        
+
 
         return models[index_min_mape], models[index_min_wtamd], models[index_min_rmse]
     else:
@@ -275,7 +276,7 @@ def nn_model(perc_split, X, scalex, Y, scaley, supersetlist, setlist, \
             model.add(keras.layers.Dense(units = n, activation = 'relu'))
         
         model.add(keras.layers.Dense(units = 1, activation = 'linear'))
-        model.compile(loss='mape', optimizer="adam", metrics=['mse', 'mape'])
+        model.compile(loss=loss_metric, optimizer="adam", metrics=['mse', 'mape'])
         """
         cannot easily define this as yje training loss at the end of 
         each epoch is the mean of the batch losses.
