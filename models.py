@@ -174,10 +174,16 @@ def pls_model (perc_split, Xin, Yin, supersetlist, setlist, \
 
 def nn_model(perc_split, X, scalex, Y, scaley, supersetlist, setlist, \
              nepochs, modelshapes, batch_sizes, inputshape=-1,\
-             search=True):
+             search=True, split=True):
 
-    X_train, X_test, y_train, y_test = train_test_split(X, Y, \
-        test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
+    X_train = X
+    X_test = X
+    y_train = Y
+    y_test = Y
+    
+    if split:
+        X_train, X_test, y_train, y_test = train_test_split(X, Y, \
+            test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
     
     if inputshape == -1:
         inputshape = X_train.shape[1]
