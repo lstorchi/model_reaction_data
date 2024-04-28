@@ -1,4 +1,5 @@
 from contextlib import contextmanager,redirect_stderr,redirect_stdout
+from dataclasses import dataclass
 from os import devnull
 
 import numpy as np
@@ -6,6 +7,30 @@ import pandas as pd
 import math 
 import os 
 import re
+
+####################################################################################################
+@dataclass
+class ModelResults:
+      setname : list = None
+      supersetname : list = None
+      nn_model_mape = None
+      nn_model_wtamd = None
+      nn_model_rmse = None
+      plsmodel = None
+      # predicted values
+      y_pred_bestourmethod: list = None
+      y_pred_bestinsidemethod: list = None
+      # data related to full set
+      fulldescriptors: list = None
+      labels: list = None
+      top_correlation: list = None
+      # data realated to inside and our methods
+      bestinsidemethod_rmse: float = 0.0
+      bestinsidemethod: str = None
+      bestourmethod_rmse: float = 0.0
+      bestourmethod: str = None
+      bestinsidemethod_wtamd : float = 0.0
+      bestourmethod_wtamd : float = 0.0
 
 ####################################################################################################
 
@@ -487,6 +512,60 @@ def readandcheckdata (rootdirqdata, rootdirdata, howmanydifs):
         stechio_ceofs, moldescriptors, chemicals_descriptors, \
         pbe_hf_nonenergy_descriptors, pbe_diff_energy_descriptors, \
         hf_diff_energy_descriptors
+
+####################################################################################################
+def read_and_init (inrootdir, supersetnames, howmanydifs, methods, \
+                   DEBUG=False):
+    
+    allvalues_perset = {}
+    fullsetnames = []
+    models_results = {}
+
+    toberemoved = {}
+    for super_setname in supersetnames:
+        toberemoved[super_setname] = []
+        allvalues_perset[super_setname] = []
+        fullsetnames.append(super_setname)
+        for i, setname in enumerate(supersetnames[super_setname]):
+              print("Reading dataset: ", setname)
+              rootdir = inrootdir + super_setname + "/" +setname
+              labelsfilename = inrootdir + setname +"_labels.txt"
+        
+              values =\
+                    read_dataset(rootdir, labelsfilename, \
+                                             howmanydifs, methods, \
+                                             debug=DEBUG)
+              for i in range(len(values)):
+                    values[i]["setname"] = setname
+                    values[i]["super_setname"] = super_setname
+                  
+              if (values is None) or (len(values) <= 2):
+                    print(setname + " No data found for this dataset")
+                    print("")
+                    toberemoved[super_setname].append(i)
+              else:
+                    fullsetname = super_setname+"_"+setname
+                    fullsetnames.append(fullsetname)
+                    allvalues_perset[fullsetname] = values  
+                    print("Number of samples: ", len(allvalues_perset[fullsetname]))
+                    print("Number of basic descriptors: ", len(allvalues_perset[fullsetname]))
+
+                    allvalues_perset[super_setname] += allvalues_perset[fullsetname]
+                    print("")
+
+    for super_setname in toberemoved:
+        for i in sorted(toberemoved[super_setname], reverse=True):
+          del supersetnames[super_setname][i]
+    
+    allvalues_perset["Full"] = []
+    for super_setname in supersetnames:
+          allvalues_perset["Full"] += allvalues_perset[super_setname]  
+    fullsetnames.append("Full")
+
+    for setname in fullsetnames:
+        models_results[setname] = ModelResults()
+
+    return allvalues_perset, fullsetnames, models_results
 
 ####################################################################################################
 
