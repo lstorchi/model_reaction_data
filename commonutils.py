@@ -1,5 +1,6 @@
 from contextlib import contextmanager,redirect_stderr,redirect_stdout
 from dataclasses import dataclass
+from dataclasses import field
 from os import devnull
 
 import numpy as np
@@ -9,28 +10,34 @@ import os
 import re
 
 ####################################################################################################
-@dataclass
+@dataclass(slots=True)
 class ModelResults:
-      setname : list = None
-      supersetname : list = None
-      nn_model_mape = None
-      nn_model_wtamd = None
-      nn_model_rmse = None
-      plsmodel = None
-      # predicted values
-      y_pred_bestourmethod: list = None
-      y_pred_bestinsidemethod: list = None
-      # data related to full set
-      fulldescriptors: list = None
-      labels: list = None
-      top_correlation: list = None
-      # data realated to inside and our methods
-      bestinsidemethod_rmse: float = 0.0
-      bestinsidemethod: str = None
-      bestourmethod_rmse: float = 0.0
-      bestourmethod: str = None
-      bestinsidemethod_wtamd : float = 0.0
-      bestourmethod_wtamd : float = 0.0
+    setnames : list = field(default_factory=list)
+    supersetnames : list = field(default_factory=list)
+    labels: list = field(default_factory=list)
+    fulldescriptors: list = field(default_factory=list)
+    top_correlation: list = field(default_factory=list)
+    
+    nn_model_mape = None
+    nn_model_wtamd = None
+    nn_model_rmse = None
+    plsmodel = None
+    
+    y_pred_bestinsidemethod_rmse: list = None
+    bestinsidemethod_rmse: float = float("inf")
+    bestinsidemethod_name_rmse: str = ""
+    
+    y_pred_bestourmethod_rmse: list = None
+    bestourmethod_rmse: float = float("inf")
+    bestourmethod_name_rmse: str = ""
+    
+    y_pred_bestinsidemethod_wtamd : list = None
+    bestinsidemethod_wtamd : float = float("inf")
+    bestinsidemethod_name_wtamd : str = ""
+
+    y_pred_bestourmethod_wtamd : list = None
+    bestourmethod_wtamd : float = float("inf")
+    bestourmethod_name_wtamd : str = ""
 
 ####################################################################################################
 
