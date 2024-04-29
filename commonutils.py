@@ -15,9 +15,9 @@ class ModelResults:
     setnames : list = field(default_factory=list)
     supersetnames : list = field(default_factory=list)
     labels: list = field(default_factory=list)
-    fulldescriptors: list = field(default_factory=list)
-    top_correlation: list = field(default_factory=list)
-    
+    features: list = field(default_factory=list)
+    uncorrelated_features: list = field(default_factory=list)
+
     nn_model_mape = None
     nn_model_wtamd = None
     nn_model_rmse = None
