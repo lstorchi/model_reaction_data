@@ -203,7 +203,8 @@ def nn_model(perc_split, X, scalex, Y, scaley, supersetlist, setlist, \
             for nepoch in nepochs:
                 for nbatch_size in batch_sizes:
                     model = keras.Sequential()
-                    model.add(keras.layers.Input(shape=(inputshape)))
+                
+                    model.add(keras.layers.Input(shape=(inputshape,)))
                 
                     for n in modelshape:
                         model.add(keras.layers.Dense(units = n, \
@@ -270,7 +271,7 @@ def nn_model(perc_split, X, scalex, Y, scaley, supersetlist, setlist, \
         batch_size = batch_sizes[0]
  
         model = keras.Sequential()
-        model.add(keras.layers.Input(shape=(inputshape)))
+        model.add(keras.layers.Input(shape=(inputshape,)))
         
         for n in modelshape:
             model.add(keras.layers.Dense(units = n, activation = 'relu'))
