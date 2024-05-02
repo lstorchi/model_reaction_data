@@ -10,13 +10,13 @@ import os
 import re
 
 ####################################################################################################
-@dataclass(slots=True)
+@dataclass(slots=False)
 class ModelResults:
     setnames : list = field(default_factory=list)
     supersetnames : list = field(default_factory=list)
     labels: list = field(default_factory=list)
-    features: list = field(default_factory=list)
-    uncorrelated_features: list = field(default_factory=list)
+    features: dict = field(default_factory=dict)
+    uncorrelated_features: dict = field(default_factory=dict)
 
     nn_model_mape = None
     nn_model_wtamd = None
@@ -583,17 +583,13 @@ def build_XY_matrix (fulldescriptors, labels):
     Y = []
     features_names = []
 
-    for idx, descriptors in enumerate(fulldescriptors):
-        val = []
-        for k,v in descriptors.items():
-            if idx == 0:
-                features_names.append(k)
-            val.append(v)
-        moldescriptors_featues.append(val)
-        Y.append(labels[idx])
-
-    Y = np.array(Y)
+    for k in fulldescriptors:
+        moldescriptors_featues.append(fulldescriptors[k])
+        features_names.append(k)
+    
+    Y = np.array(labels)
     moldescriptors_featues = np.array(moldescriptors_featues)
+    moldescriptors_featues = moldescriptors_featues.T
 
     return  moldescriptors_featues, Y, features_names
 
