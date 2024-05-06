@@ -614,7 +614,6 @@ def wtmad_ref(fullsetnames, metricsets, howmanydifs, allvalues_perset, includeFu
         for supersets in metricsets: # This loop iterates over supersets
             if setname.startswith(supersets+"_"):
                 inner_partials=[]
-                inner_E = []
 
                 for methodid in range(howmanydifs): # This loop iterates over methods
                     diff_list = []
@@ -622,20 +621,22 @@ def wtmad_ref(fullsetnames, metricsets, howmanydifs, allvalues_perset, includeFu
                     for val in allvalues_perset[setname]:
 
                         diff_list.append(val["difs"][methodid])
-                        MAD_list = [abs(x) for x in diff_list]
-                        MAD = np.mean(MAD_list)
-                        MAD = round(MAD,2)
-
                         label_list.append(val["label"])
-                        meanE_list = [abs(x) for x in label_list]
-                        meanE = np.mean(meanE_list)
-                        meanE = round(meanE,2)
 
-                        Ni = len(meanE_list)
-                        partial = round(Ni*MAD/meanE,2)
+                    MAD_list = [abs(x) for x in diff_list]
+                    MAD = np.mean(MAD_list)
+                    MAD = round(MAD,2)
+
+                    meanE_list = [abs(x) for x in label_list]
+                    meanE = np.mean(meanE_list)
+                    meanE = round(meanE,2)
+
+                    Ni = len(meanE_list)
+                    partial = round(Ni*MAD/meanE,2)
+
 
                     inner_partials.append(partial)
-                    inner_E.append(meanE)
+
 
                 Nis.append(Ni)
                 Es.append(meanE)
@@ -731,7 +732,6 @@ def wtmad(fullsetnames, metricsets, methods, allvalues_perset, includeFull = Tru
         for supersets in metricsets: # This loop iterates over supersets
             if setname.startswith(supersets+"_"):
                 inner_partials=[]
-                inner_E = []
 
                 for j, method in enumerate(methods): # This loop iterates over methods
                     diff_list = []
@@ -740,20 +740,20 @@ def wtmad(fullsetnames, metricsets, methods, allvalues_perset, includeFull = Tru
 
                         diff_list.append(val['label']- \
                                          val[method + "_energydiff"][method+"_FINAL_SINGLE_POINT_ENERGY"])
-                        MAD_list = [abs(x) for x in diff_list]
-                        MAD = np.mean(MAD_list)
-                        MAD = round(MAD,2)
-
                         label_list.append(val["label"])
-                        meanE_list = [abs(x) for x in label_list]
-                        meanE = np.mean(meanE_list)
-                        meanE = round(meanE,2)
+                    
+                    MAD_list = [abs(x) for x in diff_list]
+                    MAD = np.mean(MAD_list)
+                    MAD = round(MAD,2)
 
-                        Ni = len(meanE_list)
-                        partial = round(Ni*MAD/meanE,2)
+                    meanE_list = [abs(x) for x in label_list]
+                    meanE = np.mean(meanE_list)
+                    meanE = round(meanE,2)
+
+                    Ni = len(meanE_list)
+                    partial = round(Ni*MAD/meanE,2)
 
                     inner_partials.append(partial)
-                    inner_E.append(meanE)
 
                 Nis.append(Ni)
                 Es.append(meanE)
@@ -958,3 +958,63 @@ def wtmad_calc(supersetlist, setlist, predicted, labels, includeFull = True):
         result[superset] = wtmad2[i][0]
 
     return result
+
+######################################################################################
+
+
+def wtmad2_lf(identifier_list, labels_list, predictions_list, ssetlist, datasetslist):
+
+    if len(identifier_list)==len(labels_list)==len(predictions_list):
+        
+        df = pd.DataFrame({
+            'Identifier': identifier_list,
+            'Label': labels_list,
+            'Prediction': np.round(predictions_list,2)
+        })
+        
+        df["AbsE"] = abs(df["Label"])
+        df["Delta"] = abs(df["Prediction"]-df['Label'])
+
+        N_Full = len(df)
+        meanE_sum = 0
+        meanE_counter = 0
+        partials_Full = 0
+
+        wtmad2_df = pd.DataFrame(columns=['Set',"WTMAD-2"])
+        
+        for sset in ssetlist:
+            if sset != "Full":
+                sset_cond = df["Identifier"].str.startswith(sset)
+                sset_df = df[sset_cond]   
+
+                meanE_sset_sum  = 0
+                meanE_sset_counter = 0
+                N_t = len(sset_df)
+                partial = 0
+
+                for dataset in datasetslist:
+                    dataset_cond = sset_df["Identifier"].str.contains(dataset+"_")
+                    dataset_df = sset_df[dataset_cond]
+                    n_i = len(dataset_df)
+                    if n_i==0: 
+                        continue
+                    else:
+                        mad_i = dataset_df['Delta'].mean()
+                        meanE_i = dataset_df['AbsE'].mean()
+                        partial += n_i*mad_i/meanE_i
+                        meanE_sum += meanE_i
+                        meanE_counter += 1
+                        meanE_sset_sum += meanE_i
+                        meanE_sset_counter += 1 
+
+                meanE = meanE_sset_sum/meanE_sset_counter
+                meanE_Full = meanE_sum/meanE_counter
+                partials_Full += partial
+                wtmad2_sset = partial*meanE/N_t
+                new_row = {'Set': sset, 'WTMAD-2': round(wtmad2_sset,2)}
+                wtmad2_df.loc[len(wtmad2_df)] = new_row
+    
+        wtmad2_Full = partials_Full*meanE_Full/N_Full
+        wtmad2_df.loc[len(wtmad2_df)] = {'Set':"Full","WTMAD-2":round(wtmad2_Full,2)}
+    
+    return wtmad2_df
