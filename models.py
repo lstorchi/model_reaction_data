@@ -81,9 +81,8 @@ def pls_model (perc_split, Xin, Yin, supersetlist, setlist, \
             y_pred_test = pls.predict(X_test)
             
             pred = pls.predict(X)
-            wtmad = commonutils.wtmad_calc(supersetlist, setlist, \
-                                           pred, Y, includeFull = True)
-            wtmad_value = wtmad["Full"]
+            wtmadf = commonutils.wtmad2(setlist, list(Y), list(pred.T[0]))
+            wtmad_value = wtmadf[wtmadf["Set"] == "Full"]["WTMAD-2"].values[0]
             rmse = mean_squared_error(Y, pred, squared=False)
             r2 = r2_score(Y, pred)
     
