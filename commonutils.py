@@ -962,7 +962,7 @@ def wtmad_calc(supersetlist, setlist, predicted, labels, includeFull = True):
 ######################################################################################
 
 
-def wtmad2_lf(identifier_list, labels_list, predictions_list, ssetlist, datasetslist):
+def wtmad2_lf(identifier_list, labels_list, predictions_list):
 
     if len(identifier_list)==len(labels_list)==len(predictions_list):
         
@@ -972,6 +972,21 @@ def wtmad2_lf(identifier_list, labels_list, predictions_list, ssetlist, datasets
             'Prediction': np.round(predictions_list,2)
         })
         
+        iterss = set(identifier_list)
+        ssetlist = []
+        datasetslist=[]
+
+        for element in iterss:
+            pos = element.rfind("_")
+            dset = element[pos+1:]
+            sset = element[:pos]
+            datasetslist.append(dset)
+            ssetlist.append(sset)
+
+        ssetlist = set(ssetlist)
+        ssetlist.add("Full")
+        datasetslist = set(datasetslist)
+
         df["AbsE"] = abs(df["Label"])
         df["Delta"] = abs(df["Prediction"]-df['Label'])
 
@@ -985,15 +1000,14 @@ def wtmad2_lf(identifier_list, labels_list, predictions_list, ssetlist, datasets
         for sset in ssetlist:
             if sset != "Full":
                 sset_cond = df["Identifier"].str.startswith(sset)
-                sset_df = df[sset_cond]   
-
+                sset_df = df[sset_cond]  
                 meanE_sset_sum  = 0
                 meanE_sset_counter = 0
                 N_t = len(sset_df)
                 partial = 0
 
                 for dataset in datasetslist:
-                    dataset_cond = sset_df["Identifier"].str.contains(dataset+"_")
+                    dataset_cond = sset_df["Identifier"].str.endswith(dataset)
                     dataset_df = sset_df[dataset_cond]
                     n_i = len(dataset_df)
                     if n_i==0: 
@@ -1010,7 +1024,7 @@ def wtmad2_lf(identifier_list, labels_list, predictions_list, ssetlist, datasets
                 meanE = meanE_sset_sum/meanE_sset_counter
                 meanE_Full = meanE_sum/meanE_counter
                 partials_Full += partial
-                wtmad2_sset = partial*meanE/N_t
+                wtmad2_sset = partial*meanE/N_t #Evaluate the use of a constant value or a calculated one for each superset
                 new_row = {'Set': sset, 'WTMAD-2': round(wtmad2_sset,2)}
                 wtmad2_df.loc[len(wtmad2_df)] = new_row
     
