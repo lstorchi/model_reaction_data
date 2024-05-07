@@ -994,9 +994,7 @@ def wtmad2_lf(identifier_list, labels_list, predictions_list):
         meanE_sum = 0
         meanE_counter = 0
         partials_Full = 0
-
-        wtmad2_df = pd.DataFrame(columns=['Set',"WTMAD-2"])
-        
+        wtmad2 = {}
         for sset in ssetlist:
             if sset != "Full":
                 sset_cond = df["Identifier"].str.startswith(sset)
@@ -1025,10 +1023,9 @@ def wtmad2_lf(identifier_list, labels_list, predictions_list):
                 meanE_Full = meanE_sum/meanE_counter
                 partials_Full += partial
                 wtmad2_sset = partial*meanE/N_t #Evaluate the use of a constant value or a calculated one for each superset
-                new_row = {'Set': sset, 'WTMAD-2': round(wtmad2_sset,2)}
-                wtmad2_df.loc[len(wtmad2_df)] = new_row
-    
+                wtmad2[sset] = round(wtmad2_sset,2)
+                    
         wtmad2_Full = partials_Full*meanE_Full/N_Full
-        wtmad2_df.loc[len(wtmad2_df)] = {'Set':"Full","WTMAD-2":round(wtmad2_Full,2)}
+        wtmad2["Full"]=round(wtmad2_Full,2)
     
-    return wtmad2_df
+    return wtmad2
