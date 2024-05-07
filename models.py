@@ -191,7 +191,7 @@ def nn_model(perc_split, X, scalex, Y, scaley, supersetlist, setlist, \
 
     mapes = []
     rmses = []
-    wtamds = []
+    wtmads = []
     models = []
     modeidxs = []
 
@@ -224,12 +224,12 @@ def nn_model(perc_split, X, scalex, Y, scaley, supersetlist, setlist, \
                     y_pred_rescaled = scaley.inverse_transform(y_pred)
                     wtmad = commonutils.wtmad_calc(supersetlist, setlist, \
                                                    y_pred_rescaled, Y_rescaled, includeFull = True)   
-                    wtamd = wtmad["Full"]
+                    wtmad = wtmad["Full"]
                     mape = mean_absolute_percentage_error(Y, y_pred_rescaled)
                     rmse = mean_squared_error(Y_rescaled        , y_pred_rescaled, squared=False)
 
                     mapes.append(mape)
-                    wtamds.append(wtamd)
+                    wtmads.append(wtmad)
                     rmses.append(rmse)
 
                     models.append((modelshape, nepoch, nbatch_size))
@@ -241,7 +241,7 @@ def nn_model(perc_split, X, scalex, Y, scaley, supersetlist, setlist, \
                                     suffix = 'Complete', length = 50)
                     
         index_min_mape = np.argmin(mapes)
-        index_min_wtamd = np.argmin(wtamds)
+        index_min_wtmad = np.argmin(wtmads)
         index_min_rmse = np.argmin(rmses)
         
         avg = np.average(mapes)
@@ -260,11 +260,11 @@ def nn_model(perc_split, X, scalex, Y, scaley, supersetlist, setlist, \
         plt.hist(rmses, bins=50)
         plt.show()
         plt.clf()
-        plt.hist(wtamds, bins=50)
+        plt.hist(wtmads, bins=50)
         plt.show()
 
 
-        return models[index_min_mape], models[index_min_wtamd], models[index_min_rmse]
+        return models[index_min_mape], models[index_min_wtmad], models[index_min_rmse]
     else:
         modelshape = modelshapes[0]
         nepoch = nepochs[0]
@@ -281,19 +281,19 @@ def nn_model(perc_split, X, scalex, Y, scaley, supersetlist, setlist, \
         """
         cannot easily define this as yje training loss at the end of 
         each epoch is the mean of the batch losses.
-        lossmetric == "wtamd":
-            def wtamd_loss(scaley, setlist, supersetlist):
+        lossmetric == "wtmad":
+            def wtmad_loss(scaley, setlist, supersetlist):
                 def loss(y_true, y_pred):
                     y_pred_rescaled = scaley.inverse_transform(y_pred)
                     y_true_rescaled = scaley.inverse_transform(y_true)
                     wtamad = commonutils.wtmad_calc(supersetlist, setlist, \
                                                 y_pred_rescaled, y_true_rescaled, \
                                                 includeFull = True)
-                    wtamd = wtamad["Full"]
+                    wtmad = wtamad["Full"]
 
                     return 
                 return loss
-            model.compile(loss=wtamd_loss(scaley, setlist, supersetlist), \
+            model.compile(loss=wtmad_loss(scaley, setlist, supersetlist), \
                           optimizer="adam", metrics=['mse', 'mape'])
         """
         X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, \

@@ -19,7 +19,7 @@ class ModelResults:
     uncorrelated_features: dict = field(default_factory=dict)
 
     nn_model_mape = None
-    nn_model_wtamd = None
+    nn_model_wtmad = None
     nn_model_rmse = None
     plsmodel = None
     
@@ -31,13 +31,13 @@ class ModelResults:
     bestourmethod_rmse: float = float("inf")
     bestourmethod_name_rmse: str = ""
     
-    y_pred_bestinsidemethod_wtamd : list = None
-    bestinsidemethod_wtamd : float = float("inf")
-    bestinsidemethod_name_wtamd : str = ""
+    y_pred_bestinsidemethod_wtmad : list = None
+    bestinsidemethod_wtmad : float = float("inf")
+    bestinsidemethod_name_wtmad : str = ""
 
-    y_pred_bestourmethod_wtamd : list = None
-    bestourmethod_wtamd : float = float("inf")
-    bestourmethod_name_wtamd : str = ""
+    y_pred_bestourmethod_wtmad : list = None
+    bestourmethod_wtmad : float = float("inf")
+    bestourmethod_name_wtmad : str = ""
 
 ####################################################################################################
 
@@ -682,239 +682,6 @@ def get_top_correlations_blog(df, threshold=0.4):
             
     #return result.reset_index(drop=True).set_index(['Variable 1', 'Variable 2'])
     return result
-
-####################################################################################################
-
-def wtmad_ref(fullsetnames, metricsets, howmanydifs, allvalues_perset, includeFull = True):
-
-    datasets = []
-    partials = []
-    Nis = []
-    Es = []
-
-    for setname in fullsetnames:
-        for supersets in metricsets: # This loop iterates over supersets
-            if setname.startswith(supersets+"_"):
-                inner_partials=[]
-                inner_E = []
-
-                for methodid in range(howmanydifs): # This loop iterates over methods
-                    diff_list = []
-                    label_list = []
-                    for val in allvalues_perset[setname]:
-
-                        diff_list.append(val["difs"][methodid])
-                        MAD_list = [abs(x) for x in diff_list]
-                        MAD = np.mean(MAD_list)
-                        MAD = round(MAD,2)
-
-                        label_list.append(val["label"])
-                        meanE_list = [abs(x) for x in label_list]
-                        meanE = np.mean(meanE_list)
-                        meanE = round(meanE,2)
-
-                        Ni = len(meanE_list)
-                        partial = round(Ni*MAD/meanE,2)
-
-                    inner_partials.append(partial)
-                    inner_E.append(meanE)
-
-                Nis.append(Ni)
-                Es.append(meanE)
-                partials.append(inner_partials)
-                datasets.append(setname)
-
-    n = len(partials[0])
-    column_names = [f'partials_{i}' for i in range(n)]
-
-
-    # This line creates the base data frame for the calculation
-
-    df_wtmad = pd.DataFrame({
-                            'datasets': datasets,
-                            'Nis': Nis,
-                            'Es': Es,
-                            **{column_names[i]: [item[i] for item in partials] for i in range(n)}
-                            })
-
-    supersets = []
-    wtmad2 = []
-
-    for ssets in metricsets:
-        supersets.append(ssets)
-        tempdf = df_wtmad[df_wtmad['datasets'].str.startswith(ssets+"_")]
-
-        totalNi = tempdf["Nis"].sum()
-        total_meanE = tempdf["Es"].mean() 
-        
-        summations = []
-
-        for i in range(n):
-            summations.append(tempdf[f'partials_{i}'].sum())
-
-        metrics = []
-
-        for i in range(n):
-            metric = round(total_meanE * summations[i] / totalNi, 2)
-            metrics.append(metric)
-
-        metric_list = [metrics[i] for i in range(n)]
-
-        wtmad2.append(metric_list)
-
-    if includeFull == True:
-
-        supersets.append("Full")
-
-        totalNi = df_wtmad["Nis"].sum()
-        total_meanE = df_wtmad["Es"].mean()
-
-        summations = []
-        
-        for i in range(n):
-            summations.append(df_wtmad[f'partials_{i}'].sum())
-
-        metrics = []
-
-        for i in range(n):
-            metric = round(total_meanE * summations[i] / totalNi, 2)
-            metrics.append(metric)
-
-        metric_list = [metrics[i] for i in range(n)]
-
-        wtmad2.append(metric_list)
-
-    # This part creates the final dataframe with the results
-
-    n = len(wtmad2[0])
-    column_names = [f'WTMAD-2_{i}' for i in range(n)]
-
-    df_wtmad2 = pd.DataFrame({
-                            'Superset': supersets,
-                            **{column_names[i]: [item[i] for item in wtmad2] for i in range(n)}
-                            })
-                
-    #print(df_wtmad2, "\n")
-
-    return df_wtmad2
-
-####################################################################################################
-
-def wtmad(fullsetnames, metricsets, methods, allvalues_perset, includeFull = True):
-
-    datasets = []
-    partials = []
-    Nis = []
-    Es = []
-
-    keys_list = list(methods.keys())
-
-    for setname in fullsetnames:
-        for supersets in metricsets: # This loop iterates over supersets
-            if setname.startswith(supersets+"_"):
-                inner_partials=[]
-                inner_E = []
-
-                for j, method in enumerate(methods): # This loop iterates over methods
-                    diff_list = []
-                    label_list = []
-                    for val in allvalues_perset[setname]:
-
-                        diff_list.append(val['label']- \
-                                         val[method + "_energydiff"][method+"_FINAL_SINGLE_POINT_ENERGY"])
-                        MAD_list = [abs(x) for x in diff_list]
-                        MAD = np.mean(MAD_list)
-                        MAD = round(MAD,2)
-
-                        label_list.append(val["label"])
-                        meanE_list = [abs(x) for x in label_list]
-                        meanE = np.mean(meanE_list)
-                        meanE = round(meanE,2)
-
-                        Ni = len(meanE_list)
-                        partial = round(Ni*MAD/meanE,2)
-
-                    inner_partials.append(partial)
-                    inner_E.append(meanE)
-
-                Nis.append(Ni)
-                Es.append(meanE)
-                partials.append(inner_partials)
-                datasets.append(setname)
-
-    n = len(partials[0])
-    column_names = [f'partials_{i}' for i in range(n)]
-
-    # This line creates the base data frame for the calculation
-
-    df_wtmad = pd.DataFrame({
-                            'datasets': datasets,
-                            'Nis': Nis,
-                            'Es': Es,
-                            **{column_names[i]: [item[i] for item in partials] for i in range(n)}
-                            })
-
-    supersets = []
-    wtmad2 = []
-
-    for ssets in metricsets:
-        supersets.append(ssets)
-        wtmads = []
-        tempdf = df_wtmad[df_wtmad['datasets'].str.startswith(ssets+"_")]
-
-        totalNi = tempdf["Nis"].sum()
-        total_meanE = tempdf["Es"].mean() 
-        
-        summations = []
-
-        for i in range(n):
-            summations.append(tempdf[f'partials_{i}'].sum())
-
-        metrics = []
-
-        for i in range(n):
-            metric = round(total_meanE * summations[i] / totalNi, 2)
-            metrics.append(metric)
-
-        metric_list = [metrics[i] for i in range(n)]
-
-        wtmad2.append(metric_list)
-
-    if includeFull == True:
-
-        supersets.append("Full")
-
-        totalNi = df_wtmad["Nis"].sum()
-        total_meanE = df_wtmad["Es"].mean()
-
-        summations = []
-        
-        for i in range(n):
-            summations.append(df_wtmad[f'partials_{i}'].sum())
-
-        metrics = []
-
-        for i in range(n):
-            metric = round(total_meanE * summations[i] / totalNi, 2)
-            metrics.append(metric)
-
-        metric_list = [metrics[i] for i in range(n)]
-
-        wtmad2.append(metric_list)
-
-    # This part creates the final dataframe with the results
-
-    n = len(wtmad2[0])
-    column_names = [f'WTMAD-2_{i}' for i in keys_list]
-
-    df_wtmad2 = pd.DataFrame({
-                            'Superset': supersets,
-                            **{column_names[i]: [item[i] for item in wtmad2] for i in range(n)}
-                            })
-                
-    #print(df_wtmad2, "\n")
-
-    return df_wtmad2
 
 ####################################################################################################
 
