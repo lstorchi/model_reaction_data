@@ -223,8 +223,11 @@ def nn_model(perc_split, X, scalex, Y, scaley, supersetlist, setlist, \
                     Y_rescaled = scaley.inverse_transform(Y)
                     y_pred = model.predict(X, verbose=0)
                     y_pred_rescaled = scaley.inverse_transform(y_pred)
-                    wtmad = commonutils.wtmad_calc(supersetlist, setlist, \
-                                                   y_pred_rescaled, Y_rescaled, includeFull = True)   
+                    if len(y_pred_rescaled.shape) == 2:
+                        y_pred_rescaled = y_pred_rescaled[:,0]
+                    if len(Y_rescaled.shape) == 2:
+                        Y_rescaled = Y_rescaled[:,0]
+                    wtmad = commonutils.wtmad2(setlist, Y_rescaled, y_pred_rescaled)
                     wtmad = wtmad["Full"]
                     mape = mean_absolute_percentage_error(Y, y_pred_rescaled)
                     rmse = mean_squared_error(Y_rescaled        , y_pred_rescaled, squared=False)
