@@ -753,7 +753,11 @@ def wtmad2(identifier_list, labels_list, predictions_list):
     
         wtmad2_Full = partials_Full*meanE_Full/N_Full
         wtmad2_df.loc[len(wtmad2_df)] = {'Set':"Full","WTMAD-2":round(wtmad2_Full,2)}
-    
-    return wtmad2_df
+
+    wtamdtoret = {}
+    for v in wtmad2_df.values:
+        wtamdtoret[v[0]] = v[1]
+
+    return wtamdtoret
 
 ####################################################################################################
