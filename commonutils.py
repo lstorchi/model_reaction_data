@@ -694,7 +694,7 @@ def wtmad2(identifier_list, labels_list, predictions_list):
             'Label': labels_list,
             'Prediction': np.round(predictions_list,2)
         })
-        
+
         iterss = set(identifier_list)
         ssetlist = []
         datasetslist=[]
@@ -714,20 +714,20 @@ def wtmad2(identifier_list, labels_list, predictions_list):
         df["Delta"] = abs(df["Prediction"]-df['Label'])
 
         N_Full = len(df)
-        meanE_sum = 0
-        meanE_counter = 0
+        deltaE = []
+        MAD_List = []
+        NumberPoints = []
+        DataSetList = []
+        wtmad2_df = pd.DataFrame(columns=['Set',"WTMAD-2"])
         partials_Full = 0
 
-        wtmad2_df = pd.DataFrame(columns=['Set',"WTMAD-2"])
-        
         for sset in ssetlist:
             if sset != "Full":
                 sset_cond = df["Identifier"].str.startswith(sset)
                 sset_df = df[sset_cond]  
-                meanE_sset_sum  = 0
-                meanE_sset_counter = 0
                 N_t = len(sset_df)
-                partial = 0
+                meanE_sset = []
+                sset_partial = 0
 
                 for dataset in datasetslist:
                     dataset_cond = sset_df["Identifier"].str.endswith(dataset)
@@ -738,26 +738,26 @@ def wtmad2(identifier_list, labels_list, predictions_list):
                     else:
                         mad_i = dataset_df['Delta'].mean()
                         meanE_i = dataset_df['AbsE'].mean()
-                        partial += n_i*mad_i/meanE_i
-                        meanE_sum += meanE_i
-                        meanE_counter += 1
-                        meanE_sset_sum += meanE_i
-                        meanE_sset_counter += 1 
+                        deltaE.append(meanE_i)
+                        meanE_sset.append(meanE_i)
+                        partial = n_i*mad_i/meanE_i
+                        sset_partial += partial
+                        partials_Full += partial
 
-                meanE = meanE_sset_sum/meanE_sset_counter
-                meanE_Full = meanE_sum/meanE_counter
-                partials_Full += partial
-                wtmad2_sset = partial*meanE/N_t #Evaluate the use of a constant value or a calculated one for each superset
+                meanE = sum(meanE_sset)/len(meanE_sset) # Use this parameter instead of the constant below in case we want to use a specific mean for each SuperSet
+                wtmad2_sset = sset_partial*57.81/N_t # The 57.81 is the mean of the absolute mean energies of each dataset. 
                 new_row = {'Set': sset, 'WTMAD-2': round(wtmad2_sset,2)}
                 wtmad2_df.loc[len(wtmad2_df)] = new_row
-    
+
+        meanE_Full = sum(deltaE)/len(deltaE)
         wtmad2_Full = partials_Full*meanE_Full/N_Full
         wtmad2_df.loc[len(wtmad2_df)] = {'Set':"Full","WTMAD-2":round(wtmad2_Full,2)}
 
-    wtamdtoret = {}
-    for v in wtmad2_df.values:
-        wtamdtoret[v[0]] = v[1]
 
-    return wtamdtoret
+    wtmadtoret = {}
+    for v in wtmad2_df.values:
+        wtmadtoret[v[0]] = v[1]
+
+    return wtmadtoret
 
 ####################################################################################################
