@@ -85,7 +85,12 @@ def pls_model (Xin, Yin, supersetlist, setlist, \
         if len(pred.shape) == 2:
             pred = pred[:,0]
         wtmadf = commonutils.wtmad2(setlist, list(Y), list(pred))
-        wtmad_value = wtmadf["Full"]
+        wtmad_value = None
+        if len(set(supersetlist)) == 1:
+            ssetname = list(set(supersetlist))[0]
+            wtmad_value = wtmadf[ssetname]
+        else:
+            wtmad_value = wtmadf["Full"]
         rmse = mean_squared_error(Y, pred, squared=False)
         r2 = r2_score(Y, pred)
     

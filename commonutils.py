@@ -686,6 +686,8 @@ def get_top_correlations_blog(df, threshold=0.4):
 ####################################################################################################
 
 def wtmad2(identifier_list, labels_list, predictions_list):
+    
+    ssetlist = None
 
     if len(identifier_list)==len(labels_list)==len(predictions_list):
         
@@ -757,6 +759,11 @@ def wtmad2(identifier_list, labels_list, predictions_list):
     wtmadtoret = {}
     for v in wtmad2_df.values:
         wtmadtoret[v[0]] = v[1]
+
+    # remove values from a list
+    ssetlist.remove("Full")
+    if len(set(ssetlist)) == 1:
+        del wtmadtoret["Full"]
 
     return wtmadtoret
 
