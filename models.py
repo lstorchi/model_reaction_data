@@ -83,8 +83,13 @@ def pls_model (perc_split, Xin, Yin, supersetlist, setlist, \
             pred = pls.predict(X)
             if len(pred.shape) == 2:
                 pred = pred[:,0]
+            supes = set(supersetlist)
             wtmadf = commonutils.wtmad2(setlist, list(Y), list(pred))
-            wtmad_value = wtmadf["Full"]
+            wtmad_value = None
+            if "Full" in wtmadf and len(supes) != 1:
+                wtmad_value = wtmadf["Full"]
+            else:
+                wtmad_value = wtmadf[supes.pop()]
             rmse = mean_squared_error(Y, pred, squared=False)
             r2 = r2_score(Y, pred)
     

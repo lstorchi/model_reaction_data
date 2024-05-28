@@ -755,8 +755,8 @@ def wtmad2(identifier_list, labels_list, predictions_list):
         wtmadtoret[v[0]] = v[1]
 
     ssetlist.remove("Full")
-    if len(set(ssetlist))==1: del wtmadtoret["Full"]
-
+    if len(set(ssetlist))==1: 
+        del wtmadtoret["Full"]
 
     return wtmadtoret
 
