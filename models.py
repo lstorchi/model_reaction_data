@@ -33,7 +33,7 @@ DEBUG = False
 def pls_model (Xin, Yin, supersetlist, setlist, \
             ncomp_start = 1, ncomp_max = 15, \
             normlize = False, split = True, perc_split = 0.2, \
-            plot = False):
+            plot = False, loo = True):
 
     X = None
     Y = None
@@ -67,13 +67,14 @@ def pls_model (Xin, Yin, supersetlist, setlist, \
     
     for ncomp in range(ncomp_start, ncomp_max+1):
         
-        cv = LeaveOneOut()
-        model = PLSRegression(ncomp)
-        scores = cross_val_score(model, X_train, y_train, \
-            scoring='neg_mean_squared_error', \
-            cv=cv, n_jobs=-1)
-        loormse = np.sqrt(np.mean(np.absolute(scores)))
-        loormses.append(loormse)
+        if loo:
+            cv = LeaveOneOut()
+            model = PLSRegression(ncomp)
+            scores = cross_val_score(model, X_train, y_train, \
+                scoring='neg_mean_squared_error', \
+                cv=cv, n_jobs=-1)
+            loormse = np.sqrt(np.mean(np.absolute(scores)))
+            loormses.append(loormse)
 
         pls = PLSRegression(ncomp)
         pls.fit(X_train, y_train)
@@ -84,6 +85,7 @@ def pls_model (Xin, Yin, supersetlist, setlist, \
         pred = pls.predict(X)
         if len(pred.shape) == 2:
             pred = pred[:,0]
+        #print(setlist)
         wtmadf = commonutils.wtmad2(setlist, list(Y), list(pred))
         wtmad_value = None
         if len(set(supersetlist)) == 1:
@@ -104,7 +106,8 @@ def pls_model (Xin, Yin, supersetlist, setlist, \
         plt.clf()
         #plt.rcParams.update({'font.size': 15})
         plt.plot(ncomps, rmses, '-o', color='black', label='RMSE')
-        plt.plot(ncomps, loormses, '-o', color='red', label='LOORMSE')
+        if loo:
+            plt.plot(ncomps, loormses, '-o', color='red', label='LOORMSE')
         plt.plot(ncomps, wtmads, '-o', color='blue', label='WTMAD')
         plt.xticks(ncomps)
         plt.xlabel('Number of Components')

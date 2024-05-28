@@ -686,8 +686,6 @@ def get_top_correlations_blog(df, threshold=0.4):
 ####################################################################################################
 
 def wtmad2(identifier_list, labels_list, predictions_list):
-    
-    ssetlist = None
 
     if len(identifier_list)==len(labels_list)==len(predictions_list):
         
@@ -698,7 +696,7 @@ def wtmad2(identifier_list, labels_list, predictions_list):
         })
 
         iterss = set(identifier_list)
-        ssetlist = []
+        supersetlist = []
         datasetslist=[]
 
         for element in iterss:
@@ -706,9 +704,9 @@ def wtmad2(identifier_list, labels_list, predictions_list):
             dset = element[pos+1:]
             sset = element[:pos]
             datasetslist.append(dset)
-            ssetlist.append(sset)
+            supersetlist.append(sset)
 
-        ssetlist = set(ssetlist)
+        ssetlist = set(supersetlist)
         ssetlist.add("Full")
         datasetslist = set(datasetslist)
 
@@ -717,9 +715,6 @@ def wtmad2(identifier_list, labels_list, predictions_list):
 
         N_Full = len(df)
         deltaE = []
-        MAD_List = []
-        NumberPoints = []
-        DataSetList = []
         wtmad2_df = pd.DataFrame(columns=['Set',"WTMAD-2"])
         partials_Full = 0
 
@@ -750,19 +745,17 @@ def wtmad2(identifier_list, labels_list, predictions_list):
                 wtmad2_sset = sset_partial*57.81/N_t # The 57.81 is the mean of the absolute mean energies of each dataset. 
                 new_row = {'Set': sset, 'WTMAD-2': round(wtmad2_sset,2)}
                 wtmad2_df.loc[len(wtmad2_df)] = new_row
-
-        meanE_Full = sum(deltaE)/len(deltaE)
-        wtmad2_Full = partials_Full*meanE_Full/N_Full
-        wtmad2_df.loc[len(wtmad2_df)] = {'Set':"Full","WTMAD-2":round(wtmad2_Full,2)}
-
+        
+                meanE_Full = sum(deltaE)/len(deltaE)
+                wtmad2_Full = partials_Full*meanE_Full/N_Full
+                wtmad2_df.loc[len(wtmad2_df)] = {'Set':"Full","WTMAD-2":round(wtmad2_Full,2)}
 
     wtmadtoret = {}
     for v in wtmad2_df.values:
         wtmadtoret[v[0]] = v[1]
 
-    # remove values from a list
     ssetlist.remove("Full")
-    if len(set(ssetlist)) == 1:
+    if len(set(ssetlist))==1: 
         del wtmadtoret["Full"]
 
     return wtmadtoret
