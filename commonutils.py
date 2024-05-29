@@ -687,6 +687,8 @@ def get_top_correlations_blog(df, threshold=0.4):
 
 def wtmad2(identifier_list, labels_list, predictions_list):
 
+    wtmad2_df = None
+
     if len(identifier_list)==len(labels_list)==len(predictions_list):
         
         df = pd.DataFrame({
@@ -749,14 +751,14 @@ def wtmad2(identifier_list, labels_list, predictions_list):
                 meanE_Full = sum(deltaE)/len(deltaE)
                 wtmad2_Full = partials_Full*meanE_Full/N_Full
                 wtmad2_df.loc[len(wtmad2_df)] = {'Set':"Full","WTMAD-2":round(wtmad2_Full,2)}
+                
+        wtmadtoret = {}
+        for v in wtmad2_df.values:
+            wtmadtoret[v[0]] = v[1]
 
-    wtmadtoret = {}
-    for v in wtmad2_df.values:
-        wtmadtoret[v[0]] = v[1]
-
-    ssetlist.remove("Full")
-    if len(set(ssetlist))==1: 
-        del wtmadtoret["Full"]
+        ssetlist.remove("Full")
+        if len(set(ssetlist))==1: 
+            del wtmadtoret["Full"]
 
     return wtmadtoret
 
