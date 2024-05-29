@@ -7,8 +7,6 @@ from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_percenta
 from sklearn.model_selection import (LeaveOneOut, cross_val_predict,
                                      cross_val_score, train_test_split)
 
-from sklearn.model_selection import LeaveOneOut
-
 from tensorflow import keras
 import tensorflow as tf
 
@@ -32,9 +30,10 @@ DEBUG = False
 
 ####################################################################################################
 
-def pls_model (perc_split, Xin, Yin, supersetlist, setlist, \
-               search = True, ncomp_start = 1, ncomp_max = 15, \
-               leaveoneout=False, normlize = False, split =True):
+def pls_model (Xin, Yin, supersetlist, setlist, \
+            ncomp_start = 1, ncomp_max = 15, \
+            normlize = False, split = True, perc_split = 0.2, \
+            plot = False, loo = True):
 
     X = None
     Y = None
@@ -48,128 +47,76 @@ def pls_model (perc_split, Xin, Yin, supersetlist, setlist, \
         X = Xin
         Y = Yin
 
-    X_train = None 
-    X_test = None
-    y_train = None 
-    y_test = None
-
-    if not leaveoneout:
-
-        X_train = X
-        X_test = X
-        y_train = Y
-        y_test = Y
+    X_train = X
+    X_test = X
+    y_train = Y
+    y_test = Y
         
-        if split:
-            X_train, X_test, y_train, y_test, supersetlist_train, \
-                supersetlist_test, setlist_train, setlist_test \
-                    = train_test_split(X, Y, supersetlist, setlist, \
-                                    test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
+    if split:
+        X_train, X_test, y_train, y_test, supersetlist_train, \
+            supersetlist_test, setlist_train, setlist_test \
+                = train_test_split(X, Y, supersetlist, setlist, \
+                                test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
     
-    if search == True:
+    ncomps = []
 
-        rmses = []
-        r2s = []
-        ncomps = []
-        wtmads = []
+    r2s = []
+    rmses = []
+    wtmads = []
+    loormses = []
     
-        for ncomp in range(ncomp_start, ncomp_max+1):
-            pls = PLSRegression(ncomp)
-            pls.fit(X_train, y_train)
+    for ncomp in range(ncomp_start, ncomp_max+1):
+        
+        if loo:
+            cv = LeaveOneOut()
+            model = PLSRegression(ncomp)
+            scores = cross_val_score(model, X_train, y_train, \
+                scoring='neg_mean_squared_error', \
+                cv=cv, n_jobs=-1)
+            loormse = np.sqrt(np.mean(np.absolute(scores)))
+            loormses.append(loormse)
+
+        pls = PLSRegression(ncomp)
+        pls.fit(X_train, y_train)
     
-            y_pred = pls.predict(X_train)
-            y_pred_test = pls.predict(X_test)
-            
-            pred = pls.predict(X)
-            if len(pred.shape) == 2:
-                pred = pred[:,0]
-            wtmadf = commonutils.wtmad2(setlist, list(Y), list(pred))
+        y_pred = pls.predict(X_train)
+        y_pred_test = pls.predict(X_test)
+        
+        pred = pls.predict(X)
+        if len(pred.shape) == 2:
+            pred = pred[:,0]
+        #print(setlist)
+        wtmadf = commonutils.wtmad2(setlist, list(Y), list(pred))
+        wtmad_value = None
+        if len(set(supersetlist)) == 1:
+            ssetname = list(set(supersetlist))[0]
+            wtmad_value = wtmadf[ssetname]
+        else:
             wtmad_value = wtmadf["Full"]
-            rmse = mean_squared_error(Y, pred, squared=False)
-            r2 = r2_score(Y, pred)
+        rmse = mean_squared_error(Y, pred, squared=False)
+        r2 = r2_score(Y, pred)
     
-            r2s.append(r2)
-            rmses.append(rmse)
-            ncomps.append(ncomp)
-            wtmads.append(wtmad_value)
+        r2s.append(r2)
+        rmses.append(rmse)
+        ncomps.append(ncomp)
+        wtmads.append(wtmad_value)
 
-        return ncomps, rmses, r2s, wtmads
+    if plot:
+        # plot the rmses
+        plt.clf()
+        #plt.rcParams.update({'font.size': 15})
+        plt.plot(ncomps, rmses, '-o', color='black', label='RMSE')
+        if loo:
+            plt.plot(ncomps, loormses, '-o', color='red', label='LOORMSE')
+        plt.plot(ncomps, wtmads, '-o', color='blue', label='WTMAD')
+        plt.xticks(ncomps)
+        plt.xlabel('Number of Components')
+        plt.ylabel('RMSE')
+        plt.legend()
+        #plt.savefig("PLS_components_RMSE.png", bbox_inches="tight", dpi=600)
+        plt.show()
 
-    else:
-
-        if leaveoneout:
-
-            loo = LeaveOneOut()
-            y_pred_test = []
-            y_true_test = []
-            for i, (train_index, test_index) in enumerate(loo.split(X)):
-                X_train, X_test = X[train_index], X[test_index]
-                y_train, y_test = Y[train_index], Y[test_index]
-
-                #print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
-
-                pls = PLSRegression(ncomp_start)
-                pls.fit(X_train, y_train)
-
-                y_pred_test.append(pls.predict(X_test)[0])
-                y_true_test.append(y_test[0])
-
-                #print(y_pred_test[-1], y_true_test[-1])
-
-            rmse = mean_squared_error(y_true_test, y_pred_test, squared=False)
-            r2 = r2_score(y_true_test, y_pred_test)
-
-            if DEBUG:
-                print("Leave On Out RMSE: ", rmse)
-
-            return rmse, r2
-
-        else: 
-            pls = PLSRegression(ncomp_start)
-            pls.fit(X_train, y_train)
-           
-            y_pred = pls.predict(X_train)
-            y_pred_test = pls.predict(X_test)
-           
-            rmse_train = mean_squared_error(y_train, y_pred, squared=False)
-            rmse_test = mean_squared_error(y_test, y_pred_test, squared=False)
-           
-            r2_train = r2_score(y_train, y_pred)
-            r2_test = r2_score(y_test, y_pred_test)
-           
-            if DEBUG:
-                print("RMSE Train: ", rmse_train)
-                print("RMSE Test : ", rmse_test)
-                print("R2 Train  : ", r2_train)
-                print("R2 Test   : ", r2_test)
-           
-            y_pred_full = pls.predict(X)
-            rmse_full = mean_squared_error(Y, y_pred_full, squared=False)
-            r2_full = r2_score(Y, y_pred_full)
-           
-            if DEBUG:
-                print("RMSE Full: ", rmse_full)
-                print("R2 Full  : ", r2_full)
-
-            if SHOWPLOTS:  
-                plt.clf()
-                plt.rcParams.update({'font.size': 15})
-                plt.plot(y_pred, y_train, 'o', color='red')
-                plt.xlabel('PREDICTED')
-                plt.ylabel('TRUE')
-                plt.show()
-               
-                plt.clf()
-                plt.rcParams.update({'font.size': 15})
-                plt.plot(y_pred_test, y_test, 'o', color='black')
-                plt.xlabel('PREDICTED')
-                plt.ylabel('TRUE')
-                plt.show()
-
-            return rmse_train, rmse_test, r2_train, r2_test, rmse_full, r2_full, \
-                pls, X_train, X_test, y_train, y_test 
-
-    return
+    return ncomps, rmses, r2s, wtmads, loormses 
 
 ####################################################################################################
 
