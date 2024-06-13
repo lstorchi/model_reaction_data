@@ -22,6 +22,7 @@ class ModelResults:
     nn_model_wtmad = None
     nn_model_rmse = None
     plsmodel = None
+    hubermodel = None
     
     y_pred_bestinsidemethod_rmse: list = None
     bestinsidemethod_rmse: float = float("inf")

@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 
 from sklearn.cross_decomposition import PLSRegression
+from sklearn.linear_model import HuberRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.inspection import permutation_importance
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_percentage_error
@@ -29,6 +30,50 @@ import commonutils
 SPLIT_RANDOM_STATE = 42
 SHOWPLOTS = False
 DEBUG = False
+
+####################################################################################################
+
+def hb_model (perc_split, Xin, Yin, supersetlist, setlist, \
+              normalize = False, split =True):
+
+    X = None
+    Y = None
+
+    if normalize:
+        scalerX = preprocessing.StandardScaler().fit(Xin)
+        X = scalerX.transform(Xin)
+        Y = Yin
+
+    else:
+        X = Xin
+        Y = Yin
+    
+    if split:
+        X_train, X_test, y_train, y_test, supersetlist_train, \
+            supersetlist_test, setlist_train, setlist_test \
+                = train_test_split(X, Y, supersetlist, setlist, \
+                                test_size=perc_split, random_state=42)
+    
+    huber = HuberRegressor(max_iter=500)
+    huber.fit(X_train, y_train)
+    
+    y_pred = huber.predict(X_train)
+    y_pred_test = huber.predict(X_test)
+    
+    rmse_train = mean_squared_error(y_train, y_pred, squared=False)
+    rmse_test = mean_squared_error(y_test, y_pred_test, squared=False)
+    
+    r2_train = r2_score(y_train, y_pred)
+    r2_test = r2_score(y_test, y_pred_test)
+    
+    y_pred_full = huber.predict(X)
+    rmse_full = mean_squared_error(Y, y_pred_full, squared=False)
+    r2_full = r2_score(Y, y_pred_full)
+    
+
+    return rmse_train, rmse_test, r2_train, r2_test, rmse_full, r2_full, \
+        huber, X_train, X_test, y_train, y_test 
+
 
 ####################################################################################################
 
