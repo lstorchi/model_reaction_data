@@ -4,9 +4,9 @@ from sklearn.cross_decomposition import PLSRegression
 from sklearn.linear_model import HuberRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.inspection import permutation_importance
-from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_percentage_error
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_percentage_error, make_scorer
 from sklearn.model_selection import (LeaveOneOut, cross_val_predict,
-                                     cross_val_score, train_test_split)
+                                     cross_val_score, train_test_split, GridSearchCV)
 
 from sklearn.model_selection import LeaveOneOut
 
@@ -33,6 +33,11 @@ DEBUG = False
 
 ####################################################################################################
 
+def mape(y_true, y_pred):
+    return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
+
+###################################################################################################
+
 def hb_model (perc_split, Xin, Yin, supersetlist, setlist, \
               normalize = False, split =True):
 
@@ -54,7 +59,17 @@ def hb_model (perc_split, Xin, Yin, supersetlist, setlist, \
                 = train_test_split(X, Y, supersetlist, setlist, \
                                 test_size=perc_split, random_state=42)
     
-    huber = HuberRegressor(max_iter=500)
+    mape_scorer = make_scorer(mape, greater_is_better=False)
+
+
+    huber = HuberRegressor(max_iter=5000)
+
+    param_grid = {'epsilon': [1, 1.35, 1.5, 1.75, 2.0], 'alpha': [0.0001, 0.001, 0.01, 0.1]}
+
+    grid_search = GridSearchCV(huber, param_grid, scoring=mape_scorer, cv=5)
+    grid_search.fit(X_train, y_train)
+    huber = grid_search.best_estimator_
+
     huber.fit(X_train, y_train)
     
     y_pred = huber.predict(X_train)
