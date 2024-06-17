@@ -4,6 +4,9 @@ __pycache__/
 *$py.class
 *.p
 
+# VSC stuff
+
+.vscode
 
 # Jupyter Notebook
 .ipynb_checkpoints
