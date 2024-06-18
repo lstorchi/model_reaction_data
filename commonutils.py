@@ -9,6 +9,13 @@ import math
 import os 
 import re
 
+import token
+import tokenize
+
+from io import StringIO
+
+from numpy import exp, sqrt, fabs, log, power, multiply, divide
+
 ####################################################################################################
 @dataclass(slots=False)
 class ModelResults:
@@ -38,6 +45,76 @@ class ModelResults:
     y_pred_bestourmethod_wtmad : list = None
     bestourmethod_wtmad : float = float("inf")
     bestourmethod_name_wtmad : str = ""
+
+####################################################################################################
+
+def equation_parser_compiler (equations, functionals, basis_sets, basicfeattouse, \
+                              featuresvalues_perset):
+    eq_featuresvalues_perset = {}
+
+    for setname in featuresvalues_perset:
+        #print("Equations for ", setname , " set ", len(featuresvalues_perset[setname]))
+
+        eq_featuresvalues_perset[setname] = []
+        for entry in featuresvalues_perset[setname]:
+            eq_featuresvalues_perset[setname].append({})
+
+        for func in functionals:
+            for basis in basis_sets:
+                #print(func + "_" + basis)
+                touseforequation = {}
+                for k in basicfeattouse:
+                    ktouse = k.replace("(", "")
+                    ktouse = ktouse.replace(")", "")
+                    touseforequation[ktouse] = []
+                for entry in featuresvalues_perset[setname]:
+                    #print(len(entry))
+                    for propname in entry:
+                        if propname.find(func + "_" + basis) != -1:  
+                            newk = propname.replace(func + "_" + basis + "_", "")
+                            #print(newk, propname, entry[propname])
+                            touseforequation[newk].append(entry[propname])
+                #for k in touseforequation:
+                #    print(k, len(touseforequation[k]))
+                #print()
+                dtouseforequation = pd.DataFrame(touseforequation)
+
+                for eqname in equations:
+                    eq = equations[eqname]
+                    sio = StringIO(eq)
+                    tokens = tokenize.generate_tokens(sio.readline)
+
+                    variables = []
+                    for toknum, tokval, _, _, _  in tokens:
+                        if toknum == token.NAME:
+                            #print(tokval)
+                            if (tokval != "exp") and (tokval != "sqrt") \
+                                and (tokval != "fabs") and (tokval != "log") \
+                                and (tokval != "power") and (tokval != "multiply") \
+                                and (tokval != "sum"):
+                                variables.append(tokval)
+                                if not (tokval in dtouseforequation.columns):
+                                    print("Error ", tokval, " not in or undefined function ")
+
+                    toexe = ""
+                    for vname in variables:
+                        toexe += vname + " = np.array(dtouseforequation[\""+vname+"\"].tolist())"
+                        toexe += "\n" 
+
+                    exec(toexe) 
+                    toexe = eqname +" = " + eq
+                    #print(toexe)
+                    exec(eqname +" = " + eq)
+
+                    keyname = func + "_" + basis + "_" + eqname
+                    toexe = "for idx in range(len(" + eqname + ")): \n" + \
+                            "  #print(idx)\n" + \
+                            "  value = float(" + eqname + "[idx])\n" + \
+                            "  eq_featuresvalues_perset[setname][idx][\""+keyname+"\"] = value"
+                    #print(toexe)
+                    exec(toexe)
+
+    return eq_featuresvalues_perset    
 
 ####################################################################################################
 
