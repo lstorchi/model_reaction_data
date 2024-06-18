@@ -91,7 +91,7 @@ def equation_parser_compiler (equations, functionals, basis_sets, basicfeattouse
                             if (tokval != "exp") and (tokval != "sqrt") \
                                 and (tokval != "fabs") and (tokval != "log") \
                                 and (tokval != "power") and (tokval != "multiply") \
-                                and (tokval != "sum"):
+                                and (tokval != "sum") and (tokval != "divide"):
                                 variables.append(tokval)
                                 if not (tokval in dtouseforequation.columns):
                                     print("Error ", tokval, " not in or undefined function ")
