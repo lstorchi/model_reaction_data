@@ -24,6 +24,7 @@ class ModelResults:
     plsmodel = None
     hubermodel = None
     qregmodel = None
+    weirdmodel = None
     
     y_pred_bestinsidemethod_rmse: list = None
     bestinsidemethod_rmse: float = float("inf")
