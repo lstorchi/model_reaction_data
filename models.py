@@ -44,7 +44,7 @@ class WeirdRegressor(BaseEstimator, RegressorMixin):
     def custom_loss(self, coef, X, y):
         predictions = X @ coef
         differences = y - predictions
-        jic_epsilon = 1e-8
+        jic_epsilon = np.abs(1e-8)
         denominator = y + jic_epsilon
         mape_base = differences/denominator
         return np.mean(np.abs(mape_base))
