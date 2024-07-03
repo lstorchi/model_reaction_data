@@ -1,0 +1,3 @@
+[submodule "costomlosslr"]
+	path = costomlosslr
+	url = git@github.com:lstorchi/costomlosslr.git
