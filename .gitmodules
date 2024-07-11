@@ -1,0 +1,3 @@
+[submodule "CLossLr"]
+	path = CLossLr
+	url = git@github.com:lstorchi/CLossLr.git
