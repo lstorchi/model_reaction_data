@@ -76,9 +76,16 @@ def equation_parser_compiler (equations, functionals, basis_sets, basicfeattouse
                             newk = propname.replace(func + "_" + basis + "_", "")
                             #print(newk, propname, entry[propname])
                             touseforequation[newk].append(entry[propname])
-                #for k in touseforequation:
-                #    print(k, len(touseforequation[k]))
-                #print()
+                maxdim = 0
+                for k in touseforequation:
+                    if len(touseforequation[k]) > maxdim:
+                        maxdim = len(touseforequation[k])
+                torm = []
+                for k in touseforequation:
+                    if len(touseforequation[k]) < maxdim:
+                        torm.append(k)
+                for k in torm:
+                    del touseforequation[k]
                 dtouseforequation = pd.DataFrame(touseforequation)
 
                 for eqname in equations:
@@ -97,24 +104,30 @@ def equation_parser_compiler (equations, functionals, basis_sets, basicfeattouse
                                 variables.append(tokval)
                                 if not (tokval in dtouseforequation.columns):
                                     print("Error ", tokval, " not in or undefined function ")
+                    exettherest = True
+                    for var in variables:
+                        if not (var in dtouseforequation.columns):
+                            print("Warning ", var, " not in or undefined function ")
+                            exettherest = False
 
-                    toexe = ""
-                    for vname in variables:
-                        toexe += vname + " = np.array(dtouseforequation[\""+vname+"\"].tolist())"
-                        toexe += "\n" 
-
-                    exec(toexe) 
-                    toexe = eqname +" = " + eq
-                    #print(toexe)
-                    exec(eqname +" = " + eq)
-
-                    keyname = func + "_" + basis + "_" + eqname
-                    toexe = "for idx in range(len(" + eqname + ")): \n" + \
-                            "  #print(idx)\n" + \
-                            "  value = float(" + eqname + "[idx])\n" + \
-                            "  eq_featuresvalues_perset[setname][idx][\""+keyname+"\"] = value"
-                    #print(toexe)
-                    exec(toexe)
+                    if exettherest:
+                        toexe = ""
+                        for vname in variables:
+                            toexe += vname + " = np.array(dtouseforequation[\""+vname+"\"].tolist())"
+                            toexe += "\n" 
+                    
+                        exec(toexe) 
+                        toexe = eqname +" = " + eq
+                        #print(toexe)
+                        exec(eqname +" = " + eq)
+                    
+                        keyname = func + "_" + basis + "_" + eqname
+                        toexe = "for idx in range(len(" + eqname + ")): \n" + \
+                                "  #print(idx)\n" + \
+                                "  value = float(" + eqname + "[idx])\n" + \
+                                "  eq_featuresvalues_perset[setname][idx][\""+keyname+"\"] = value"
+                        #print(toexe)
+                        exec(toexe)
 
     return eq_featuresvalues_perset    
 
