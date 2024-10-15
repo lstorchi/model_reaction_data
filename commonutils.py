@@ -226,10 +226,16 @@ def read_dataset (rootdir, labelfilename, howmanydifs, methods, debug=True):
                 #    molname = molname.replace("S", "")
                 moldesc = {}
                 fp = open(rootdir+'/'+method+'/'+file, 'r')
+                toinsert = True
                 for line in fp:
                     for val in methods[method]:
-                        if line.find(val) != -1:
-                            keyval = val.replace(":", "").rstrip().lstrip().replace(" ", "_")
+                        if line.find(val[0]) != -1:
+                            keyval = val[1]
+                            keyval = keyval.rstrip().lstrip().replace(" ", "_")
+                            #if val.find(":") != -1:
+                            #    keyval = val.replace(":", "").rstrip().lstrip().replace(" ", "_")
+                            #elif val.find("=") != -1:
+                            #    keyval = val.replace("=", "").rstrip().lstrip().replace(" ", "_")
                             sline = line.rstrip().lstrip().split()
                             for sval in sline:
                                 try:
@@ -239,22 +245,25 @@ def read_dataset (rootdir, labelfilename, howmanydifs, methods, debug=True):
                                     continue
                             
                             moldesc[method+"_"+keyval] = firstnumvalue
-                            #print(molname, keyval, sval)
+                            #print(molname, keyval, sval, sline)
+                            #exit(1)
                 fp.close()
                 if first:
                     first = False
                     desclist = list(moldesc.keys())
                 else:
                     if desclist != list(moldesc.keys()):
+                        toinsert = False
                         if debug:
                             print("Error: desclist != list(moldesc.keys())")
                             print("Looking for ",desclist)
                             print("Found ", moldesc.keys())
                             print("Cannot find features in Molname:", \
                                   rootdir+'/'+method+'/'+file)
-                        return None
+                        #return None
        
-                descriptor[molname] = moldesc
+                if toinsert:    
+                    descriptor[molname] = moldesc
     
         for i, val in enumerate(allvalues):
        
