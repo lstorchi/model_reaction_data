@@ -103,11 +103,14 @@ def equation_parser_compiler (equations, functionals, basis_sets, basicfeattouse
                                 and (tokval != "sum") and (tokval != "divide"):
                                 variables.append(tokval)
                                 if not (tokval in dtouseforequation.columns):
-                                    print("Error ", tokval, " not in or undefined function ")
+                                    print("Warning ", tokval, \
+                                          " not in or undefined function ", \
+                                            func, basis)
                     exettherest = True
                     for var in variables:
                         if not (var in dtouseforequation.columns):
-                            print("Warning ", var, " not in or undefined function ")
+                            print("Warning ", var, 
+                                  " not in or undefined function ", func, basis)
                             exettherest = False
 
                     if exettherest:
