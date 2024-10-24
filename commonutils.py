@@ -25,16 +25,18 @@ class ModelResults:
     features: dict = field(default_factory=dict)
     uncorrelated_features: dict = field(default_factory=dict)
 
-    nn_model_mape = None
-    nn_model_wtmad = None
-    nn_model_rmse = None
     plsmodel = None
     lr_model = None
     lr_custom_model = None
+
+    y_pred_slectedfunc_qzbasis: list = None
+    slectedfunc_qzbasis_rmse : float = float("inf")
+    slectedfunc_qzbasis_name_rmse : str = ""
     
     y_pred_bestinsidemethod_rmse: list = None
     bestinsidemethod_rmse: float = float("inf")
-    bestinsidemethod_name_rmse: str = ""
+    bestinsidemethod_wtmad: float = float("inf")
+    bestinsidemethod_name: str = ""
     
     y_pred_bestourmethod_rmse: list = None
     bestourmethod_rmse: float = float("inf")
