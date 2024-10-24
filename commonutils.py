@@ -17,7 +17,7 @@ from io import StringIO
 from numpy import exp, sqrt, fabs, log, power, multiply, divide
 
 ####################################################################################################
-@dataclass(slots=False)
+@dataclass(slots=True)
 class ModelResults:
     setnames : list = field(default_factory=list)
     supersetnames : list = field(default_factory=list)
@@ -25,30 +25,33 @@ class ModelResults:
     features: dict = field(default_factory=dict)
     uncorrelated_features: dict = field(default_factory=dict)
 
-    plsmodel = None
-    lr_model = None
-    lr_custom_model = None
-
     y_pred_slectedfunc_qzbasis: list = None
     slectedfunc_qzbasis_rmse : float = float("inf")
-    slectedfunc_qzbasis_name_rmse : str = ""
+    slectedfunc_qzbasis_wtmad : float = float("inf")
+    slectedfunc_qzbasis_name : str = ""
     
     y_pred_bestinsidemethod_rmse: list = None
     bestinsidemethod_rmse: float = float("inf")
-    bestinsidemethod_wtmad: float = float("inf")
-    bestinsidemethod_name: str = ""
+    bestinsidemethod_rmse_name: str = ""
     
     y_pred_bestourmethod_rmse: list = None
     bestourmethod_rmse: float = float("inf")
-    bestourmethod_name_rmse: str = ""
+    bestourmethod_rmse_name: str = ""
     
     y_pred_bestinsidemethod_wtmad : list = None
     bestinsidemethod_wtmad : float = float("inf")
-    bestinsidemethod_name_wtmad : str = ""
+    bestinsidemethod_wtmad_name : str = ""
 
     y_pred_bestourmethod_wtmad : list = None
     bestourmethod_wtmad : float = float("inf")
-    bestourmethod_name_wtmad : str = ""
+    bestourmethod_wtmad_name : str = ""
+
+@dataclass(slots=False)
+class ModelsStore:
+    
+    plsmodel = None
+    lr_model = None
+    lr_custom_model = None
 
 ####################################################################################################
 
