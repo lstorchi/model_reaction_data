@@ -797,6 +797,7 @@ def get_top_correlations_blog(df, threshold=0.4):
 def wtmad2(identifier_list, labels_list, predictions_list):
 
     wtmad2_df = None
+    wtmadtoret = None
 
     if len(identifier_list)==len(labels_list)==len(predictions_list):
         
