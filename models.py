@@ -62,6 +62,7 @@ def pls_model (Xin, Yin, supersetlist, setlist, \
 
     r2s = []
     rmses = []
+    mapes = []
     wtmads = []
     loormses = []
     
@@ -95,9 +96,11 @@ def pls_model (Xin, Yin, supersetlist, setlist, \
             wtmad_value = wtmadf["Full"]
         rmse = mean_squared_error(Y, pred, squared=False)
         r2 = r2_score(Y, pred)
+        mape = mean_absolute_percentage_error(Y, pred)
     
         r2s.append(r2)
         rmses.append(rmse)
+        mapes.append(mape)
         ncomps.append(ncomp)
         wtmads.append(wtmad_value)
 
@@ -116,7 +119,7 @@ def pls_model (Xin, Yin, supersetlist, setlist, \
         #plt.savefig("PLS_components_RMSE.png", bbox_inches="tight", dpi=600)
         plt.show()
 
-    return ncomps, rmses, r2s, wtmads, loormses 
+    return ncomps, rmses, r2s, wtmads, loormses, mapes
 
 ####################################################################################################
 

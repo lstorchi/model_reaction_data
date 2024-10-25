@@ -25,27 +25,15 @@ class ModelResults:
     features: dict = field(default_factory=dict)
     uncorrelated_features: dict = field(default_factory=dict)
 
-    y_pred_slectedfunc_qzbasis: list = None
-    slectedfunc_qzbasis_rmse : float = float("inf")
-    slectedfunc_qzbasis_wtmad : float = float("inf")
-    slectedfunc_qzbasis_name : str = ""
-    
-    y_pred_bestinsidemethod_rmse: list = None
-    bestinsidemethod_rmse: float = float("inf")
-    bestinsidemethod_rmse_name: str = ""
-    
-    y_pred_bestourmethod_rmse: list = None
-    bestourmethod_rmse: float = float("inf")
-    bestourmethod_rmse_name: str = ""
-    
-    y_pred_bestinsidemethod_wtmad : list = None
-    bestinsidemethod_wtmad : float = float("inf")
-    bestinsidemethod_wtmad_name : str = ""
+    funcional_basisset_rmse: dict = field(default_factory=dict)
+    funcional_basisset_wtamd: dict = field(default_factory=dict)
+    funcional_basisset_mape : dict = field(default_factory=dict)
+    funcional_basisset_ypred : dict = field(default_factory=dict)
 
-    y_pred_bestourmethod_wtmad : list = None
-    bestourmethod_wtmad : float = float("inf")
-    bestourmethod_wtmad_name : str = ""
-
+    insidemethods_rmse: dict = field(default_factory=dict)
+    insidemethods_wtamd: dict = field(default_factory=dict)
+    insidemethods_mape : dict = field(default_factory=dict)
+    insidemethods_ypred : dict = field(default_factory=dict)
 @dataclass(slots=False)
 class ModelsStore:
     
