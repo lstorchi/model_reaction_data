@@ -38,8 +38,11 @@ class ModelResults:
 class ModelsStore:
     
     plsmodel = None
+    plsmodel_splitted = None
     lr_model = None
+    lr_model_splitted = None
     lr_custom_model = None
+    lr_custom_model_splitted = None
 
 ####################################################################################################
 
