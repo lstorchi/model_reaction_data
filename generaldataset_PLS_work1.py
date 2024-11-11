@@ -177,7 +177,15 @@ if __name__ == "__main__":
             models_results[setname].funcional_basisset_mape[method] = mape
             
     
-    basicfeattouse = ["Potential_Energy",                 "Kinetic_Energy",                 "FINAL_SINGLE_POINT_ENERGY",                 "Dispersion_correction",                 "E(C)",                 "E(X)",                 "Two_Electron_Energy",                 "Nuclear_Repulsion",                 "One_Electron_Energy"]
+    basicfeattouse = ["Potential_Energy",\
+                    "Kinetic_Energy",\
+                    "FINAL_SINGLE_POINT_ENERGY",\
+                    "Dispersion_correction",\
+                    "E(C)",\
+                    "E(X)",\
+                    "Two_Electron_Energy",\
+                    "Nuclear_Repulsion",\
+                    "One_Electron_Energy"]
     
     featuresvalues_perset = {}
     for setname in fullsetnames:
@@ -196,9 +204,22 @@ if __name__ == "__main__":
                             featuresvalues_perset[setname][-1][keytouse] = val[k][f]
     
     
-    equations = {"EC" :"EC" ,             "EX" : "EX",             "FSPE" : "FINAL_SINGLE_POINT_ENERGY",             "DC" : "Dispersion_correction",             "PE" : "Potential_Energy",             "KE" : "Kinetic_Energy",             "OEE" : "One_Electron_Energy",             "TEE" : "Two_Electron_Energy",             "NR" : "Nuclear_Repulsion"}
+    equations = {"EC" :"EC" ,\
+                "EX" : "EX",\
+                "FSPE" : "FINAL_SINGLE_POINT_ENERGY",\
+                "DC" : "Dispersion_correction",\
+                "PE" : "Potential_Energy",\
+                "KE" : "Kinetic_Energy",\
+                "OEE" : "One_Electron_Energy",\
+                "TEE" : "Two_Electron_Energy",\
+                "NR" : "Nuclear_Repulsion"}
     
-    eq_featuresvalues_perset =     commonutils.equation_parser_compiler(equations, functionals, basis_sets, basicfeattouse,                               featuresvalues_perset)
+    eq_featuresvalues_perset =  \
+        commonutils.equation_parser_compiler(equations, \
+                                            functionals, \
+                                            basis_sets, \
+                                            basicfeattouse,\
+                                            featuresvalues_perset)
     
     featuresvalues_perset = deepcopy(eq_featuresvalues_perset)
     
@@ -213,7 +234,8 @@ if __name__ == "__main__":
     sep = "_"
     for setname in fullsetnames:
         desciptors = {}
-        k = selected_functional + sep +             selected_basisset 
+        k = selected_functional + sep +\
+                    selected_basisset 
         for features in featuresvalues_perset[setname]:
             for val in features:
                 if val.find(k) != -1:
@@ -364,14 +386,6 @@ if __name__ == "__main__":
         wtmad_lr = wtamd2[setname]
         lrrmse = mean_squared_error(Y, y_pred_lr, squared=False)
         lrrmape = mean_absolute_percentage_error(Y, y_pred_lr)
-        # use LOO to get the RMSE
-        #cv = LeaveOneOut()
-        #model = LinearRegression()
-        #scores = cross_val_score(model, X, Y, \
-        #        scoring='neg_mean_squared_error', \
-        #        cv=cv, n_jobs=-1)
-        #loolrrmse = np.sqrt(np.mean(np.absolute(scores)))
-        #lm = LinearRegression()
         models_store[setname].lr_model_splitted  = clr.custom_loss_lr (loss=clr.mean_average_error)
         models_store[setname].lr_model_splitted.fit(X_train, y_train)
         y_pred_lr = models_store[setname].lr_model_splitted.predict(X_test)
@@ -404,14 +418,6 @@ if __name__ == "__main__":
         wtmad_custom_lr = wtamd2[setname]
         custom_lrrmse = mean_squared_error(Y, y_pred_custom_lr, squared=False)
         custom_lrrmape = mean_absolute_percentage_error(Y, y_pred_custom_lr)
-        # use LOO to get the RMSE canno use need to implemente full estimator API 
-        # https://scikit-learn.org/1.5/developers/develop.html
-        #cv = LeaveOneOut()
-        #model = clr.custom_loss_lr (loss=clr.mean_absolute_percentage_error)
-        #scores = cross_val_score(model, X, Y, \
-        #        scoring='neg_mean_squared_error', \
-        #        cv=cv, n_jobs=-1)
-        #loocustom_lrrmse = np.sqrt(np.mean(np.absolute(scores)))
         models_store[setname].lr_custom_model_splitted  = clr.custom_loss_lr (loss=clr.mean_absolute_percentage_error)
         models_store[setname].lr_custom_model_splitted.fit(X_train, y_train)
         y_pred_custom_lr = models_store[setname].lr_custom_model_splitted.predict(X_test)
@@ -591,20 +597,7 @@ if __name__ == "__main__":
             print("Setname: ", setname)
             for entry in featuresvalues_perset[setname]:
                 classes.append(supersetnameslist.index(setname))
-                #print("Entry: ", entry)
-                #for featurename in entry:
-                #    for functional in functional_to_use:
-                #        for basisset in basissets_touse:
-                #            if featurename.find(basisset) != -1 and \
-                #                featurename.find(functional) != -1:
-                #                if featurename not in features:
-                #                    features[featurename] = []
-                #                features[featurename].append(entry[featurename])
     
-    #print("Classes: ", len(classes))
-    #for f in features:
-    #    print("Feature: ", f, " ", len(features[f]))
-    #X = pd.DataFrame(features)
     X, Y, features_names =     commonutils.build_XY_matrix (models_results['Full'].features,                                     models_results['Full'].labels)
     X_train, X_test, y_train, y_test = train_test_split(    X, classes, test_size=0.20, random_state=41)
     accuracys = []
@@ -687,30 +680,41 @@ if __name__ == "__main__":
     
     predictred = {}
     
-    predictred["Full , using PLS Full"] =     models_store["Full"].plsmodel.predict(X)
+    predictred["Full , using PLS Full"] = \
+        models_store["Full"].plsmodel.predict(X)
     if len(predictred["Full , using PLS Full"].shape) == 2:
-        predictred["Full , using PLS Full"] =         predictred["Full , using PLS Full"][:,0]
-    predictred["Full , using PLS Full split"] =     models_store["Full"].pls_model_splitted.predict(X)
+        predictred["Full , using PLS Full"] = \
+            predictred["Full , using PLS Full"][:,0]
+    predictred["Full , using PLS Full split"] =\
+                  models_store["Full"].pls_model_splitted.predict(X)
     if len(predictred["Full , using PLS Full split"].shape) == 2:
-        predictred["Full , using PLS Full split"] =         predictred["Full , using PLS Full split"][:,0]
+        predictred["Full , using PLS Full split"] = \
+                            predictred["Full , using PLS Full split"][:,0]
     predictred["Full , using PLS SS"] = ypredFull_pls
     predictred["Full , using PLS SS split"] = ypredFull_pls_split
     
-    predictred["Full , using LR Full"] =     models_store["Full"].lr_model.predict(X)
+    predictred["Full , using LR Full"] = \
+                  models_store["Full"].lr_model.predict(X)
     if len(predictred["Full , using LR Full"].shape) == 2:
-        predictred["Full , using LR Full"] =         predictred["Full , using LR Full"][:,0]
-    predictred["Full , using LR Full split"] =     models_store["Full"].lr_model_splitted.predict(X)
+        predictred["Full , using LR Full"] = \
+                            predictred["Full , using LR Full"][:,0]
+    predictred["Full , using LR Full split"] = \
+                models_store["Full"].lr_model_splitted.predict(X)
     if len(predictred["Full , using LR Full split"].shape) == 2:
         predictred["Full , using LR Full split"] =         predictred["Full , using LR Full split"][:,0]
     predictred["Full , using LR SS"] = ypredFull_lr
     predictred["Full , using LR SS split"] = ypredFull_lr_split
     
-    predictred["Full , using Custom LR Full"] =     models_store["Full"].lr_custom_model.predict(X)
+    predictred["Full , using Custom LR Full"] = \
+                models_store["Full"].lr_custom_model.predict(X)
     if len(predictred["Full , using Custom LR Full"].shape) == 2:
-        predictred["Full , using Custom LR Full"] =         predictred["Full , using Custom LR Full"][:,0]
-    predictred["Full , using Custom LR Full split"] =     models_store["Full"].lr_custom_model_splitted.predict(X)
+        predictred["Full , using Custom LR Full"] =  \
+                          predictred["Full , using Custom LR Full"][:,0]
+    predictred["Full , using Custom LR Full split"] =  \
+              models_store["Full"].lr_custom_model_splitted.predict(X)
     if len(predictred["Full , using Custom LR Full split"].shape) == 2:
-        predictred["Full , using Custom LR Full split"] =         predictred["Full , using Custom LR Full split"][:,0]
+        predictred["Full , using Custom LR Full split"] = \
+                            predictred["Full , using Custom LR Full split"][:,0]
     predictred["Full , using Custom LR SS"] = ypredFull_lr_custom
     predictred["Full , using Custom LR SS split"] = ypredFull_lr_custom_split
     
