@@ -1,0 +1,782 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+
+import commonutils
+import models
+
+from commonutils import ModelResults
+
+import pandas as pd
+import numpy as np
+
+import matplotlib.pyplot as plt
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_percentage_error
+from sklearn.inspection import permutation_importance
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+
+from dataclasses import dataclass
+import prettyprinter as pp
+
+from sklearn.cross_decomposition import PLSRegression
+import warnings
+import sys
+
+from sklearn import preprocessing
+
+from copy import deepcopy
+import pickle
+
+import numpy as np
+from sklearn.model_selection import LeaveOneOut
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import train_test_split
+
+from sklearn.linear_model import LinearRegression
+import sys
+sys.path.append("./CLossLr")
+import customlosslr as clr
+
+from commonutils import ModelsStore
+
+
+warnings.simplefilter("ignore")
+
+###############################################################
+
+def lr_test_and_rpint (lr_model, X, Y, name, fp):
+
+    y_pred = lr_model.predict(X)
+    rmse = mean_squared_error(Y, y_pred, squared=False)
+    #y_pred_eq = lr_model.intercept_ + np.dot(X, lr_model.coef_.T)
+    y_pred_eq = lr_model.get_intercept() + np.dot(X, lr_model.get_coefficients().T)
+    rmse_eq = mean_squared_error(Y, y_pred_eq, squared=False)
+    diffperc = np.abs(rmse - rmse_eq) / rmse * 100.0
+    if diffperc > 0.0001:
+        print("%40s RMSE Diff %5.3f "%(name, diffperc), "%")
+        print("%40s RMSE Diff %5.3f "%(name, diffperc), "%", file=fp)
+        exit(1)
+
+    print("%40s , %30s , %12.4f"%(name, "Intercept", lr_model.get_intercept()))
+    print("%40s , %30s , %12.4f"%(name, "Intercept", lr_model.get_intercept()), file=fp)
+    for i, f in enumerate(features_names):
+        #print("  %15s %12.8e"%(f, lr_model.coef_.T[i]))
+        print("%40s , %30s , %12.4f"%(name, f, lr_model.get_coefficients().T[i]))
+        print("%40s , %30s , %12.4f"%(name, f, lr_model.get_coefficients().T[i]), file=fp)
+    #print("")
+    #print("", file=fp)
+
+###############################################################
+
+def pls_test_and_rpint (pls_model, X, Y, name, fp):
+    
+        y_pred = pls_model.predict(X)
+        rmse = mean_squared_error(Y, y_pred, squared=False)
+        X_e = X.copy()
+        X_e -= pls_model._x_mean
+        X_e /= pls_model._x_std
+        y_pred_eq = np.dot(X_e, pls_model.coef_.T)
+        y_pred_eq += pls_model._y_mean
+        rmse_eq = mean_squared_error(Y, y_pred_eq, squared=False)
+        diffperc = np.abs(rmse - rmse_eq) / rmse * 100.0
+        if diffperc > 0.0001:
+            print("%40s RMSE Diff %5.3f "%(name, diffperc), "%")
+            print("%40s RMSE Diff %5.3f "%(name, diffperc), "%", file=fp)
+            exit(1)
+            
+        for i, f in enumerate(features_names):
+            print("%40s , %30s , %12.4f , %16.4f , %16.4f "%(                name, f,                 pls_model.coef_.T[i],                 pls_model._x_mean[i],                 pls_model._x_std[i]))
+            print("%40s , %30s , %12.4f , %16.4f , %16.4f "%(                name, f,                 pls_model.coef_.T[i],                 pls_model._x_mean[i],                 pls_model._x_std[i]), file=fp)
+        #print("")
+        #print("", file=fp)
+
+
+###############################################################
+
+
+if __name__ == "__main__":
+
+    howmanydifs = 3
+    allvalues_perset = pickle.load(open("./data/allvalues_perset.p", "rb"))
+    methods = pickle.load(open("./data/methods.p", "rb"))
+    fullsetnames = pickle.load(open("./data/fullsetnames.p", "rb"))
+    functionals = pickle.load(open("./data/functionals.p", "rb"))
+    basis_sets = pickle.load(open("./data/basis_sets.p", "rb"))
+    supersetnames = pickle.load(open("./data/supersetnames.p", "rb"))
+    
+    
+    allfeatures = set()
+    for setname in fullsetnames:
+        for val in allvalues_perset[setname]:
+            for k in val:
+                if k.find("energydiff") != -1:
+                    for f in val[k]:
+                        allfeatures.add(f)
+    
+    # set labels and sets iists
+    models_results = {}
+    for setname in fullsetnames:
+        models_results[setname] = ModelResults()
+        for val in allvalues_perset[setname]:
+            models_results[setname].labels.append(val["label"]) 
+            models_results[setname].supersetnames.append(val["super_setname"])
+            models_results[setname].setnames.append(val["super_setname"]+"_"+val["setname"])
+    
+    insidemethods = ["W","D3(0)","D3(BJ)"]
+    for setname in fullsetnames:
+        for methodid in range(howmanydifs):
+            methodname = insidemethods[methodid]
+            models_results[setname].insidemethods_rmse[methodname] = float("inf")
+            models_results[setname].insidemethods_mape[methodname] = float("inf")
+            models_results[setname].insidemethods_wtamd[methodname] = float("inf")
+            models_results[setname].insidemethods_ypred[methodname] = []
+    
+            y_pred = []
+            for val in allvalues_perset[setname]:
+                y_pred.append(val["label"] + val["difs"][methodid])
+    
+            models_results[setname].insidemethods_ypred[methodname].extend(y_pred)
+    
+            wtmad = None
+            fulllist = list(supersetnames.keys()) + ["Full"]
+            if setname in fulllist:
+                wtmadf = commonutils.wtmad2(models_results[setname].setnames,                                     models_results[setname].labels, y_pred)
+                wtmad = wtmadf[setname]
+                models_results[setname].insidemethods_wtamd[methodname] = wtmad
+    
+            rmse = mean_squared_error(models_results[setname].labels,                                 y_pred, squared=False)
+            models_results[setname].insidemethods_rmse[methodname] = rmse
+            
+            mape = mean_absolute_percentage_error(models_results[setname].labels, y_pred)
+            models_results[setname].insidemethods_mape[methodname] = mape
+            
+        for j, method in enumerate(methods):
+            models_results[setname].funcional_basisset_rmse[method] = float("inf")
+            models_results[setname].funcional_basisset_mape[method] = float
+            models_results[setname].funcional_basisset_wtamd[method] = float
+            models_results[setname].funcional_basisset_ypred[method] = []
+    
+            y_pred = []
+            for val in allvalues_perset[setname]:
+                y_pred.append(val[method + "_energydiff"][method+"_FINAL_SINGLE_POINT_ENERGY"])
+    
+            models_results[setname].funcional_basisset_ypred[method].extend(y_pred)
+    
+            wtmad = None            
+            fulllist = list(supersetnames.keys()) + ["Full"]
+            if setname in fulllist:
+                wtmadf = commonutils.wtmad2(models_results[setname].setnames,                                 models_results[setname].labels, y_pred)
+                wtmad = wtmadf[setname]
+                models_results[setname].funcional_basisset_wtamd[method] = wtmad
+    
+            rmse = mean_squared_error(models_results[setname].labels,                                y_pred, squared=False)
+            models_results[setname].funcional_basisset_rmse[method] = rmse
+    
+            mape = mean_absolute_percentage_error(models_results[setname].labels, y_pred)
+            models_results[setname].funcional_basisset_mape[method] = mape
+            
+    
+    basicfeattouse = ["Potential_Energy",                 "Kinetic_Energy",                 "FINAL_SINGLE_POINT_ENERGY",                 "Dispersion_correction",                 "E(C)",                 "E(X)",                 "Two_Electron_Energy",                 "Nuclear_Repulsion",                 "One_Electron_Energy"]
+    
+    featuresvalues_perset = {}
+    for setname in fullsetnames:
+        featuresvalues_perset [setname] = []
+        for val in allvalues_perset[setname]:
+            featuresvalues_perset[setname].append({})
+            for k in val:
+                if k.find("energydiff") != -1:
+                    torm = k.replace("energydiff", "")
+                    for f in val[k]:
+                        tocheck = f.replace(torm, "")
+                        if tocheck in basicfeattouse:
+                            keytouse = f.replace("-", "_")
+                            keytouse = keytouse.replace("(", "")
+                            keytouse = keytouse.replace(")", "")
+                            featuresvalues_perset[setname][-1][keytouse] = val[k][f]
+    
+    
+    equations = {"EC" :"EC" ,             "EX" : "EX",             "FSPE" : "FINAL_SINGLE_POINT_ENERGY",             "DC" : "Dispersion_correction",             "PE" : "Potential_Energy",             "KE" : "Kinetic_Energy",             "OEE" : "One_Electron_Energy",             "TEE" : "Two_Electron_Energy",             "NR" : "Nuclear_Repulsion"}
+    
+    eq_featuresvalues_perset =     commonutils.equation_parser_compiler(equations, functionals, basis_sets, basicfeattouse,                               featuresvalues_perset)
+    
+    featuresvalues_perset = deepcopy(eq_featuresvalues_perset)
+    
+    #["PBE", "PBE0"]
+    #["MINIX", "SVP", "TZVP", "QZVP"]
+    
+    selected_basisset = "QZVP"
+    selected_functional = "PBE0"
+    functionals = ["PBE0"]
+    basis_sets = ["MINIX"]
+    
+    sep = "_"
+    for setname in fullsetnames:
+        desciptors = {}
+        k = selected_functional + sep +             selected_basisset 
+        for features in featuresvalues_perset[setname]:
+            for val in features:
+                if val.find(k) != -1:
+                    if val not in desciptors:
+                        desciptors[val] = [features[val]]
+                    else:
+                        desciptors[val].append(features[val])
+    
+        for features in featuresvalues_perset[setname]:
+            for val in features:
+                for func in functionals:
+                    for basis in basis_sets:
+                        if not(basis == selected_basisset and                            func == selected_functional):
+                            if val.find(func + sep + basis) != -1:
+                                actualk = val 
+                                refk  = selected_functional + sep  + selected_basisset +                                 val.replace(func + sep + basis, "")
+                                newk = actualk + "_difftoref"
+                                if newk not in desciptors:
+                                    desciptors[newk] = [features[actualk]-features[refk]]
+                                else:
+                                    desciptors[newk].append(features[actualk]-features[refk])
+        
+        models_results[setname].features = desciptors
+    
+    # feastures selection
+    setname = "Full"
+    numoffeat = len(models_results[setname].features)
+    print("Number of features for ", numoffeat)
+    for setname in fullsetnames:
+        if len(models_results[setname].features) != numoffeat:
+            print("Number of features for ", setname, " is different")
+            sys.exit(1)
+    
+    toremove = []
+    setname = "Full"
+    for k in models_results[setname].features:
+        if len(set(models_results[setname].features[k])) == 1:
+            toremove.append(k)
+            print("Constant fatures to remove: ", k)
+    
+    # remove constant values
+    for setname in fullsetnames:
+        #print("Removing constant features for ", setname)
+        for k in toremove:
+            #print("Constant fatures to remove: ", k)
+            del models_results[setname].features[k]
+    
+    # force removing features Nuclear Repulsion difference
+    print("Removing Nuclear Repulsion differences")
+    for setname in fullsetnames: 
+        toremove = []
+        for k in models_results[setname].features:
+            if k.find("NR_difftoref") != -1:
+                toremove.append(k)
+        for k in toremove:
+            #print("Removing feature ", k)
+            del models_results[setname].features[k]
+    
+    setname = "Full"
+    numoffeat = len(models_results[setname].features)
+    print("Number of features ", numoffeat)
+    for setname in fullsetnames:
+        if len(models_results[setname].features) != numoffeat:
+            print("Number of features for ", setname, " is different")
+            sys.exit(1)
+    
+    
+    models_store = {}
+    fp = open("modelsgeneral.csv", "w")
+    for setname in list(supersetnames)+["Full"]:
+        models_store[setname] = ModelsStore()
+    
+        #print("Running PLS for dataset: ", setname)
+        X, Y, features_names =         commonutils.build_XY_matrix (models_results[setname].features,               models_results[setname].labels)
+        X_train, X_test, y_train, y_test = train_test_split(X, Y, 
+                          test_size=0.20, random_state=42)
+        setlist = models_results[setname].setnames  
+        supersetlist = models_results[setname].supersetnames
+        maxcomp = X.shape[1]
+    
+        # PLS
+        ncomps, rmses, r2s, wtmads, loormses, mapes =           models.pls_model (X, Y, supersetlist, setlist,           ncomp_start = 1, ncomp_max = maxcomp, split = False,          plot = False, loo=False)
+        r2max_comps = np.argmax(r2s)+1
+        rmsemin_comps = np.argmin(rmses)+1
+        mapemin_comps = np.argmin(mapes)+1
+        wtmadmin_comps = np.argmin(wtmads)+1
+        compstouse = mapemin_comps
+        #print("  Using ", compstouse, " components")
+        models_store[setname].plsmodel = PLSRegression(n_components=compstouse)
+        y_pred = models_store[setname].plsmodel.fit(X, Y).predict(X)
+        plsrmse = mean_squared_error(Y, y_pred, squared=False)
+        plsr2 = r2_score(Y, y_pred)
+        plsmape = mean_absolute_percentage_error(Y, y_pred)
+        if len(y_pred.shape) == 2:
+                y_pred = y_pred[:,0]
+        wtmadf = commonutils.wtmad2(setlist, Y, y_pred)
+        plswtmad = wtmadf[setname]
+        cv = LeaveOneOut()
+        model = PLSRegression(n_components=compstouse)
+        scores = cross_val_score(model, X, Y,             scoring='neg_mean_squared_error',             cv=cv, n_jobs=-1)
+        plsloormse = np.sqrt(np.mean(np.absolute(scores)))
+        #print("              PLS R2: %10.2f"%plsr2)
+        #print("           PLS WTMAD: %10.2f"%plswtmad)
+        print("%40s ,            PLS RMSE, %10.2f"%(setname, plsrmse))
+        print("%40s ,            PLS RMSE, %10.2f"%(setname, plsrmse), file=fp)
+        print("%40s ,        PLS LOO RMSE, %10.2f"%(setname, plsloormse))
+        print("%40s ,        PLS LOO RMSE, %10.2f"%(setname, plsloormse), file=fp)
+        best_mape = 0.0
+        best_ncomp = 0
+        for ncomp in range(1, compstouse+1):
+            model = PLSRegression(n_components=ncomp)
+            model.fit(X_train, y_train)
+            y_pred = model.predict(X_test)
+            mape = mean_absolute_percentage_error(y_test, y_pred)
+            if ncomp == 1:
+                best_mape = mape
+                best_ncomp = ncomp
+            else:
+                if mape < best_mape:
+                    best_mape = mape
+                    best_ncomp = ncomp
+        models_store[setname].pls_model_splitted = PLSRegression(n_components=best_ncomp)
+        models_store[setname].pls_model_splitted.fit(X_train, y_train)
+        y_pred = models_store[setname].pls_model_splitted.predict(X_test)
+        plsrmsetest = mean_squared_error(y_test, y_pred, squared=False)
+        plsmapetest = mean_absolute_percentage_error(y_test, y_pred)
+        y_pred = models_store[setname].pls_model_splitted.predict(X_train)
+        plsrmsetrain = mean_squared_error(y_train, y_pred, squared=False)
+        plsmapetrain = mean_absolute_percentage_error(y_train, y_pred)
+        print("%40s ,      PLS Train RMSE, %10.2f"%(setname,plsrmsetrain))
+        print("%40s ,      PLS Train RMSE, %10.2f"%(setname,plsrmsetrain), file=fp)
+        print("%40s ,      PLS  Test RMSE, %10.2f"%(setname,plsrmsetest))
+        print("%40s ,      PLS  Test RMSE, %10.2f"%(setname,plsrmsetest), file=fp)
+        print("%40s ,            PLS MAPE, %10.2f"%(setname,plsmape))    
+        print("%40s ,            PLS MAPE, %10.2f"%(setname,plsmape), file=fp)  
+        print("%40s ,      PLS Train MAPE, %10.2f"%(setname,plsmapetrain))
+        print("%40s ,      PLS Train MAPE, %10.2f"%(setname,plsmapetrain), file=fp)
+        print("%40s ,      PLS  Test MAPE, %10.2f"%(setname,plsmapetest))
+        print("%40s ,      PLS  Test MAPE, %10.2f"%(setname,plsmapetest), file=fp)
+        #print()
+    
+        # Linear Regression
+        #lm = LinearRegression()
+        models_store[setname].lr_model = clr.custom_loss_lr (loss=clr.mean_average_error)
+        models_store[setname].lr_model.fit(X, Y)
+        y_pred_lr = models_store[setname].lr_model.predict(X)
+        wtamd2 = commonutils.wtmad2(setlist, Y, y_pred_lr)
+        wtmad_lr = wtamd2[setname]
+        lrrmse = mean_squared_error(Y, y_pred_lr, squared=False)
+        lrrmape = mean_absolute_percentage_error(Y, y_pred_lr)
+        # use LOO to get the RMSE
+        #cv = LeaveOneOut()
+        #model = LinearRegression()
+        #scores = cross_val_score(model, X, Y, \
+        #        scoring='neg_mean_squared_error', \
+        #        cv=cv, n_jobs=-1)
+        #loolrrmse = np.sqrt(np.mean(np.absolute(scores)))
+        #lm = LinearRegression()
+        models_store[setname].lr_model_splitted  = clr.custom_loss_lr (loss=clr.mean_average_error)
+        models_store[setname].lr_model_splitted.fit(X_train, y_train)
+        y_pred_lr = models_store[setname].lr_model_splitted.predict(X_test)
+        lrrmsetest = mean_squared_error(y_test, y_pred_lr, squared=False)
+        lrrmaoetest = mean_absolute_percentage_error(y_test, y_pred_lr)
+        y_pred_lr = models_store[setname].lr_model_splitted.predict(X_train)
+        lrrmsetrain = mean_squared_error(y_train, y_pred_lr, squared=False)
+        lrrmaopetrain = mean_absolute_percentage_error(y_train, y_pred_lr)
+        #print("            LR WTMAD: %10.2f"%wtmad_lr)
+        print("%40s ,             LR RMSE, %10.2f"%(setname,lrrmse))
+        print("%40s ,             LR RMSE, %10.2f"%(setname,lrrmse), file=fp)
+        #print("         LR LOO RMSE: %10.2f"%loolrrmse)
+        print("%40s ,       LR Train RMSE, %10.2f"%(setname,lrrmsetrain))
+        print("%40s ,       LR Train RMSE, %10.2f"%(setname,lrrmsetrain), file=fp)
+        print("%40s ,        LR Test RMSE, %10.2f"%(setname,lrrmsetest))
+        print("%40s ,        LR Test RMSE, %10.2f"%(setname,lrrmsetest), file=fp)
+        print("%40s ,             LR MAPE, %10.2f"%(setname,lrrmape))
+        print("%40s ,             LR MAPE, %10.2f"%(setname,lrrmape), file=fp)
+        print("%40s ,       LR Train MAPE, %10.2f"%(setname,lrrmaopetrain))
+        print("%40s ,       LR Train MAPE, %10.2f"%(setname,lrrmaopetrain), file=fp)
+        print("%40s ,        LR Test MAPE, %10.2f"%(setname,lrrmaoetest))
+        print("%40s ,        LR Test MAPE, %10.2f"%(setname,lrrmaoetest), file=fp)
+        #print()
+    
+        # Custom Loss Linear Regression
+        models_store[setname].lr_custom_model = clr.custom_loss_lr (loss=clr.mean_absolute_percentage_error)
+        models_store[setname].lr_custom_model.fit(X, Y)
+        y_pred_custom_lr = models_store[setname].lr_custom_model.predict(X)
+        wtamd2 = commonutils.wtmad2(setlist, Y, y_pred_custom_lr)
+        wtmad_custom_lr = wtamd2[setname]
+        custom_lrrmse = mean_squared_error(Y, y_pred_custom_lr, squared=False)
+        custom_lrrmape = mean_absolute_percentage_error(Y, y_pred_custom_lr)
+        # use LOO to get the RMSE canno use need to implemente full estimator API 
+        # https://scikit-learn.org/1.5/developers/develop.html
+        #cv = LeaveOneOut()
+        #model = clr.custom_loss_lr (loss=clr.mean_absolute_percentage_error)
+        #scores = cross_val_score(model, X, Y, \
+        #        scoring='neg_mean_squared_error', \
+        #        cv=cv, n_jobs=-1)
+        #loocustom_lrrmse = np.sqrt(np.mean(np.absolute(scores)))
+        models_store[setname].lr_custom_model_splitted  = clr.custom_loss_lr (loss=clr.mean_absolute_percentage_error)
+        models_store[setname].lr_custom_model_splitted.fit(X_train, y_train)
+        y_pred_custom_lr = models_store[setname].lr_custom_model_splitted.predict(X_test)
+        custom_lrrmsetest = mean_squared_error(y_test, y_pred_custom_lr, squared=False)
+        custom_lrrmapetest = mean_absolute_percentage_error(y_test, y_pred_custom_lr)
+        y_pred_custom_lr = models_store[setname].lr_custom_model_splitted.predict(X_train)
+        custom_lrrmsetrain = mean_squared_error(y_train, y_pred_custom_lr, squared=False)
+        custom_lrrmapetrain = mean_absolute_percentage_error(y_train, y_pred_custom_lr)
+        #print("     Custom LR WTMAD: %10.2f"%wtmad_custom_lr)
+        print("%40s ,      Custom LR RMSE, %10.2f"%(setname,custom_lrrmse))
+        print("%40s ,      Custom LR RMSE, %10.2f"%(setname,custom_lrrmse), file=fp)
+        #print("  Custom LR LOO RMSE: %10.2f"%loocustom_lrrmse)
+        print("%40s ,Custom LR Train RMSE, %10.2f"%(setname,custom_lrrmsetrain))
+        print("%40s ,Custom LR Train RMSE, %10.2f"%(setname,custom_lrrmsetrain), file=fp)
+        print("%40s , Custom LR Test RMSE, %10.2f"%(setname,custom_lrrmsetest))
+        print("%40s , Custom LR Test RMSE, %10.2f"%(setname,custom_lrrmsetest), file=fp)
+        print("%40s ,      Custom LR MAPE, %10.2f"%(setname,custom_lrrmape))
+        print("%40s ,      Custom LR MAPE, %10.2f"%(setname,custom_lrrmape), file=fp)
+        print("%40s ,Custom LR Train MAPE, %10.2f"%(setname,custom_lrrmapetrain))
+        print("%40s ,Custom LR Train MAPE, %10.2f"%(setname,custom_lrrmapetrain), file=fp)
+        print("%40s , Custom LR Test MAPE: %10.2f"%(setname,custom_lrrmapetest))
+        print("%40s , Custom LR Test MAPE: %10.2f"%(setname,custom_lrrmapetest), file=fp)
+    
+    fp.close()
+              
+    
+    setname = None
+    ssetname = "Full"
+    pls_model_full = models_store[ssetname].plsmodel
+    pls_model_full_splitted = models_store[ssetname].pls_model_splitted
+    lr_model_full = models_store[ssetname].lr_model
+    lr_model_full_splitted = models_store[ssetname].lr_model_splitted
+    lr_custom_model_full = models_store[ssetname].lr_custom_model
+    lr_custom_model_full_splitted = models_store[ssetname].lr_custom_model_splitted
+    
+    ypredFull_pls = []
+    ypredFull_pls_split = []
+    ypredFull_lr = []
+    ypredFull_lr_split = []
+    ypredFull_lr_custom = []
+    ypredFull_lr_custom_split = []
+    ypredFull_allbasissets = {}
+    ypredFull_d3bj = []
+    
+    for method in models_results[ssetname].funcional_basisset_ypred:
+        if method.find(selected_functional) != -1:
+            ypredFull_allbasissets[method] = []
+    
+    setnamesFull = []
+    
+    fp = open("modelsresults.csv", "w")
+    
+    for ssetname in supersetnames:
+        pls_model_ssetname = models_store[ssetname].plsmodel
+        pls_model_ssetname_splitted = models_store[ssetname].pls_model_splitted
+        lr_model_ssetname = models_store[ssetname].lr_model
+        lr_model_ssetname_splitted = models_store[ssetname].lr_model_splitted
+        lr_custom_model_ssetname = models_store[ssetname].lr_custom_model
+        lr_custom_model_ssetname_splitted = models_store[ssetname].lr_custom_model_splitted
+    
+        X, Y, features_names =         commonutils.build_XY_matrix (models_results[ssetname].features,                                     models_results[ssetname].labels)
+        setlist = models_results[ssetname].setnames
+        setnamesFull.extend(setlist)
+    
+        # SuperSet PLS 
+        y_pred = pls_model_ssetname.predict(X)
+        if len(y_pred.shape) == 2:
+            y_pred = y_pred[:,0]
+        ypredFull_pls.extend(y_pred)
+        mape = mean_absolute_percentage_error(Y, y_pred)
+        print(" %60s MAPE , %7.3f"%(ssetname+" , SS PLS", mape))
+        print(" %60s MAPE , %7.3f"%(ssetname+" , SS PLS", mape), file=fp)
+        y_pred = pls_model_ssetname_splitted.predict(X)
+        if len(y_pred.shape) == 2:
+            y_pred = y_pred[:,0]
+        ypredFull_pls_split.extend(y_pred)
+        mape = mean_absolute_percentage_error(Y, y_pred)
+        print(" %60s MAPE , %7.3f"%(ssetname+" , SS PLS split", mape))
+        print(" %60s MAPE , %7.3f"%(ssetname+" , SS PLS split", mape), file=fp)
+    
+        # SuperSet LR
+        y_pred = lr_model_ssetname.predict(X)
+        if len(y_pred.shape) == 2:
+            y_pred = y_pred[:,0]
+        ypredFull_lr.extend(y_pred)
+        mape = mean_absolute_percentage_error(Y, y_pred)
+        print(" %60s MAPE , %7.3f"%(ssetname+" , SS LR", mape))
+        print(" %60s MAPE , %7.3f"%(ssetname+" , SS LR", mape), file=fp)
+        y_pred = lr_model_ssetname_splitted.predict(X)
+        if len(y_pred.shape) == 2:
+            y_pred = y_pred[:,0]
+        ypredFull_lr_split.extend(y_pred)
+        mape = mean_absolute_percentage_error(Y, y_pred)
+        print(" %60s MAPE , %7.3f"%(ssetname+" , SS LR split", mape))
+        print(" %60s MAPE , %7.3f"%(ssetname+" , SS LR split", mape), file=fp)
+        
+        # SuperSet Custom LR
+        y_pred = lr_custom_model_ssetname.predict(X)
+        if len(y_pred.shape) == 2:
+            y_pred = y_pred[:,0]
+        ypredFull_lr_custom.extend(y_pred)
+        mape = mean_absolute_percentage_error(Y, y_pred)
+        print(" %60s MAPE , %7.3f"%(ssetname+" , SS Custom LR", mape))
+        print(" %60s MAPE , %7.3f"%(ssetname+" , SS Custom LR", mape), file=fp)
+        y_pred = lr_custom_model_ssetname_splitted.predict(X)
+        if len(y_pred.shape) == 2:
+            y_pred = y_pred[:,0]
+        ypredFull_lr_custom_split.extend(y_pred)
+        mape = mean_absolute_percentage_error(Y, y_pred)
+        print(" %60s MAPE , %7.3f"%(ssetname+" , SS Custom LR split", mape))
+        print(" %60s MAPE , %7.3f"%(ssetname+" , SS Custom LR split", mape), file=fp)
+    
+        # Full PLS
+        y_pred = pls_model_full.predict(X)
+        if len(y_pred.shape) == 2:
+            y_pred = y_pred[:,0]
+        mape = mean_absolute_percentage_error(Y, y_pred)
+        print(" %60s MAPE , %7.3f"%(ssetname+" , Full PLS", mape))
+        print(" %60s MAPE , %7.3f"%(ssetname+" , Full PLS", mape), file=fp)
+        y_pred = pls_model_full_splitted.predict(X)
+        if len(y_pred.shape) == 2:
+            y_pred = y_pred[:,0]
+        mape = mean_absolute_percentage_error(Y, y_pred)
+        print(" %60s MAPE , %7.3f"%(ssetname+" , Full PLS split", mape))
+        print(" %60s MAPE , %7.3f"%(ssetname+" , Full PLS split", mape), file=fp)
+    
+        # Full LR
+        y_pred = lr_model_full.predict(X)
+        if len(y_pred.shape) == 2:
+            y_pred = y_pred[:,0]
+        mape = mean_absolute_percentage_error(Y, y_pred)
+        print(" %60s MAPE , %7.3f"%(ssetname+" , Full LR", mape))
+        print(" %60s MAPE , %7.3f"%(ssetname+" , Full LR", mape), file=fp)
+        ypred = lr_model_full_splitted.predict(X)
+        if len(y_pred.shape) == 2:
+            y_pred = y_pred[:,0]
+        mape = mean_absolute_percentage_error(Y, y_pred)
+        print(" %60s MAPE , %7.3f"%(ssetname+" , Full LR split", mape))
+        print(" %60s MAPE , %7.3f"%(ssetname+" , Full LR split", mape), file=fp)
+    
+        # Full Custom LR
+        y_pred = lr_custom_model_full.predict(X)
+        if len(y_pred.shape) == 2:
+            y_pred = y_pred[:,0]
+        mape = mean_absolute_percentage_error(Y, y_pred)
+        print(" %60s MAPE , %7.3f"%(ssetname+" , Full Custom LR", mape))
+        print(" %60s MAPE , %7.3f"%(ssetname+" , Full Custom LR", mape), file=fp)
+        y_pred = lr_custom_model_full_splitted.predict(X)
+        if len(y_pred.shape) == 2:
+            y_pred = y_pred[:,0]
+        mape = mean_absolute_percentage_error(Y, y_pred)
+        print(" %60s MAPE , %7.3f"%(ssetname+" , Full Custom LR split", mape))
+        print(" %60s MAPE , %7.3f"%(ssetname+" , Full Custom LR split", mape), file=fp)
+    
+        mape = models_results[ssetname].insidemethods_mape["D3(BJ)"] 
+        print(" %60s MAPE , %7.3f"%(ssetname+" , D3(BJ)", mape))
+        print(" %60s MAPE , %7.3f"%(ssetname+" , D3(BJ)", mape), file=fp)
+        ypredFull_d3bj.extend(models_results[ssetname].insidemethods_ypred["D3(BJ)"])
+    
+        for method in models_results[ssetname].funcional_basisset_ypred:
+            if method.find(selected_functional) != -1:
+                y_pred = models_results[ssetname].funcional_basisset_ypred[method]
+                ypredFull_allbasissets[method].extend(y_pred)
+                print(" %60s MAPE , %7.3f"%(ssetname+' , '+method,                                         mean_absolute_percentage_error(Y, y_pred)))
+                print(" %60s MAPE , %7.3f"%(ssetname+' , '+method,                                         mean_absolute_percentage_error(Y, y_pred)), file=fp)
+    fp.close()
+    
+    
+    basissets_touse = set(basis_sets + [selected_basisset])
+    functional_to_use = set(functionals + [selected_functional])
+    
+    classes = []
+    features = {}
+    supersetnameslist = list(supersetnames.keys())
+    for setname in featuresvalues_perset:
+        if setname in supersetnameslist:
+            print("Setname: ", setname)
+            for entry in featuresvalues_perset[setname]:
+                classes.append(supersetnameslist.index(setname))
+                #print("Entry: ", entry)
+                #for featurename in entry:
+                #    for functional in functional_to_use:
+                #        for basisset in basissets_touse:
+                #            if featurename.find(basisset) != -1 and \
+                #                featurename.find(functional) != -1:
+                #                if featurename not in features:
+                #                    features[featurename] = []
+                #                features[featurename].append(entry[featurename])
+    
+    #print("Classes: ", len(classes))
+    #for f in features:
+    #    print("Feature: ", f, " ", len(features[f]))
+    #X = pd.DataFrame(features)
+    X, Y, features_names =     commonutils.build_XY_matrix (models_results['Full'].features,                                     models_results['Full'].labels)
+    X_train, X_test, y_train, y_test = train_test_split(    X, classes, test_size=0.20, random_state=41)
+    accuracys = []
+    numoftrees = []
+    for ntrees in range(10, 200, 10):
+        rf = RandomForestClassifier(n_estimators=ntrees, random_state=42)
+        rf.fit(X_train, y_train)
+        y_pred = rf.predict(X_test)
+        accuracy = accuracy_score(y_test, y_pred)
+        accuracys.append(accuracy)
+        numoftrees.append(ntrees)
+    
+    bestaccuracy = max(accuracys)   
+    bestntrees = numoftrees[accuracys.index(bestaccuracy)]
+    print("Best accuracy: ", max(accuracys), " with ", bestntrees, " trees")
+    
+    rf = RandomForestClassifier(n_estimators=bestntrees, random_state=42)
+    rf.fit(X_train, y_train)
+    testaccuracy = rf.score(X_test, y_test)
+    trainaccuracy = rf.score(X_train, y_train)
+    overallaccuracy = rf.score(X, classes)
+    print("  Train accuracy: %5.2f"%(trainaccuracy))
+    print("   Test accuracy: %5.2f"%(testaccuracy))
+    print("Overall accuracy: %5.2f"%(overallaccuracy))
+    
+    
+    assert(len(ypredFull_pls) == len(ypredFull_pls_split))
+    assert(len(ypredFull_pls) == len(ypredFull_lr))
+    assert(len(ypredFull_pls) == len(ypredFull_lr_split)) 
+    assert(len(ypredFull_pls) == len(ypredFull_lr_custom))
+    assert(len(ypredFull_pls) == len(ypredFull_lr_custom_split))
+    assert(len(ypredFull_pls) == len(models_results["Full"].labels))
+    assert(len(ypredFull_pls) == len(setnamesFull))
+    assert(len(ypredFull_pls) == len(ypredFull_d3bj))
+    for method in ypredFull_allbasissets:
+        assert(len(ypredFull_pls) == len(ypredFull_allbasissets[method]))
+    
+    X, Y, features_names =     commonutils.build_XY_matrix (models_results['Full'].features,                                     models_results['Full'].labels)
+    setlist = models_results['Full'].setnames
+    
+    y_pred_RF_PLS = []
+    y_pred_RF_PLS_split = []
+    y_pred_RF_LR = []
+    y_pred_RF_LR_split = []
+    y_pred_RF_LR_CUSTOM = []
+    y_pred_RF_LR_CUSTOM_split = []
+    for i in range(len(X)):
+        c = rf.predict([X[i]])
+        supersetrname= supersetnameslist[c[0]]
+        #print("X: ", i, " Y: ", Y[i], " C: ", c, " ==> ", supersetnameslist[c[0]])
+        
+        y = models_store[supersetrname].plsmodel.predict([X[i]])
+        if len(y.shape) == 2:
+            y = y[:,0]
+        y_pred_RF_PLS.append(y[0])
+        y = models_store[supersetrname].pls_model_splitted.predict([X[i]])
+        if len(y.shape) == 2:
+            y = y[:,0]
+        y_pred_RF_PLS_split.append(y[0])
+    
+        y = models_store[supersetrname].lr_model.predict([X[i]])
+        if len(y.shape) == 2:
+            y = y[:,0]
+        y_pred_RF_LR.append(y[0])
+        y = models_store[supersetrname].lr_model_splitted.predict([X[i]])
+        if len(y.shape) == 2:
+            y = y[:,0]
+        y_pred_RF_LR_split.append(y[0])
+    
+        y = models_store[supersetrname].lr_custom_model.predict([X[i]])
+        if len(y.shape) == 2:
+            y = y[:,0]
+        y_pred_RF_LR_CUSTOM.append(y[0])
+        y = models_store[supersetrname].lr_custom_model_splitted.predict([X[i]])
+        if len(y.shape) == 2:
+            y = y[:,0]
+        y_pred_RF_LR_CUSTOM_split.append(y[0])
+    
+    fp = open("modelsresults.csv", "a")
+    
+    predictred = {}
+    
+    predictred["Full , using PLS Full"] =     models_store["Full"].plsmodel.predict(X)
+    if len(predictred["Full , using PLS Full"].shape) == 2:
+        predictred["Full , using PLS Full"] =         predictred["Full , using PLS Full"][:,0]
+    predictred["Full , using PLS Full split"] =     models_store["Full"].pls_model_splitted.predict(X)
+    if len(predictred["Full , using PLS Full split"].shape) == 2:
+        predictred["Full , using PLS Full split"] =         predictred["Full , using PLS Full split"][:,0]
+    predictred["Full , using PLS SS"] = ypredFull_pls
+    predictred["Full , using PLS SS split"] = ypredFull_pls_split
+    
+    predictred["Full , using LR Full"] =     models_store["Full"].lr_model.predict(X)
+    if len(predictred["Full , using LR Full"].shape) == 2:
+        predictred["Full , using LR Full"] =         predictred["Full , using LR Full"][:,0]
+    predictred["Full , using LR Full split"] =     models_store["Full"].lr_model_splitted.predict(X)
+    if len(predictred["Full , using LR Full split"].shape) == 2:
+        predictred["Full , using LR Full split"] =         predictred["Full , using LR Full split"][:,0]
+    predictred["Full , using LR SS"] = ypredFull_lr
+    predictred["Full , using LR SS split"] = ypredFull_lr_split
+    
+    predictred["Full , using Custom LR Full"] =     models_store["Full"].lr_custom_model.predict(X)
+    if len(predictred["Full , using Custom LR Full"].shape) == 2:
+        predictred["Full , using Custom LR Full"] =         predictred["Full , using Custom LR Full"][:,0]
+    predictred["Full , using Custom LR Full split"] =     models_store["Full"].lr_custom_model_splitted.predict(X)
+    if len(predictred["Full , using Custom LR Full split"].shape) == 2:
+        predictred["Full , using Custom LR Full split"] =         predictred["Full , using Custom LR Full split"][:,0]
+    predictred["Full , using Custom LR SS"] = ypredFull_lr_custom
+    predictred["Full , using Custom LR SS split"] = ypredFull_lr_custom_split
+    
+    predictred["Full , using PLSRF"] = y_pred_RF_PLS
+    predictred["Full , using PLSRF split"] = y_pred_RF_PLS_split
+    predictred["Full , using LRRF"] = y_pred_RF_LR
+    predictred["Full , using LRRF split"] = y_pred_RF_LR_split
+    predictred["Full , using Custom LRRF"] = y_pred_RF_LR_CUSTOM
+    predictred["Full , using Custom LRRF split"] = y_pred_RF_LR_CUSTOM_split
+    
+    for m in predictred:
+        ypred = predictred[m]
+        wtamd2_full_usingss =         commonutils.wtmad2(setnamesFull,                         ypred,                         models_results["Full"].labels)
+        wtamd2 = wtamd2_full_usingss["Full"]
+        print("%44s %7.3f"%(m + " WTMAD2, ", wtamd2))
+        print("%44s %7.3f"%(m + " WTMAD2, ", wtamd2), file=fp)
+    
+    for method in ypredFull_allbasissets:
+        wtamd2_full_allbasissets =         commonutils.wtmad2(setnamesFull,                             ypredFull_allbasissets[method],                             models_results["Full"].labels)
+        wtamd2 = wtamd2_full_allbasissets["Full"]
+        print("%44s %7.3f"%("Full , "+ method + " WTMAD2, ", wtamd2))
+        print("%44s %7.3f"%("Full , "+ method + " WTMAD2, ", wtamd2), file=fp)
+    
+    wtamd2_full_d3bj =     commonutils.wtmad2(setnamesFull,                         ypredFull_d3bj,                         models_results["Full"].labels)
+    wtamd2 = wtamd2_full_d3bj["Full"]
+    print("%44s %7.3f"%("Full , D3(BJ) WTMAD2, ", wtamd2))
+    print("%44s %7.3f"%("Full , D3(BJ) WTMAD2, ", wtamd2), file=fp)
+    
+    for m in predictred:
+        ypred = predictred[m]
+        mape_full_usingss = mean_absolute_percentage_error(        models_results["Full"].labels, ypred)
+        print("%44s %7.3f"%(m + " MAPE, ", mape_full_usingss))
+        print("%44s %7.3f"%(m + " MAPE, ", mape_full_usingss), file=fp)
+    
+    for method in ypredFull_allbasissets:
+        mape_full_allbasissets = mean_absolute_percentage_error(        models_results["Full"].labels, ypredFull_allbasissets[method])
+        print("%44s %7.3f"%("Full , " + method + " MAPE, ", mape_full_allbasissets))
+        print("%44s %7.3f"%("Full , " + method + " MAPE, ", mape_full_allbasissets), file=fp)
+    
+    mape_full_d3bj = mean_absolute_percentage_error(    models_results["Full"].labels, ypredFull_d3bj)
+    print("%44s %7.3f"%("Full , D3(BJ) MAPE, ", mape_full_d3bj))
+    print("%44s %7.3f"%("Full , D3(BJ) MAPE, ", mape_full_d3bj), file=fp)
+    
+    fp.close()
+    
+    
+    fp = open("modelscoefficients.csv", "w")    
+    for setname in list(supersetnames)+["Full"]:   
+        lr_model = models_store[setname].lr_model
+        lr_model_splitted = models_store[setname].lr_model_splitted
+        lr_custom_model = models_store[setname].lr_custom_model
+        lr_custom_model_splitted = models_store[setname].lr_custom_model_splitted
+        pls_model = models_store[setname].plsmodel
+        pls_model_splitted = models_store[setname].pls_model_splitted
+    
+        X, Y, features_names =         commonutils.build_XY_matrix (models_results[setname].features,                                     models_results[setname].labels)
+        # LR model
+        lr_test_and_rpint (lr_model, X, Y, setname + " LR ", fp)
+        lr_test_and_rpint (lr_model_splitted, X, Y, setname + " LR split ", fp)
+    
+        # Custom LR model
+        lr_test_and_rpint (lr_custom_model, X, Y, setname + " Custom LR ", fp)
+        lr_test_and_rpint (lr_custom_model_splitted, X, Y, setname + " Custom LR split ", fp)
+    
+        # PLS model
+        pls_test_and_rpint (pls_model, X, Y, setname + " PLS ", fp)
+        pls_test_and_rpint (pls_model_splitted, X, Y, setname + " PLS split ", fp)
+    
+    fp.close()
