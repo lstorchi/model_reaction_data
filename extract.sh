@@ -25,7 +25,25 @@ val16=$(grep "using LRRF split MAPE" modelsresults.csv | awk -F, '{print $3}')
 val17=$(grep "using Custom LRRF MAPE" modelsresults.csv | awk -F, '{print $3}')
 val18=$(grep "using Custom LRRF split MAPE" modelsresults.csv | awk -F, '{print $3}')
 
-echo $1 , $val1 , $val2 , $val3 , $val4 , $val5 , $val6 , $val7 , $val8 , $val9 , $val10 , $val11 , $val12 , $val13 , $val14 , $val15 , $val16 , $val17 , $val18
+echo $1 , \
+     $val1 , \
+     $val2 , \
+     $val3 , \
+     $val4 , \
+     $val5 , \
+     $val6 , \
+     $val7 , \
+     $val8 , \
+     $val9 , \
+     $val10 , \
+     $val11 , \
+     $val12 , \
+     $val13 , \
+     $val14 , \
+     $val15 , \
+     $val16 , \
+     $val17 , \
+     $val18
 
 # check if a dir exists and if not create it
 if [ ! -d $1 ]; then

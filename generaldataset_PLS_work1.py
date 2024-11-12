@@ -782,7 +782,8 @@ if __name__ == "__main__":
     predictred["Full , using LR Full split"] = \
                 models_store["Full"].lr_model_splitted.predict(X)
     if len(predictred["Full , using LR Full split"].shape) == 2:
-        predictred["Full , using LR Full split"] =         predictred["Full , using LR Full split"][:,0]
+        predictred["Full , using LR Full split"] =         \
+            predictred["Full , using LR Full split"][:,0]
     predictred["Full , using LR SS"] = ypredFull_lr
     predictred["Full , using LR SS split"] = ypredFull_lr_split
     
@@ -805,7 +806,9 @@ if __name__ == "__main__":
     predictred["Full , using LRRF split"] = y_pred_RF_LR_split
     predictred["Full , using Custom LRRF"] = y_pred_RF_LR_CUSTOM
     predictred["Full , using Custom LRRF split"] = y_pred_RF_LR_CUSTOM_split
-    
+
+    mapes_to_collect = {}
+
     for m in predictred:
         ypred = predictred[m]
         wtamd2_full_usingss = \
@@ -843,22 +846,28 @@ if __name__ == "__main__":
         if PRINTALSOINSTDOUT:
             print("%44s %7.3f"%(m + " MAPE, ", mape_full_usingss))
         print("%44s %7.3f"%(m + " MAPE, ", mape_full_usingss), file=fp)
-    
+        mapes_to_collect[m] = mape_full_usingss
+
     for method in ypredFull_allbasissets:
         mape_full_allbasissets = mean_absolute_percentage_error(  \
                 models_results["Full"].labels, ypredFull_allbasissets[method])
         if PRINTALSOINSTDOUT:
             print("%44s %7.3f"%("Full , " + method + " MAPE, ", mape_full_allbasissets))
         print("%44s %7.3f"%("Full , " + method + " MAPE, ", mape_full_allbasissets), file=fp)
-    
+        mapes_to_collect[method] = mape_full_allbasissets
+
     mape_full_d3bj = mean_absolute_percentage_error( \
             models_results["Full"].labels, ypredFull_d3bj)
     if PRINTALSOINSTDOUT:
         print("%44s %7.3f"%("Full , D3(BJ) MAPE, ", mape_full_d3bj))
     print("%44s %7.3f"%("Full , D3(BJ) MAPE, ", mape_full_d3bj), file=fp)
-    
+    mapes_to_collect["D3(BJ)"] = mape_full_d3bj
+
     fp.close()
-    
+
+    for m in mapes_to_collect:
+        mtop = m.replace("Full , using ", "")
+        print(" %40s , %7.3f"%(mtop, mapes_to_collect[m]))
     
     fp = open("modelscoefficients.csv", "w")    
     for setname in list(supersetnames)+["Full"]:   
