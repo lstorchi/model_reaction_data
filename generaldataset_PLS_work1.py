@@ -1,4 +1,5 @@
 import os
+import sys
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
 import commonutils
@@ -110,6 +111,12 @@ def pls_test_and_rpint (pls_model, X, Y, name, fp):
 
 if __name__ == "__main__":
 
+    if len(sys.argv) != 5 and len(sys.argv) != 3:
+        print("Usage: python3 runmodels.py " + \
+              "<selected_functional> <selected_basisset> " + \
+                "[<functionals> <basis_sets>]")
+        sys.exit(1)
+
     howmanydifs = 3
     allvalues_perset = pickle.load(open("./data/allvalues_perset.p", "rb"))
     methods = pickle.load(open("./data/methods.p", "rb"))
@@ -117,7 +124,8 @@ if __name__ == "__main__":
     functionals = pickle.load(open("./data/functionals.p", "rb"))
     basis_sets = pickle.load(open("./data/basis_sets.p", "rb"))
     supersetnames = pickle.load(open("./data/supersetnames.p", "rb"))
-    
+
+    print("Printing also to stdout: ", PRINTALSOINSTDOUT) 
     
     allfeatures = set()
     for setname in fullsetnames:
@@ -246,11 +254,22 @@ if __name__ == "__main__":
     
     #["PBE", "PBE0"]
     #["MINIX", "SVP", "TZVP", "QZVP"]
-    
-    selected_basisset = "QZVP"
-    selected_functional = "PBE0"
-    functionals = ["PBE0"]
-    basis_sets = ["MINIX"]
+
+    selected_basisset = ""
+    selected_functional = ""
+    functionals = []
+    basis_sets = []
+
+    selected_basisset = sys.argv[2].strip()
+    selected_functional = sys.argv[1].strip()
+    if len(sys.argv) == 5:
+        functionals = sys.argv[3].split(",")
+        basis_sets = sys.argv[4].split(",")
+
+    print("Selected functional: ", selected_functional)
+    print("Selected basis set: ", selected_basisset)
+    print("Functionals: ", functionals)
+    print("Basis sets: ", basis_sets)
     
     sep = "_"
     for setname in fullsetnames:
@@ -403,7 +422,7 @@ if __name__ == "__main__":
             print("%40s ,            PLS MAPE, %10.2f"%(setname,plsmape))    
             print("%40s ,      PLS Train MAPE, %10.2f"%(setname,plsmapetrain))
             print("%40s ,      PLS  Test MAPE, %10.2f"%(setname,plsmapetest))
-
+    
         print("%40s ,      PLS Train RMSE, %10.2f"%(setname,plsrmsetrain), file=fp)
         print("%40s ,      PLS  Test RMSE, %10.2f"%(setname,plsrmsetest), file=fp)
         print("%40s ,            PLS MAPE, %10.2f"%(setname,plsmape), file=fp)  
@@ -436,7 +455,7 @@ if __name__ == "__main__":
             print("%40s ,             LR MAPE, %10.2f"%(setname,lrrmape))
             print("%40s ,       LR Train MAPE, %10.2f"%(setname,lrrmaopetrain))
             print("%40s ,        LR Test MAPE, %10.2f"%(setname,lrrmaoetest))
-
+    
         print("%40s ,             LR RMSE, %10.2f"%(setname,lrrmse), file=fp)
         print("%40s ,       LR Train RMSE, %10.2f"%(setname,lrrmsetrain), file=fp)
         print("%40s ,        LR Test RMSE, %10.2f"%(setname,lrrmsetest), file=fp)
@@ -470,7 +489,7 @@ if __name__ == "__main__":
             print("%40s ,      Custom LR MAPE, %10.2f"%(setname,custom_lrrmape))
             print("%40s ,Custom LR Train MAPE, %10.2f"%(setname,custom_lrrmapetrain))
             print("%40s , Custom LR Test MAPE: %10.2f"%(setname,custom_lrrmapetest))
-
+    
         print("%40s ,      Custom LR RMSE, %10.2f"%(setname,custom_lrrmse), file=fp)
         print("%40s ,Custom LR Train RMSE, %10.2f"%(setname,custom_lrrmsetrain), file=fp)
         print("%40s , Custom LR Test RMSE, %10.2f"%(setname,custom_lrrmsetest), file=fp)
