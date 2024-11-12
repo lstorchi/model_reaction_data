@@ -40,8 +40,12 @@ import customlosslr as clr
 
 from commonutils import ModelsStore
 
-
 warnings.simplefilter("ignore")
+
+
+PRINTALSOINSTDOUT = False
+CUTDIFFPERCPLS = 0.9
+CUTDIFFPERCLR = 0.001
 
 ###############################################################
 
@@ -53,19 +57,20 @@ def lr_test_and_rpint (lr_model, X, Y, name, fp):
     y_pred_eq = lr_model.get_intercept() + np.dot(X, lr_model.get_coefficients().T)
     rmse_eq = mean_squared_error(Y, y_pred_eq, squared=False)
     diffperc = np.abs(rmse - rmse_eq) / rmse * 100.0
-    if diffperc > 0.0001:
-        print("%40s RMSE Diff %5.3f "%(name, diffperc), "%")
+    if diffperc > CUTDIFFPERCLR:
+        print("LR %40s RMSE Diff %5.3f "%(name, diffperc), "%")
         print("%40s RMSE Diff %5.3f "%(name, diffperc), "%", file=fp)
         exit(1)
 
-    print("%40s , %30s , %12.4f"%(name, "Intercept", lr_model.get_intercept()))
+
+    if PRINTALSOINSTDOUT:
+        print("%40s , %30s , %12.4f"%(name, "Intercept", lr_model.get_intercept()))
     print("%40s , %30s , %12.4f"%(name, "Intercept", lr_model.get_intercept()), file=fp)
     for i, f in enumerate(features_names):
         #print("  %15s %12.8e"%(f, lr_model.coef_.T[i]))
-        print("%40s , %30s , %12.4f"%(name, f, lr_model.get_coefficients().T[i]))
+        if PRINTALSOINSTDOUT:
+            print("%40s , %30s , %12.4f"%(name, f, lr_model.get_coefficients().T[i]))
         print("%40s , %30s , %12.4f"%(name, f, lr_model.get_coefficients().T[i]), file=fp)
-    #print("")
-    #print("", file=fp)
 
 ###############################################################
 
@@ -80,16 +85,24 @@ def pls_test_and_rpint (pls_model, X, Y, name, fp):
         y_pred_eq += pls_model._y_mean
         rmse_eq = mean_squared_error(Y, y_pred_eq, squared=False)
         diffperc = np.abs(rmse - rmse_eq) / rmse * 100.0
-        if diffperc > 0.0001:
-            print("%40s RMSE Diff %5.3f "%(name, diffperc), "%")
+        if diffperc > CUTDIFFPERCPLS:
+            print("PLS %40s RMSE Diff %5.3f "%(name, diffperc), "%")
             print("%40s RMSE Diff %5.3f "%(name, diffperc), "%", file=fp)
             exit(1)
             
         for i, f in enumerate(features_names):
-            print("%40s , %30s , %12.4f , %16.4f , %16.4f "%(                name, f,                 pls_model.coef_.T[i],                 pls_model._x_mean[i],                 pls_model._x_std[i]))
-            print("%40s , %30s , %12.4f , %16.4f , %16.4f "%(                name, f,                 pls_model.coef_.T[i],                 pls_model._x_mean[i],                 pls_model._x_std[i]), file=fp)
-        #print("")
-        #print("", file=fp)
+
+            if PRINTALSOINSTDOUT:
+                print("%40s , %30s , %12.4f , %16.4f , %16.4f "%(\
+                        name, f,\
+                        pls_model.coef_.T[i],\
+                        pls_model._x_mean[i],\
+                        pls_model._x_std[i]))
+            print("%40s , %30s , %12.4f , %16.4f , %16.4f "%(\
+                    name, f,\
+                    pls_model.coef_.T[i],\
+                    pls_model._x_mean[i],\
+                    pls_model._x_std[i]), file=fp)
 
 
 ###############################################################
@@ -141,11 +154,15 @@ if __name__ == "__main__":
             wtmad = None
             fulllist = list(supersetnames.keys()) + ["Full"]
             if setname in fulllist:
-                wtmadf = commonutils.wtmad2(models_results[setname].setnames,                                     models_results[setname].labels, y_pred)
+                wtmadf = commonutils.wtmad2(models_results[setname].\
+                        setnames,  \
+                        models_results[setname].labels, y_pred)
                 wtmad = wtmadf[setname]
                 models_results[setname].insidemethods_wtamd[methodname] = wtmad
     
-            rmse = mean_squared_error(models_results[setname].labels,                                 y_pred, squared=False)
+            rmse = mean_squared_error(models_results[setname].\
+                    labels, \
+                    y_pred, squared=False)
             models_results[setname].insidemethods_rmse[methodname] = rmse
             
             mape = mean_absolute_percentage_error(models_results[setname].labels, y_pred)
@@ -166,11 +183,14 @@ if __name__ == "__main__":
             wtmad = None            
             fulllist = list(supersetnames.keys()) + ["Full"]
             if setname in fulllist:
-                wtmadf = commonutils.wtmad2(models_results[setname].setnames,                                 models_results[setname].labels, y_pred)
+                wtmadf = commonutils.wtmad2(models_results[setname].\
+                        setnames,\
+                        models_results[setname].labels, y_pred)
                 wtmad = wtmadf[setname]
                 models_results[setname].funcional_basisset_wtamd[method] = wtmad
     
-            rmse = mean_squared_error(models_results[setname].labels,                                y_pred, squared=False)
+            rmse = mean_squared_error(models_results[setname].labels,\
+                    y_pred, squared=False)
             models_results[setname].funcional_basisset_rmse[method] = rmse
     
             mape = mean_absolute_percentage_error(models_results[setname].labels, y_pred)
@@ -213,13 +233,14 @@ if __name__ == "__main__":
                 "OEE" : "One_Electron_Energy",\
                 "TEE" : "Two_Electron_Energy",\
                 "NR" : "Nuclear_Repulsion"}
-    
     eq_featuresvalues_perset =  \
         commonutils.equation_parser_compiler(equations, \
                                             functionals, \
                                             basis_sets, \
                                             basicfeattouse,\
-                                            featuresvalues_perset)
+                                            featuresvalues_perset, \
+                                            warining=False)
+
     
     featuresvalues_perset = deepcopy(eq_featuresvalues_perset)
     
@@ -248,10 +269,13 @@ if __name__ == "__main__":
             for val in features:
                 for func in functionals:
                     for basis in basis_sets:
-                        if not(basis == selected_basisset and                            func == selected_functional):
+                        if not(basis == selected_basisset and \
+                                func == selected_functional):
                             if val.find(func + sep + basis) != -1:
                                 actualk = val 
-                                refk  = selected_functional + sep  + selected_basisset +                                 val.replace(func + sep + basis, "")
+                                refk  = selected_functional + sep  + \
+                                        selected_basisset + \
+                                        val.replace(func + sep + basis, "")
                                 newk = actualk + "_difftoref"
                                 if newk not in desciptors:
                                     desciptors[newk] = [features[actualk]-features[refk]]
@@ -278,12 +302,11 @@ if __name__ == "__main__":
     
     # remove constant values
     for setname in fullsetnames:
-        #print("Removing constant features for ", setname)
         for k in toremove:
-            #print("Constant fatures to remove: ", k)
             del models_results[setname].features[k]
     
     # force removing features Nuclear Repulsion difference
+    tormfeatname = set()
     print("Removing Nuclear Repulsion differences")
     for setname in fullsetnames: 
         toremove = []
@@ -292,8 +315,10 @@ if __name__ == "__main__":
                 toremove.append(k)
         for k in toremove:
             #print("Removing feature ", k)
+            tormfeatname.add(k)
             del models_results[setname].features[k]
     
+    print("Removed features: ", tormfeatname)
     setname = "Full"
     numoffeat = len(models_results[setname].features)
     print("Number of features ", numoffeat)
@@ -308,8 +333,11 @@ if __name__ == "__main__":
     for setname in list(supersetnames)+["Full"]:
         models_store[setname] = ModelsStore()
     
-        #print("Running PLS for dataset: ", setname)
-        X, Y, features_names =         commonutils.build_XY_matrix (models_results[setname].features,               models_results[setname].labels)
+        print("Running models for dataset: ", setname)
+        X, Y, features_names = \
+                commonutils.build_XY_matrix \
+                (models_results[setname].features, \
+                models_results[setname].labels)
         X_train, X_test, y_train, y_test = train_test_split(X, Y, 
                           test_size=0.20, random_state=42)
         setlist = models_results[setname].setnames  
@@ -317,7 +345,10 @@ if __name__ == "__main__":
         maxcomp = X.shape[1]
     
         # PLS
-        ncomps, rmses, r2s, wtmads, loormses, mapes =           models.pls_model (X, Y, supersetlist, setlist,           ncomp_start = 1, ncomp_max = maxcomp, split = False,          plot = False, loo=False)
+        ncomps, rmses, r2s, wtmads, loormses, mapes = \
+                models.pls_model (X, Y, supersetlist, setlist, \
+                ncomp_start = 1, ncomp_max = maxcomp, split = False, \
+                plot = False, loo=False)
         r2max_comps = np.argmax(r2s)+1
         rmsemin_comps = np.argmin(rmses)+1
         mapemin_comps = np.argmin(mapes)+1
@@ -335,13 +366,14 @@ if __name__ == "__main__":
         plswtmad = wtmadf[setname]
         cv = LeaveOneOut()
         model = PLSRegression(n_components=compstouse)
-        scores = cross_val_score(model, X, Y,             scoring='neg_mean_squared_error',             cv=cv, n_jobs=-1)
+        scores = cross_val_score(model, X, Y,\
+                scoring='neg_mean_squared_error', \
+                cv=cv, n_jobs=-1)
         plsloormse = np.sqrt(np.mean(np.absolute(scores)))
-        #print("              PLS R2: %10.2f"%plsr2)
-        #print("           PLS WTMAD: %10.2f"%plswtmad)
-        print("%40s ,            PLS RMSE, %10.2f"%(setname, plsrmse))
+        if PRINTALSOINSTDOUT:
+            print("%40s ,            PLS RMSE, %10.2f"%(setname, plsrmse))
+            print("%40s ,        PLS LOO RMSE, %10.2f"%(setname, plsloormse))
         print("%40s ,            PLS RMSE, %10.2f"%(setname, plsrmse), file=fp)
-        print("%40s ,        PLS LOO RMSE, %10.2f"%(setname, plsloormse))
         print("%40s ,        PLS LOO RMSE, %10.2f"%(setname, plsloormse), file=fp)
         best_mape = 0.0
         best_ncomp = 0
@@ -365,28 +397,31 @@ if __name__ == "__main__":
         y_pred = models_store[setname].pls_model_splitted.predict(X_train)
         plsrmsetrain = mean_squared_error(y_train, y_pred, squared=False)
         plsmapetrain = mean_absolute_percentage_error(y_train, y_pred)
-        print("%40s ,      PLS Train RMSE, %10.2f"%(setname,plsrmsetrain))
+        if PRINTALSOINSTDOUT:
+            print("%40s ,      PLS Train RMSE, %10.2f"%(setname,plsrmsetrain))
+            print("%40s ,      PLS  Test RMSE, %10.2f"%(setname,plsrmsetest))
+            print("%40s ,            PLS MAPE, %10.2f"%(setname,plsmape))    
+            print("%40s ,      PLS Train MAPE, %10.2f"%(setname,plsmapetrain))
+            print("%40s ,      PLS  Test MAPE, %10.2f"%(setname,plsmapetest))
+
         print("%40s ,      PLS Train RMSE, %10.2f"%(setname,plsrmsetrain), file=fp)
-        print("%40s ,      PLS  Test RMSE, %10.2f"%(setname,plsrmsetest))
         print("%40s ,      PLS  Test RMSE, %10.2f"%(setname,plsrmsetest), file=fp)
-        print("%40s ,            PLS MAPE, %10.2f"%(setname,plsmape))    
         print("%40s ,            PLS MAPE, %10.2f"%(setname,plsmape), file=fp)  
-        print("%40s ,      PLS Train MAPE, %10.2f"%(setname,plsmapetrain))
         print("%40s ,      PLS Train MAPE, %10.2f"%(setname,plsmapetrain), file=fp)
-        print("%40s ,      PLS  Test MAPE, %10.2f"%(setname,plsmapetest))
         print("%40s ,      PLS  Test MAPE, %10.2f"%(setname,plsmapetest), file=fp)
         #print()
     
         # Linear Regression
-        #lm = LinearRegression()
-        models_store[setname].lr_model = clr.custom_loss_lr (loss=clr.mean_average_error)
+        models_store[setname].lr_model = \
+                clr.custom_loss_lr (loss=clr.mean_average_error)
         models_store[setname].lr_model.fit(X, Y)
         y_pred_lr = models_store[setname].lr_model.predict(X)
         wtamd2 = commonutils.wtmad2(setlist, Y, y_pred_lr)
         wtmad_lr = wtamd2[setname]
         lrrmse = mean_squared_error(Y, y_pred_lr, squared=False)
         lrrmape = mean_absolute_percentage_error(Y, y_pred_lr)
-        models_store[setname].lr_model_splitted  = clr.custom_loss_lr (loss=clr.mean_average_error)
+        models_store[setname].lr_model_splitted = \
+                clr.custom_loss_lr (loss=clr.mean_average_error)
         models_store[setname].lr_model_splitted.fit(X_train, y_train)
         y_pred_lr = models_store[setname].lr_model_splitted.predict(X_test)
         lrrmsetest = mean_squared_error(y_test, y_pred_lr, squared=False)
@@ -394,31 +429,33 @@ if __name__ == "__main__":
         y_pred_lr = models_store[setname].lr_model_splitted.predict(X_train)
         lrrmsetrain = mean_squared_error(y_train, y_pred_lr, squared=False)
         lrrmaopetrain = mean_absolute_percentage_error(y_train, y_pred_lr)
-        #print("            LR WTMAD: %10.2f"%wtmad_lr)
-        print("%40s ,             LR RMSE, %10.2f"%(setname,lrrmse))
+        if PRINTALSOINSTDOUT:
+            print("%40s ,             LR RMSE, %10.2f"%(setname,lrrmse))
+            print("%40s ,       LR Train RMSE, %10.2f"%(setname,lrrmsetrain))
+            print("%40s ,        LR Test RMSE, %10.2f"%(setname,lrrmsetest))
+            print("%40s ,             LR MAPE, %10.2f"%(setname,lrrmape))
+            print("%40s ,       LR Train MAPE, %10.2f"%(setname,lrrmaopetrain))
+            print("%40s ,        LR Test MAPE, %10.2f"%(setname,lrrmaoetest))
+
         print("%40s ,             LR RMSE, %10.2f"%(setname,lrrmse), file=fp)
-        #print("         LR LOO RMSE: %10.2f"%loolrrmse)
-        print("%40s ,       LR Train RMSE, %10.2f"%(setname,lrrmsetrain))
         print("%40s ,       LR Train RMSE, %10.2f"%(setname,lrrmsetrain), file=fp)
-        print("%40s ,        LR Test RMSE, %10.2f"%(setname,lrrmsetest))
         print("%40s ,        LR Test RMSE, %10.2f"%(setname,lrrmsetest), file=fp)
-        print("%40s ,             LR MAPE, %10.2f"%(setname,lrrmape))
         print("%40s ,             LR MAPE, %10.2f"%(setname,lrrmape), file=fp)
-        print("%40s ,       LR Train MAPE, %10.2f"%(setname,lrrmaopetrain))
         print("%40s ,       LR Train MAPE, %10.2f"%(setname,lrrmaopetrain), file=fp)
-        print("%40s ,        LR Test MAPE, %10.2f"%(setname,lrrmaoetest))
         print("%40s ,        LR Test MAPE, %10.2f"%(setname,lrrmaoetest), file=fp)
         #print()
     
         # Custom Loss Linear Regression
-        models_store[setname].lr_custom_model = clr.custom_loss_lr (loss=clr.mean_absolute_percentage_error)
+        models_store[setname].lr_custom_model =\
+                clr.custom_loss_lr (loss=clr.mean_absolute_percentage_error)
         models_store[setname].lr_custom_model.fit(X, Y)
         y_pred_custom_lr = models_store[setname].lr_custom_model.predict(X)
         wtamd2 = commonutils.wtmad2(setlist, Y, y_pred_custom_lr)
         wtmad_custom_lr = wtamd2[setname]
         custom_lrrmse = mean_squared_error(Y, y_pred_custom_lr, squared=False)
         custom_lrrmape = mean_absolute_percentage_error(Y, y_pred_custom_lr)
-        models_store[setname].lr_custom_model_splitted  = clr.custom_loss_lr (loss=clr.mean_absolute_percentage_error)
+        models_store[setname].lr_custom_model_splitted  = \
+                clr.custom_loss_lr (loss=clr.mean_absolute_percentage_error)
         models_store[setname].lr_custom_model_splitted.fit(X_train, y_train)
         y_pred_custom_lr = models_store[setname].lr_custom_model_splitted.predict(X_test)
         custom_lrrmsetest = mean_squared_error(y_test, y_pred_custom_lr, squared=False)
@@ -426,24 +463,23 @@ if __name__ == "__main__":
         y_pred_custom_lr = models_store[setname].lr_custom_model_splitted.predict(X_train)
         custom_lrrmsetrain = mean_squared_error(y_train, y_pred_custom_lr, squared=False)
         custom_lrrmapetrain = mean_absolute_percentage_error(y_train, y_pred_custom_lr)
-        #print("     Custom LR WTMAD: %10.2f"%wtmad_custom_lr)
-        print("%40s ,      Custom LR RMSE, %10.2f"%(setname,custom_lrrmse))
+        if PRINTALSOINSTDOUT:
+            print("%40s ,      Custom LR RMSE, %10.2f"%(setname,custom_lrrmse))
+            print("%40s ,Custom LR Train RMSE, %10.2f"%(setname,custom_lrrmsetrain))
+            print("%40s , Custom LR Test RMSE, %10.2f"%(setname,custom_lrrmsetest))
+            print("%40s ,      Custom LR MAPE, %10.2f"%(setname,custom_lrrmape))
+            print("%40s ,Custom LR Train MAPE, %10.2f"%(setname,custom_lrrmapetrain))
+            print("%40s , Custom LR Test MAPE: %10.2f"%(setname,custom_lrrmapetest))
+
         print("%40s ,      Custom LR RMSE, %10.2f"%(setname,custom_lrrmse), file=fp)
-        #print("  Custom LR LOO RMSE: %10.2f"%loocustom_lrrmse)
-        print("%40s ,Custom LR Train RMSE, %10.2f"%(setname,custom_lrrmsetrain))
         print("%40s ,Custom LR Train RMSE, %10.2f"%(setname,custom_lrrmsetrain), file=fp)
-        print("%40s , Custom LR Test RMSE, %10.2f"%(setname,custom_lrrmsetest))
         print("%40s , Custom LR Test RMSE, %10.2f"%(setname,custom_lrrmsetest), file=fp)
-        print("%40s ,      Custom LR MAPE, %10.2f"%(setname,custom_lrrmape))
         print("%40s ,      Custom LR MAPE, %10.2f"%(setname,custom_lrrmape), file=fp)
-        print("%40s ,Custom LR Train MAPE, %10.2f"%(setname,custom_lrrmapetrain))
         print("%40s ,Custom LR Train MAPE, %10.2f"%(setname,custom_lrrmapetrain), file=fp)
-        print("%40s , Custom LR Test MAPE: %10.2f"%(setname,custom_lrrmapetest))
         print("%40s , Custom LR Test MAPE: %10.2f"%(setname,custom_lrrmapetest), file=fp)
     
     fp.close()
               
-    
     setname = None
     ssetname = "Full"
     pls_model_full = models_store[ssetname].plsmodel
@@ -478,7 +514,10 @@ if __name__ == "__main__":
         lr_custom_model_ssetname = models_store[ssetname].lr_custom_model
         lr_custom_model_ssetname_splitted = models_store[ssetname].lr_custom_model_splitted
     
-        X, Y, features_names =         commonutils.build_XY_matrix (models_results[ssetname].features,                                     models_results[ssetname].labels)
+        X, Y, features_names = \
+                commonutils.build_XY_matrix (\
+                models_results[ssetname].features,\
+                models_results[ssetname].labels)
         setlist = models_results[ssetname].setnames
         setnamesFull.extend(setlist)
     
@@ -488,14 +527,16 @@ if __name__ == "__main__":
             y_pred = y_pred[:,0]
         ypredFull_pls.extend(y_pred)
         mape = mean_absolute_percentage_error(Y, y_pred)
-        print(" %60s MAPE , %7.3f"%(ssetname+" , SS PLS", mape))
+        if PRINTALSOINSTDOUT:
+            print(" %60s MAPE , %7.3f"%(ssetname+" , SS PLS", mape))
         print(" %60s MAPE , %7.3f"%(ssetname+" , SS PLS", mape), file=fp)
         y_pred = pls_model_ssetname_splitted.predict(X)
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         ypredFull_pls_split.extend(y_pred)
         mape = mean_absolute_percentage_error(Y, y_pred)
-        print(" %60s MAPE , %7.3f"%(ssetname+" , SS PLS split", mape))
+        if PRINTALSOINSTDOUT:
+            print(" %60s MAPE , %7.3f"%(ssetname+" , SS PLS split", mape))
         print(" %60s MAPE , %7.3f"%(ssetname+" , SS PLS split", mape), file=fp)
     
         # SuperSet LR
@@ -504,14 +545,16 @@ if __name__ == "__main__":
             y_pred = y_pred[:,0]
         ypredFull_lr.extend(y_pred)
         mape = mean_absolute_percentage_error(Y, y_pred)
-        print(" %60s MAPE , %7.3f"%(ssetname+" , SS LR", mape))
+        if PRINTALSOINSTDOUT:
+            print(" %60s MAPE , %7.3f"%(ssetname+" , SS LR", mape))
         print(" %60s MAPE , %7.3f"%(ssetname+" , SS LR", mape), file=fp)
         y_pred = lr_model_ssetname_splitted.predict(X)
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         ypredFull_lr_split.extend(y_pred)
         mape = mean_absolute_percentage_error(Y, y_pred)
-        print(" %60s MAPE , %7.3f"%(ssetname+" , SS LR split", mape))
+        if PRINTALSOINSTDOUT:
+            print(" %60s MAPE , %7.3f"%(ssetname+" , SS LR split", mape))
         print(" %60s MAPE , %7.3f"%(ssetname+" , SS LR split", mape), file=fp)
         
         # SuperSet Custom LR
@@ -520,14 +563,16 @@ if __name__ == "__main__":
             y_pred = y_pred[:,0]
         ypredFull_lr_custom.extend(y_pred)
         mape = mean_absolute_percentage_error(Y, y_pred)
-        print(" %60s MAPE , %7.3f"%(ssetname+" , SS Custom LR", mape))
+        if PRINTALSOINSTDOUT:
+            print(" %60s MAPE , %7.3f"%(ssetname+" , SS Custom LR", mape))
         print(" %60s MAPE , %7.3f"%(ssetname+" , SS Custom LR", mape), file=fp)
         y_pred = lr_custom_model_ssetname_splitted.predict(X)
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         ypredFull_lr_custom_split.extend(y_pred)
         mape = mean_absolute_percentage_error(Y, y_pred)
-        print(" %60s MAPE , %7.3f"%(ssetname+" , SS Custom LR split", mape))
+        if PRINTALSOINSTDOUT:
+            print(" %60s MAPE , %7.3f"%(ssetname+" , SS Custom LR split", mape))
         print(" %60s MAPE , %7.3f"%(ssetname+" , SS Custom LR split", mape), file=fp)
     
         # Full PLS
@@ -535,13 +580,15 @@ if __name__ == "__main__":
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         mape = mean_absolute_percentage_error(Y, y_pred)
-        print(" %60s MAPE , %7.3f"%(ssetname+" , Full PLS", mape))
+        if PRINTALSOINSTDOUT:
+            print(" %60s MAPE , %7.3f"%(ssetname+" , Full PLS", mape))
         print(" %60s MAPE , %7.3f"%(ssetname+" , Full PLS", mape), file=fp)
         y_pred = pls_model_full_splitted.predict(X)
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         mape = mean_absolute_percentage_error(Y, y_pred)
-        print(" %60s MAPE , %7.3f"%(ssetname+" , Full PLS split", mape))
+        if PRINTALSOINSTDOUT:
+            print(" %60s MAPE , %7.3f"%(ssetname+" , Full PLS split", mape))
         print(" %60s MAPE , %7.3f"%(ssetname+" , Full PLS split", mape), file=fp)
     
         # Full LR
@@ -549,13 +596,15 @@ if __name__ == "__main__":
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         mape = mean_absolute_percentage_error(Y, y_pred)
-        print(" %60s MAPE , %7.3f"%(ssetname+" , Full LR", mape))
+        if PRINTALSOINSTDOUT:
+            print(" %60s MAPE , %7.3f"%(ssetname+" , Full LR", mape))
         print(" %60s MAPE , %7.3f"%(ssetname+" , Full LR", mape), file=fp)
         ypred = lr_model_full_splitted.predict(X)
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         mape = mean_absolute_percentage_error(Y, y_pred)
-        print(" %60s MAPE , %7.3f"%(ssetname+" , Full LR split", mape))
+        if PRINTALSOINSTDOUT:
+            print(" %60s MAPE , %7.3f"%(ssetname+" , Full LR split", mape))
         print(" %60s MAPE , %7.3f"%(ssetname+" , Full LR split", mape), file=fp)
     
         # Full Custom LR
@@ -563,17 +612,20 @@ if __name__ == "__main__":
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         mape = mean_absolute_percentage_error(Y, y_pred)
-        print(" %60s MAPE , %7.3f"%(ssetname+" , Full Custom LR", mape))
+        if PRINTALSOINSTDOUT:
+            print(" %60s MAPE , %7.3f"%(ssetname+" , Full Custom LR", mape))
         print(" %60s MAPE , %7.3f"%(ssetname+" , Full Custom LR", mape), file=fp)
         y_pred = lr_custom_model_full_splitted.predict(X)
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         mape = mean_absolute_percentage_error(Y, y_pred)
-        print(" %60s MAPE , %7.3f"%(ssetname+" , Full Custom LR split", mape))
+        if PRINTALSOINSTDOUT:
+            print(" %60s MAPE , %7.3f"%(ssetname+" , Full Custom LR split", mape))
         print(" %60s MAPE , %7.3f"%(ssetname+" , Full Custom LR split", mape), file=fp)
     
         mape = models_results[ssetname].insidemethods_mape["D3(BJ)"] 
-        print(" %60s MAPE , %7.3f"%(ssetname+" , D3(BJ)", mape))
+        if PRINTALSOINSTDOUT:
+            print(" %60s MAPE , %7.3f"%(ssetname+" , D3(BJ)", mape))
         print(" %60s MAPE , %7.3f"%(ssetname+" , D3(BJ)", mape), file=fp)
         ypredFull_d3bj.extend(models_results[ssetname].insidemethods_ypred["D3(BJ)"])
     
@@ -581,8 +633,13 @@ if __name__ == "__main__":
             if method.find(selected_functional) != -1:
                 y_pred = models_results[ssetname].funcional_basisset_ypred[method]
                 ypredFull_allbasissets[method].extend(y_pred)
-                print(" %60s MAPE , %7.3f"%(ssetname+' , '+method,                                         mean_absolute_percentage_error(Y, y_pred)))
-                print(" %60s MAPE , %7.3f"%(ssetname+' , '+method,                                         mean_absolute_percentage_error(Y, y_pred)), file=fp)
+                if PRINTALSOINSTDOUT:
+                    print(" %60s MAPE , %7.3f"%(ssetname+' , ' \
+                        +method,\
+                        mean_absolute_percentage_error(Y, y_pred)))
+                print(" %60s MAPE , %7.3f"%(ssetname+' , '+  \
+                        method,\
+                        mean_absolute_percentage_error(Y, y_pred)), file=fp)
     fp.close()
     
     
@@ -598,8 +655,12 @@ if __name__ == "__main__":
             for entry in featuresvalues_perset[setname]:
                 classes.append(supersetnameslist.index(setname))
     
-    X, Y, features_names =     commonutils.build_XY_matrix (models_results['Full'].features,                                     models_results['Full'].labels)
-    X_train, X_test, y_train, y_test = train_test_split(    X, classes, test_size=0.20, random_state=41)
+    X, Y, features_names =\
+            commonutils.build_XY_matrix (\
+            models_results['Full'].features,\
+            models_results['Full'].labels)
+    X_train, X_test, y_train, y_test = train_test_split(\
+            X, classes, test_size=0.20, random_state=41)
     accuracys = []
     numoftrees = []
     for ntrees in range(10, 200, 10):
@@ -623,7 +684,6 @@ if __name__ == "__main__":
     print("   Test accuracy: %5.2f"%(testaccuracy))
     print("Overall accuracy: %5.2f"%(overallaccuracy))
     
-    
     assert(len(ypredFull_pls) == len(ypredFull_pls_split))
     assert(len(ypredFull_pls) == len(ypredFull_lr))
     assert(len(ypredFull_pls) == len(ypredFull_lr_split)) 
@@ -635,7 +695,10 @@ if __name__ == "__main__":
     for method in ypredFull_allbasissets:
         assert(len(ypredFull_pls) == len(ypredFull_allbasissets[method]))
     
-    X, Y, features_names =     commonutils.build_XY_matrix (models_results['Full'].features,                                     models_results['Full'].labels)
+    X, Y, features_names =\
+            commonutils.build_XY_matrix (models_results['Full'].\
+            features,\
+            models_results['Full'].labels)
     setlist = models_results['Full'].setnames
     
     y_pred_RF_PLS = []
@@ -648,7 +711,6 @@ if __name__ == "__main__":
         c = rf.predict([X[i]])
         supersetrname= supersetnameslist[c[0]]
         #print("X: ", i, " Y: ", Y[i], " C: ", c, " ==> ", supersetnameslist[c[0]])
-        
         y = models_store[supersetrname].plsmodel.predict([X[i]])
         if len(y.shape) == 2:
             y = y[:,0]
@@ -727,35 +789,53 @@ if __name__ == "__main__":
     
     for m in predictred:
         ypred = predictred[m]
-        wtamd2_full_usingss =         commonutils.wtmad2(setnamesFull,                         ypred,                         models_results["Full"].labels)
+        wtamd2_full_usingss = \
+                commonutils.wtmad2(setnamesFull,\
+                ypred,\
+                models_results["Full"].labels)
         wtamd2 = wtamd2_full_usingss["Full"]
-        print("%44s %7.3f"%(m + " WTMAD2, ", wtamd2))
+        if PRINTALSOINSTDOUT:
+            print("%44s %7.3f"%(m + " WTMAD2, ", wtamd2))
         print("%44s %7.3f"%(m + " WTMAD2, ", wtamd2), file=fp)
     
     for method in ypredFull_allbasissets:
-        wtamd2_full_allbasissets =         commonutils.wtmad2(setnamesFull,                             ypredFull_allbasissets[method],                             models_results["Full"].labels)
+        wtamd2_full_allbasissets = \
+                commonutils.wtmad2(setnamesFull, \
+                ypredFull_allbasissets[method], \
+                models_results["Full"].labels)
         wtamd2 = wtamd2_full_allbasissets["Full"]
-        print("%44s %7.3f"%("Full , "+ method + " WTMAD2, ", wtamd2))
+        if PRINTALSOINSTDOUT:
+            print("%44s %7.3f"%("Full , "+ method + " WTMAD2, ", wtamd2))
         print("%44s %7.3f"%("Full , "+ method + " WTMAD2, ", wtamd2), file=fp)
     
-    wtamd2_full_d3bj =     commonutils.wtmad2(setnamesFull,                         ypredFull_d3bj,                         models_results["Full"].labels)
+    wtamd2_full_d3bj = \
+            commonutils.wtmad2(setnamesFull, \
+            ypredFull_d3bj,  \
+            models_results["Full"].labels)
     wtamd2 = wtamd2_full_d3bj["Full"]
-    print("%44s %7.3f"%("Full , D3(BJ) WTMAD2, ", wtamd2))
+    if PRINTALSOINSTDOUT:
+        print("%44s %7.3f"%("Full , D3(BJ) WTMAD2, ", wtamd2))
     print("%44s %7.3f"%("Full , D3(BJ) WTMAD2, ", wtamd2), file=fp)
     
     for m in predictred:
         ypred = predictred[m]
-        mape_full_usingss = mean_absolute_percentage_error(        models_results["Full"].labels, ypred)
-        print("%44s %7.3f"%(m + " MAPE, ", mape_full_usingss))
+        mape_full_usingss = mean_absolute_percentage_error( \
+                models_results["Full"].labels, ypred)
+        if PRINTALSOINSTDOUT:
+            print("%44s %7.3f"%(m + " MAPE, ", mape_full_usingss))
         print("%44s %7.3f"%(m + " MAPE, ", mape_full_usingss), file=fp)
     
     for method in ypredFull_allbasissets:
-        mape_full_allbasissets = mean_absolute_percentage_error(        models_results["Full"].labels, ypredFull_allbasissets[method])
-        print("%44s %7.3f"%("Full , " + method + " MAPE, ", mape_full_allbasissets))
+        mape_full_allbasissets = mean_absolute_percentage_error(  \
+                models_results["Full"].labels, ypredFull_allbasissets[method])
+        if PRINTALSOINSTDOUT:
+            print("%44s %7.3f"%("Full , " + method + " MAPE, ", mape_full_allbasissets))
         print("%44s %7.3f"%("Full , " + method + " MAPE, ", mape_full_allbasissets), file=fp)
     
-    mape_full_d3bj = mean_absolute_percentage_error(    models_results["Full"].labels, ypredFull_d3bj)
-    print("%44s %7.3f"%("Full , D3(BJ) MAPE, ", mape_full_d3bj))
+    mape_full_d3bj = mean_absolute_percentage_error( \
+            models_results["Full"].labels, ypredFull_d3bj)
+    if PRINTALSOINSTDOUT:
+        print("%44s %7.3f"%("Full , D3(BJ) MAPE, ", mape_full_d3bj))
     print("%44s %7.3f"%("Full , D3(BJ) MAPE, ", mape_full_d3bj), file=fp)
     
     fp.close()
@@ -770,7 +850,10 @@ if __name__ == "__main__":
         pls_model = models_store[setname].plsmodel
         pls_model_splitted = models_store[setname].pls_model_splitted
     
-        X, Y, features_names =         commonutils.build_XY_matrix (models_results[setname].features,                                     models_results[setname].labels)
+        X, Y, features_names = \
+                commonutils.build_XY_matrix (models_results[setname].\
+                features, \
+                models_results[setname].labels)
         # LR model
         lr_test_and_rpint (lr_model, X, Y, setname + " LR ", fp)
         lr_test_and_rpint (lr_model_splitted, X, Y, setname + " LR split ", fp)

@@ -47,7 +47,7 @@ class ModelsStore:
 ####################################################################################################
 
 def equation_parser_compiler (equations, functionals, basis_sets, basicfeattouse, \
-                              featuresvalues_perset):
+                              featuresvalues_perset, warining=True):
     eq_featuresvalues_perset = {}
 
     for setname in featuresvalues_perset:
@@ -99,13 +99,15 @@ def equation_parser_compiler (equations, functionals, basis_sets, basicfeattouse
                                 and (tokval != "sum") and (tokval != "divide"):
                                 variables.append(tokval)
                                 if not (tokval in dtouseforequation.columns):
-                                    print("Warning ", tokval, \
+                                    if warining:
+                                        print("Warning ", tokval, \
                                           " not in or undefined function ", \
                                             func, basis)
                     exettherest = True
                     for var in variables:
                         if not (var in dtouseforequation.columns):
-                            print("Warning ", var, 
+                            if warining:
+                                print("Warning ", var, 
                                   " not in or undefined function ", func, basis)
                             exettherest = False
 
