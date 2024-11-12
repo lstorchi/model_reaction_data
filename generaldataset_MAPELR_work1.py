@@ -409,7 +409,7 @@ if __name__ == "__main__":
     assert(len(ypredFull_lr) == len(setnamesFull))
     assert(len(ypredFull_lr) == len(ypredFull_d3bj))
     for method in ypredFull_allbasissets:
-        assert(len(ypredFull_pls) == len(ypredFull_allbasissets[method]))
+        assert(len(ypredFull_lr) == len(ypredFull_allbasissets[method]))
     
     X, Y, features_names =\
             commonutils.build_XY_matrix (models_results['Full'].\
