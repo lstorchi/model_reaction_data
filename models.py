@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.inspection import permutation_importance
-from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_percentage_error
+from sklearn.metrics import root_mean_squared_error, r2_score, mean_absolute_percentage_error
 from sklearn.model_selection import (LeaveOneOut, cross_val_predict,
                                      cross_val_score, train_test_split)
 
@@ -180,7 +180,7 @@ def nn_model(perc_split, X, scalex, Y, scaley, supersetlist, setlist, \
                     wtmad = commonutils.wtmad2(setlist, Y_rescaled, y_pred_rescaled)
                     wtmad = wtmad["Full"]
                     mape = mean_absolute_percentage_error(Y, y_pred_rescaled)
-                    rmse = mean_squared_error(Y_rescaled        , y_pred_rescaled, squared=False)
+                    rmse = root_mean_squared_error(Y_rescaled        , y_pred_rescaled)
 
                     mapes.append(mape)
                     wtmads.append(wtmad)
@@ -348,10 +348,8 @@ def rf_model (perc_split, X, Y, search = True, in_n_estimators = [50, 100, 300, 
                                 y_pred = model.predict(X_train)
                                 y_pred_test = model.predict(X_test)
 
-                                train_rmse = mean_squared_error(y_train, y_pred, \
-                                                               squared=False)
-                                test_rmse = mean_squared_error(y_test, y_pred_test, \
-                                                              squared=False)
+                                train_rmse = root_mean_squared_error(y_train, y_pred)
+                                test_rmse = root_mean_squared_error(y_test, y_pred_test)
                                 rmses_train.append(train_rmse)
                                 rmses_test.append(test_rmse)
 
@@ -473,8 +471,8 @@ def rf_model (perc_split, X, Y, search = True, in_n_estimators = [50, 100, 300, 
         y_pred = model.predict(X_train)
         y_pred_test = model.predict(X_test)
         
-        train_rmse = mean_squared_error(y_train, y_pred, squared=False)
-        test_rmse = mean_squared_error(y_test, y_pred_test, squared=False)
+        train_rmse = root_mean_squared_error(y_train, y_pred)
+        test_rmse = root_mean_squared_error(y_test, y_pred_test)
         r2_train = r2_score(y_train, y_pred)
         r2_test = r2_score(y_test, y_pred_test)
       

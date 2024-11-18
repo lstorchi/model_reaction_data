@@ -5,7 +5,7 @@ import pickle
 
 from copy import deepcopy
 from commonutils import ModelResults
-from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error
+from sklearn.metrics import root_mean_squared_error, mean_absolute_percentage_error
 
 PRINTALSOINSTDOUT = False
 CUTDIFFPERCPLS = 0.9
@@ -17,9 +17,9 @@ def lr_test_and_rpint (lr_model, X, Y, name, features_names, fp):
 
     #y_pred_eq = lr_model.intercept_ + np.dot(X, lr_model.coef_.T)
     y_pred = lr_model.predict(X)
-    rmse = mean_squared_error(Y, y_pred, squared=False)
+    rmse = root_mean_squared_error(Y, y_pred)
     y_pred_eq = lr_model.get_intercept() + np.dot(X, lr_model.get_coefficients().T)
-    rmse_eq = mean_squared_error(Y, y_pred_eq, squared=False)
+    rmse_eq = root_mean_squared_error(Y, y_pred_eq)
     diffperc = np.abs(rmse - rmse_eq) / rmse * 100.0
     if diffperc > CUTDIFFPERCLR:
         print("LR %40s RMSE Diff %5.3f "%(name, diffperc), "%")
@@ -41,13 +41,13 @@ def lr_test_and_rpint (lr_model, X, Y, name, features_names, fp):
 def pls_test_and_rpint (pls_model, X, Y, name, features_names, fp):
     
         y_pred = pls_model.predict(X)
-        rmse = mean_squared_error(Y, y_pred, squared=False)
+        rmse = root_mean_squared_error(Y, y_pred)
         X_e = X.copy()
         X_e -= pls_model._x_mean
         X_e /= pls_model._x_std
         y_pred_eq = np.dot(X_e, pls_model.coef_.T)
         y_pred_eq += pls_model._y_mean
-        rmse_eq = mean_squared_error(Y, y_pred_eq, squared=False)
+        rmse_eq = root_mean_squared_error(Y, y_pred_eq)
         diffperc = np.abs(rmse - rmse_eq) / rmse * 100.0
         if diffperc > CUTDIFFPERCPLS:
             print("PLS %40s RMSE Diff %5.3f "%(name, diffperc), "%")
@@ -124,9 +124,9 @@ def readdata ():
                 wtmad = wtmadf[setname]
                 models_results[setname].insidemethods_wtamd[methodname] = wtmad
     
-            rmse = mean_squared_error(models_results[setname].\
+            rmse = root_mean_squared_error(models_results[setname].\
                     labels, \
-                    y_pred, squared=False)
+                    y_pred)
             models_results[setname].insidemethods_rmse[methodname] = rmse
             
             mape = mean_absolute_percentage_error(models_results[setname].labels, y_pred)
@@ -153,8 +153,8 @@ def readdata ():
                 wtmad = wtmadf[setname]
                 models_results[setname].funcional_basisset_wtamd[method] = wtmad
     
-            rmse = mean_squared_error(models_results[setname].labels,\
-                    y_pred, squared=False)
+            rmse = root_mean_squared_error(models_results[setname].labels,\
+                    y_pred)
             models_results[setname].funcional_basisset_rmse[method] = rmse
     
             mape = mean_absolute_percentage_error(models_results[setname].labels, y_pred)

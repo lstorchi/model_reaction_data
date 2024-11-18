@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 
 import matplotlib.pyplot as plt
-from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_percentage_error
+from sklearn.metrics import root_mean_squared_error, r2_score, mean_absolute_percentage_error
 from sklearn.inspection import permutation_importance
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
@@ -41,7 +41,7 @@ import customlosslr as clr
 
 from commonutils import ModelsStore
 
-warnings.simplefilter("ignore")
+#warnings.simplefilter("ignore")
 
 from commonfuncsforcli import *
 
@@ -174,18 +174,16 @@ if __name__ == "__main__":
                 clr.custom_loss_lr (loss=clr.mean_average_error)
         models_store[setname].lr_model.fit(X, Y)
         y_pred_lr = models_store[setname].lr_model.predict(X)
-        wtamd2 = commonutils.wtmad2(setlist, Y, y_pred_lr)
-        wtmad_lr = wtamd2[setname]
-        lrrmse = mean_squared_error(Y, y_pred_lr, squared=False)
+        lrrmse = root_mean_squared_error(Y, y_pred_lr)
         lrrmape = mean_absolute_percentage_error(Y, y_pred_lr)
         models_store[setname].lr_model_splitted = \
                 clr.custom_loss_lr (loss=clr.mean_average_error)
         models_store[setname].lr_model_splitted.fit(X_train, y_train)
         y_pred_lr = models_store[setname].lr_model_splitted.predict(X_test)
-        lrrmsetest = mean_squared_error(y_test, y_pred_lr, squared=False)
+        lrrmsetest = root_mean_squared_error(y_test, y_pred_lr)
         lrrmaoetest = mean_absolute_percentage_error(y_test, y_pred_lr)
         y_pred_lr = models_store[setname].lr_model_splitted.predict(X_train)
-        lrrmsetrain = mean_squared_error(y_train, y_pred_lr, squared=False)
+        lrrmsetrain = root_mean_squared_error(y_train, y_pred_lr)
         lrrmaopetrain = mean_absolute_percentage_error(y_train, y_pred_lr)
         if PRINTALSOINSTDOUT:
             print("%40s ,             LR RMSE, %10.2f"%(setname,lrrmse))
@@ -205,21 +203,20 @@ if __name__ == "__main__":
     
         # Custom Loss Linear Regression
         models_store[setname].lr_custom_model =\
-                clr.custom_loss_lr (loss=clr.mean_absolute_percentage_error)
+                clr.custom_loss_lr (loss=clr.mean_absolute_percentage_error, \
+                                   maxiter=5000)
         models_store[setname].lr_custom_model.fit(X, Y)
         y_pred_custom_lr = models_store[setname].lr_custom_model.predict(X)
-        wtamd2 = commonutils.wtmad2(setlist, Y, y_pred_custom_lr)
-        wtmad_custom_lr = wtamd2[setname]
-        custom_lrrmse = mean_squared_error(Y, y_pred_custom_lr, squared=False)
+        custom_lrrmse = root_mean_squared_error(Y, y_pred_custom_lr)
         custom_lrrmape = mean_absolute_percentage_error(Y, y_pred_custom_lr)
         models_store[setname].lr_custom_model_splitted  = \
                 clr.custom_loss_lr (loss=clr.mean_absolute_percentage_error)
         models_store[setname].lr_custom_model_splitted.fit(X_train, y_train)
         y_pred_custom_lr = models_store[setname].lr_custom_model_splitted.predict(X_test)
-        custom_lrrmsetest = mean_squared_error(y_test, y_pred_custom_lr, squared=False)
+        custom_lrrmsetest = root_mean_squared_error(y_test, y_pred_custom_lr)
         custom_lrrmapetest = mean_absolute_percentage_error(y_test, y_pred_custom_lr)
         y_pred_custom_lr = models_store[setname].lr_custom_model_splitted.predict(X_train)
-        custom_lrrmsetrain = mean_squared_error(y_train, y_pred_custom_lr, squared=False)
+        custom_lrrmsetrain = root_mean_squared_error(y_train, y_pred_custom_lr)
         custom_lrrmapetrain = mean_absolute_percentage_error(y_train, y_pred_custom_lr)
         if PRINTALSOINSTDOUT:
             print("%40s ,      Custom LR RMSE, %10.2f"%(setname,custom_lrrmse))
@@ -237,7 +234,7 @@ if __name__ == "__main__":
         print("%40s , Custom LR Test MAPE: %10.2f"%(setname,custom_lrrmapetest), file=fp)
     
     fp.close()
-              
+
     setname = None
     ssetname = "Full"
     lr_model_full = models_store[ssetname].lr_model
@@ -359,8 +356,7 @@ if __name__ == "__main__":
                         method,\
                         mean_absolute_percentage_error(Y, y_pred)), file=fp)
     fp.close()
-    
-    
+     
     basissets_touse = set(basis_sets + [selected_basisset])
     functional_to_use = set(functionals + [selected_functional])
     
