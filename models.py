@@ -94,7 +94,7 @@ def pls_model (Xin, Yin, supersetlist, setlist, \
             wtmad_value = wtmadf[ssetname]
         else:
             wtmad_value = wtmadf["Full"]
-        rmse = mean_squared_error(Y, pred, squared=False)
+        rmse = root_mean_squared_error(Y, pred)
         r2 = r2_score(Y, pred)
         mape = mean_absolute_percentage_error(Y, pred)
     
