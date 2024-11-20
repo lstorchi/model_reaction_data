@@ -235,17 +235,23 @@ if __name__ == "__main__":
         print("%40s ,      PLS Train MAPE, %10.2f"%(setname,plsmapetrain), file=fp)
         print("%40s ,      PLS  Test MAPE, %10.2f"%(setname,plsmapetest), file=fp)
         #print()
+
+        # Linear regression model to get starting beta values
+        lr_start_model = clr.custom_loss_lr (loss=clr.mean_average_error)
+        lr_start_model.fit(X, Y)
     
         # Linear Regression
         models_store[setname].lr_model = \
                 clr.custom_loss_lr (loss=clr.mean_average_error)
-        models_store[setname].lr_model.fit(X, Y)
+        models_store[setname].lr_model.fit(X, Y, \
+                beta_init_values = lr_start_model.get_beta())
         y_pred_lr = models_store[setname].lr_model.predict(X)
         lrrmse = root_mean_squared_error(Y, y_pred_lr)
         lrrmape = mean_absolute_percentage_error(Y, y_pred_lr)
         models_store[setname].lr_model_splitted = \
                 clr.custom_loss_lr (loss=clr.mean_average_error)
-        models_store[setname].lr_model_splitted.fit(X_train, y_train)
+        models_store[setname].lr_model_splitted.fit(X_train, y_train,\
+                beta_init_values = models_store[setname].lr_model.get_beta())
         y_pred_lr = models_store[setname].lr_model_splitted.predict(X_test)
         lrrmsetest = root_mean_squared_error(y_test, y_pred_lr)
         lrrmaoetest = mean_absolute_percentage_error(y_test, y_pred_lr)
@@ -272,14 +278,14 @@ if __name__ == "__main__":
         models_store[setname].lr_custom_model =\
                 clr.custom_loss_lr (loss=clr.mean_absolute_percentage_error)
         models_store[setname].lr_custom_model.fit(X, Y, \
-                beta_init_values = models_store[setname].lr_model.get_beta())
+                beta_init_values = lr_start_model.get_beta())
         y_pred_custom_lr = models_store[setname].lr_custom_model.predict(X)
         custom_lrrmse = root_mean_squared_error(Y, y_pred_custom_lr)
         custom_lrrmape = mean_absolute_percentage_error(Y, y_pred_custom_lr)
         models_store[setname].lr_custom_model_splitted  = \
                 clr.custom_loss_lr (loss=clr.mean_absolute_percentage_error)
         models_store[setname].lr_custom_model_splitted.fit(X_train, y_train, \
-                beta_init_values = models_store[setname].lr_model_splitted.get_beta())
+                beta_init_values = lr_start_model.get_beta())
         y_pred_custom_lr = models_store[setname].lr_custom_model_splitted.predict(X_test)
         custom_lrrmsetest = root_mean_squared_error(y_test, y_pred_custom_lr)
         custom_lrrmapetest = mean_absolute_percentage_error(y_test, y_pred_custom_lr)
