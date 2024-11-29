@@ -252,43 +252,13 @@ if __name__ == "__main__":
 
         # Linear regression model to get starting beta values
         lr_start_model = clr.custom_loss_lr (loss=clr.mean_average_error)
-        try:
-            lr_start_model.fit(X, Y)
-        except:
-            converged = False   
-            #for trytime in range(100):
-            #    beta_init_values = np.random.rand(X.shape[1])
-            #    beta_init_values = 2*(beta_init_values - np.min(beta_init_values))/\
-            #        (np.max(beta_init_values) - np.min(beta_init_values)) - 1
-
-            #    #print("Trying with random initial values ")
-            #    #print("Initial values: ", beta_init_values)
-
-            #    lr_start_model.set_maxiter(10000)   
-            #    
-            #    try:
-            #        lr_start_model.fit(X, Y,  beta_init_values = beta_init_values)
-            #        converged = True
-            #        break
-            #    except:
-            #        pass
-        
-            if not converged:
-                print("Error in fitting initial linear regression model")
-                lr_start_model = clr.custom_loss_lr (loss=clr.mean_average_error)
-                lr_start_model.fit(X, Y, checkconvergence=False)
+        lr_start_model.fit(X, Y)
 
         # Linear Regression
         models_store[setname].lr_model = \
                 clr.custom_loss_lr (loss=clr.mean_average_error)
-        try:
-            models_store[setname].lr_model.fit(X, Y, \
+        models_store[setname].lr_model.fit(X, Y, \
                 beta_init_values = lr_start_model.get_beta())
-        except:
-            print("Error in fitting lr model")
-            models_store[setname].lr_model.fit(X, Y, \
-                beta_init_values = lr_start_model.get_beta(), \
-                    checkconvergence=False)
         y_pred_lr = models_store[setname].lr_model.predict(X)
         lrrmse = 0.0
         try:
@@ -298,14 +268,8 @@ if __name__ == "__main__":
         lrrmape = mean_absolute_percentage_error(Y, y_pred_lr)
         models_store[setname].lr_model_splitted = \
                 clr.custom_loss_lr (loss=clr.mean_average_error)
-        try:
-            models_store[setname].lr_model_splitted.fit(X_train, y_train,\
+        models_store[setname].lr_model_splitted.fit(X_train, y_train,\
                 beta_init_values = models_store[setname].lr_model.get_beta())
-        except:
-            print("Error in fitting lr model splitted")
-            models_store[setname].lr_model_splitted.fit(X_train, y_train,\
-                beta_init_values = models_store[setname].lr_model.get_beta(),\
-                    checkconvergence=False)
         y_pred_lr = models_store[setname].lr_model_splitted.predict(X_test)
         lrrmsetest = 0.0
         try:
@@ -339,14 +303,8 @@ if __name__ == "__main__":
         # Custom Loss Linear Regression
         models_store[setname].lr_custom_model =\
                 clr.custom_loss_lr (loss=clr.mean_absolute_percentage_error)
-        try:
-            models_store[setname].lr_custom_model.fit(X, Y, \
+        models_store[setname].lr_custom_model.fit(X, Y, \
                 beta_init_values = lr_start_model.get_beta())
-        except:
-            print("Error in fitting custom lr model")
-            models_store[setname].lr_custom_model.fit(X, Y, \
-                beta_init_values = lr_start_model.get_beta(), \
-                    checkconvergence=False)
         y_pred_custom_lr = models_store[setname].lr_custom_model.predict(X)
         custom_lrrmse = 0.0
         try:
@@ -356,14 +314,8 @@ if __name__ == "__main__":
         custom_lrrmape = mean_absolute_percentage_error(Y, y_pred_custom_lr)
         models_store[setname].lr_custom_model_splitted  = \
                 clr.custom_loss_lr (loss=clr.mean_absolute_percentage_error)
-        try:
-            models_store[setname].lr_custom_model_splitted.fit(X_train, y_train, \
+        models_store[setname].lr_custom_model_splitted.fit(X_train, y_train, \
                 beta_init_values = lr_start_model.get_beta())
-        except:
-            print("Error in fitting custom lr model splitted")
-            models_store[setname].lr_custom_model_splitted.fit(X_train, y_train, \
-                beta_init_values = lr_start_model.get_beta(), \
-                    checkconvergence=False)
         y_pred_custom_lr = models_store[setname].lr_custom_model_splitted.predict(X_test)
         custom_lrrmsetest = 0.0
         try:
