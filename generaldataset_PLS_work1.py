@@ -11,7 +11,8 @@ import pandas as pd
 import numpy as np
 
 import matplotlib.pyplot as plt
-from sklearn.metrics import root_mean_squared_error, r2_score, mean_absolute_percentage_error
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_percentage_error
+#from sklearn.metrics import root_mean_squared_error, r2_score, mean_absolute_percentage_error
 from sklearn.inspection import permutation_importance
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
@@ -182,7 +183,11 @@ if __name__ == "__main__":
         #print("  Using ", compstouse, " components")
         models_store[setname].plsmodel = PLSRegression(n_components=compstouse)
         y_pred = models_store[setname].plsmodel.fit(X, Y).predict(X)
-        plsrmse = root_mean_squared_error(Y, y_pred)
+        plsrmse = 0.0
+        try:
+            plsrmse = root_mean_squared_error(Y, y_pred)
+        except:
+            plsrmse = np.sqrt(mean_squared_error(Y, y_pred))
         plsr2 = r2_score(Y, y_pred)
         plsmape = mean_absolute_percentage_error(Y, y_pred)
         if len(y_pred.shape) == 2:
@@ -217,10 +222,19 @@ if __name__ == "__main__":
         models_store[setname].pls_model_splitted = PLSRegression(n_components=best_ncomp)
         models_store[setname].pls_model_splitted.fit(X_train, y_train)
         y_pred = models_store[setname].pls_model_splitted.predict(X_test)
-        plsrmsetest = root_mean_squared_error(y_test, y_pred)
+        plsrmsetest = 0.0
+        try:
+            plsrmsetest = root_mean_squared_error(y_test, y_pred)
+        except:
+            plsrmsetest = np.sqrt(mean_squared_error(y_test, y_pred))
         plsmapetest = mean_absolute_percentage_error(y_test, y_pred)
         y_pred = models_store[setname].pls_model_splitted.predict(X_train)
-        plsrmsetrain = root_mean_squared_error(y_train, y_pred)
+        plsrmsetrain = 0.0
+        try:
+            plsrmsetrain = root_mean_squared_error(y_train, y_pred)
+        except:
+            plsrmsetrain = np.sqrt(mean_squared_error(y_train, y_pred))
+
         plsmapetrain = mean_absolute_percentage_error(y_train, y_pred)
         if PRINTALSOINSTDOUT:
             print("%40s ,      PLS Train RMSE, %10.2f"%(setname,plsrmsetrain))
@@ -241,29 +255,28 @@ if __name__ == "__main__":
         try:
             lr_start_model.fit(X, Y)
         except:
-            print("Error in fitting initial linear regression model " + \
-                "try using random initial values")
             converged = False   
-            for trytime in range(100):
-                beta_init_values = np.random.rand(X.shape[1])
-                beta_init_values = 2*(beta_init_values - np.min(beta_init_values))/\
-                    (np.max(beta_init_values) - np.min(beta_init_values)) - 1
+            #for trytime in range(100):
+            #    beta_init_values = np.random.rand(X.shape[1])
+            #    beta_init_values = 2*(beta_init_values - np.min(beta_init_values))/\
+            #        (np.max(beta_init_values) - np.min(beta_init_values)) - 1
 
-                #print("Trying with random initial values ")
-                #print("Initial values: ", beta_init_values)
+            #    #print("Trying with random initial values ")
+            #    #print("Initial values: ", beta_init_values)
 
-                lr_start_model.set_maxiter(10000)   
-                
-                try:
-                    lr_start_model.fit(X, Y,  beta_init_values = beta_init_values)
-                    converged = True
-                    break
-                except:
-                    pass
+            #    lr_start_model.set_maxiter(10000)   
+            #    
+            #    try:
+            #        lr_start_model.fit(X, Y,  beta_init_values = beta_init_values)
+            #        converged = True
+            #        break
+            #    except:
+            #        pass
         
-        if not converged:
-            lr_start_model = clr.custom_loss_lr (loss=clr.mean_average_error)
-            lr_start_model.fit(X, Y, checkconvergence=False)
+            if not converged:
+                print("Error in fitting initial linear regression model")
+                lr_start_model = clr.custom_loss_lr (loss=clr.mean_average_error)
+                lr_start_model.fit(X, Y, checkconvergence=False)
 
         # Linear Regression
         models_store[setname].lr_model = \
@@ -272,11 +285,16 @@ if __name__ == "__main__":
             models_store[setname].lr_model.fit(X, Y, \
                 beta_init_values = lr_start_model.get_beta())
         except:
+            print("Error in fitting lr model")
             models_store[setname].lr_model.fit(X, Y, \
                 beta_init_values = lr_start_model.get_beta(), \
                     checkconvergence=False)
         y_pred_lr = models_store[setname].lr_model.predict(X)
-        lrrmse = root_mean_squared_error(Y, y_pred_lr)
+        lrrmse = 0.0
+        try:
+            lrrmse = root_mean_squared_error(Y, y_pred_lr)
+        except:
+            lrrmse = np.sqrt(mean_squared_error(Y, y_pred_lr))
         lrrmape = mean_absolute_percentage_error(Y, y_pred_lr)
         models_store[setname].lr_model_splitted = \
                 clr.custom_loss_lr (loss=clr.mean_average_error)
@@ -284,14 +302,23 @@ if __name__ == "__main__":
             models_store[setname].lr_model_splitted.fit(X_train, y_train,\
                 beta_init_values = models_store[setname].lr_model.get_beta())
         except:
+            print("Error in fitting lr model splitted")
             models_store[setname].lr_model_splitted.fit(X_train, y_train,\
                 beta_init_values = models_store[setname].lr_model.get_beta(),\
                     checkconvergence=False)
         y_pred_lr = models_store[setname].lr_model_splitted.predict(X_test)
-        lrrmsetest = root_mean_squared_error(y_test, y_pred_lr)
+        lrrmsetest = 0.0
+        try:
+            lrrmsetest = root_mean_squared_error(y_test, y_pred_lr)
+        except:
+            lrrmsetest = np.sqrt(mean_squared_error(y_test, y_pred_lr))
         lrrmaoetest = mean_absolute_percentage_error(y_test, y_pred_lr)
         y_pred_lr = models_store[setname].lr_model_splitted.predict(X_train)
-        lrrmsetrain = root_mean_squared_error(y_train, y_pred_lr)
+        lrrmsetrain = 0.0
+        try:
+            lrrmsetrain = root_mean_squared_error(y_train, y_pred_lr)
+        except:
+            lrrmsetrain = np.sqrt(mean_squared_error(y_train, y_pred_lr))
         lrrmaopetrain = mean_absolute_percentage_error(y_train, y_pred_lr)
         if PRINTALSOINSTDOUT:
             print("%40s ,             LR RMSE, %10.2f"%(setname,lrrmse))
@@ -316,11 +343,16 @@ if __name__ == "__main__":
             models_store[setname].lr_custom_model.fit(X, Y, \
                 beta_init_values = lr_start_model.get_beta())
         except:
+            print("Error in fitting custom lr model")
             models_store[setname].lr_custom_model.fit(X, Y, \
                 beta_init_values = lr_start_model.get_beta(), \
                     checkconvergence=False)
         y_pred_custom_lr = models_store[setname].lr_custom_model.predict(X)
-        custom_lrrmse = root_mean_squared_error(Y, y_pred_custom_lr)
+        custom_lrrmse = 0.0
+        try:
+            custom_lrrmse = root_mean_squared_error(Y, y_pred_custom_lr)
+        except:
+            custom_lrrmse = np.sqrt(mean_squared_error(Y, y_pred_custom_lr))    
         custom_lrrmape = mean_absolute_percentage_error(Y, y_pred_custom_lr)
         models_store[setname].lr_custom_model_splitted  = \
                 clr.custom_loss_lr (loss=clr.mean_absolute_percentage_error)
@@ -328,14 +360,23 @@ if __name__ == "__main__":
             models_store[setname].lr_custom_model_splitted.fit(X_train, y_train, \
                 beta_init_values = lr_start_model.get_beta())
         except:
+            print("Error in fitting custom lr model splitted")
             models_store[setname].lr_custom_model_splitted.fit(X_train, y_train, \
                 beta_init_values = lr_start_model.get_beta(), \
                     checkconvergence=False)
         y_pred_custom_lr = models_store[setname].lr_custom_model_splitted.predict(X_test)
-        custom_lrrmsetest = root_mean_squared_error(y_test, y_pred_custom_lr)
+        custom_lrrmsetest = 0.0
+        try:
+            custom_lrrmsetest = root_mean_squared_error(y_test, y_pred_custom_lr)
+        except:
+            custom_lrrmsetest = np.sqrt(mean_squared_error(y_test, y_pred_custom_lr))
         custom_lrrmapetest = mean_absolute_percentage_error(y_test, y_pred_custom_lr)
         y_pred_custom_lr = models_store[setname].lr_custom_model_splitted.predict(X_train)
-        custom_lrrmsetrain = root_mean_squared_error(y_train, y_pred_custom_lr)
+        custom_lrrmsetrain = 0.0
+        try:
+            custom_lrrmsetrain = root_mean_squared_error(y_train, y_pred_custom_lr)
+        except:
+            custom_lrrmsetrain = np.sqrt(mean_squared_error(y_train, y_pred_custom_lr))
         custom_lrrmapetrain = mean_absolute_percentage_error(y_train, y_pred_custom_lr)
         if PRINTALSOINSTDOUT:
             print("%40s ,      Custom LR RMSE, %10.2f"%(setname,custom_lrrmse))

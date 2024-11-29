@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.inspection import permutation_importance
-from sklearn.metrics import root_mean_squared_error, r2_score, mean_absolute_percentage_error
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_percentage_error
+#from sklearn.metrics import root_mean_squared_error, r2_score, mean_absolute_percentage_error
 from sklearn.model_selection import (LeaveOneOut, cross_val_predict,
                                      cross_val_score, train_test_split)
 
@@ -94,7 +95,12 @@ def pls_model (Xin, Yin, supersetlist, setlist, \
             wtmad_value = wtmadf[ssetname]
         else:
             wtmad_value = wtmadf["Full"]
-        rmse = root_mean_squared_error(Y, pred)
+
+        rmse = 0.0
+        try:
+            rmse = root_mean_squared_error(Y, pred)
+        except:
+            rmse = mean_squared_error(Y, pred, squared=False)
         r2 = r2_score(Y, pred)
         mape = mean_absolute_percentage_error(Y, pred)
     
