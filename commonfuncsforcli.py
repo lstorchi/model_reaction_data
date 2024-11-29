@@ -28,13 +28,13 @@ def lr_test_and_rpint (lr_model, X, Y, name, features_names, fp):
 
 
     if PRINTALSOINSTDOUT:
-        print("%40s , %30s , %12.4f"%(name, "Intercept", lr_model.get_intercept()))
-    print("%40s , %30s , %12.4f"%(name, "Intercept", lr_model.get_intercept()), file=fp)
+        print("%40s , %30s , %20.12f"%(name, "Intercept", lr_model.get_intercept()))
+    print("%40s , %30s , %20.12f"%(name, "Intercept", lr_model.get_intercept()), file=fp)
     for i, f in enumerate(features_names):
         #print("  %15s %12.8e"%(f, lr_model.coef_.T[i]))
         if PRINTALSOINSTDOUT:
-            print("%40s , %30s , %12.4f"%(name, f, lr_model.get_coefficients().T[i]))
-        print("%40s , %30s , %12.4f"%(name, f, lr_model.get_coefficients().T[i]), file=fp)
+            print("%40s , %30s , %20.12f"%(name, f, lr_model.get_coefficients().T[i]))
+        print("%40s , %30s , %20.12f"%(name, f, lr_model.get_coefficients().T[i]), file=fp)
 
 ###############################################################
 
