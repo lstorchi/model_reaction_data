@@ -21,6 +21,7 @@ from numpy import exp, sqrt, fabs, log, power, multiply, divide
 class ModelResults:
     setnames : list = field(default_factory=list)
     supersetnames : list = field(default_factory=list)
+    chemicals : list = field(default_factory=list)
     labels: list = field(default_factory=list)
     features: dict = field(default_factory=dict)
     uncorrelated_features: dict = field(default_factory=dict)

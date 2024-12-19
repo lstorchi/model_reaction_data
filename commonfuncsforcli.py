@@ -88,7 +88,11 @@ def pls_test_and_rpint (pls_model, X, Y, name, features_names, fp):
 
 ###############################################################
 
-def readdata ():
+def readdata (removeNR=False, shiftusingNR=False):
+
+    if shiftusingNR:
+        print("Shifting using NR")
+        removeNR = True
 
     howmanydifs = 3
     allvalues_perset = pickle.load(open("./data/allvalues_perset.p", "rb"))
@@ -116,7 +120,11 @@ def readdata ():
             models_results[setname].labels.append(val["label"]) 
             models_results[setname].supersetnames.append(val["super_setname"])
             models_results[setname].setnames.append(val["super_setname"]+"_"+val["setname"])
-    
+            allchems = ""
+            for c in val["chemicals"]:
+                allchems += c + " "
+            models_results[setname].chemicals.append(allchems)
+
     insidemethods = ["W","D3(0)","D3(BJ)"]
     for setname in fullsetnames:
         for methodid in range(howmanydifs):
@@ -216,7 +224,13 @@ def readdata ():
                             keytouse = keytouse.replace("(", "")
                             keytouse = keytouse.replace(")", "")
                             featuresvalues_perset[setname][-1][keytouse] = val[k][f]
-    
+
+    #for setname in featuresvalues_perset:
+    #    print("Setname: ", setname, len(featuresvalues_perset[setname]))
+    #    for i, val in enumerate(featuresvalues_perset[setname]):
+    #        print("Val: ",len(val))
+    #        for k in val:
+    #            print("   ", k, val[k])
     
     equations = {"EC" :"EC" ,\
                 "EX" : "EX",\
@@ -237,6 +251,79 @@ def readdata ():
 
     
     featuresvalues_perset = deepcopy(eq_featuresvalues_perset)
+
+    CHECKNRvalues = False
+    if CHECKNRvalues:
+        for setname in featuresvalues_perset:
+            print("Setname: ", setname)
+            if setname not in models_results:
+                print("Setname not in models_results: ", setname)
+                exit(1)
+    
+            #["PBE", "PBE0"]
+            #["MINIX", "SVP", "TZVP", "QZVP"]
+    
+            nrsforfb = {}
+            chemicalsforfb = {}
+            for func in ["PBE", "PBE0"]:
+                for basis in ["MINIX", "SVP", "TZVP", "QZVP"]:
+                    nrs = []
+                    chemicals = []
+                    for i, val in enumerate(featuresvalues_perset[setname]):
+                        chemicals.append(models_results[setname].chemicals[i])
+                        for k in val:
+                            if k.find("_NR" ) != -1 and \
+                                k.find(func + "_") != -1 and \
+                                k.find(basis + "_") != -1:
+                                nrs.append(val[k])  
+    
+                    nrsforfb[func + "_" + basis] = nrs 
+                    chemicalsforfb[func + "_" + basis] = chemicals
+    
+            for k in nrsforfb:
+                if len(nrsforfb[k]) != len(chemicalsforfb[k]):
+                    print("NR values error")
+                    print(k, len(nrsforfb[k]), len(chemicalsforfb[k]))
+                    exit(1)
+    
+            # compare nrs pair by pair looking for differnces
+            for func1 in ["PBE", "PBE0"]:
+                for basis1 in ["MINIX", "SVP", "TZVP", "QZVP"]:
+                    for func2 in ["PBE", "PBE0"]:
+                        for basis2 in ["MINIX", "SVP", "TZVP", "QZVP"]:
+                            if func1 == func2 and basis1 == basis2:
+                                continue
+                            nrs1 = nrsforfb[func1 + "_" + basis1]
+                            chem1 = chemicalsforfb[func1 + "_" + basis1]
+                            nrs2 = nrsforfb[func2 + "_" + basis2]
+                            chem2 = chemicalsforfb[func2 + "_" + basis2]
+                            if len(nrs1) != len(nrs2):
+                                print("NR len values error")
+                                print(len(nrs1), len(nrs2), chem1, chem2)
+                                exit(1)
+    
+                            for i in range(len(nrs1)):
+                                if np.abs(nrs1[i] - nrs2[i]) > 1e-6:
+                                    print("NR error")
+                                    print(nrs1[i], \
+                                        nrs2[i], \
+                                        chem1[i], \
+                                        chem2[i], \
+                                        func1, \
+                                        basis1, \
+                                        func2, \
+                                        basis2)
+    
+        exit()
+    
+        if removeNR:    
+            for setname in featuresvalues_perset:
+                for i, val in enumerate(featuresvalues_perset[setname]):
+                    for k in val:
+                        if k.find("_NR" ) != -1:
+                            del featuresvalues_perset[setname][i][k] 
+                
+        exit()
 
     return featuresvalues_perset, \
         fullsetnames, models_results, \
