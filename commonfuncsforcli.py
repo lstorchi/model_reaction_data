@@ -252,7 +252,7 @@ def readdata (removeNR=False, shiftusingNR=False):
     
     featuresvalues_perset = deepcopy(eq_featuresvalues_perset)
 
-    CHECKNRvalues = False
+    CHECKNRvalues = True
     if CHECKNRvalues:
         for setname in featuresvalues_perset:
             print("Setname: ", setname)
@@ -304,15 +304,14 @@ def readdata (removeNR=False, shiftusingNR=False):
     
                             for i in range(len(nrs1)):
                                 if np.abs(nrs1[i] - nrs2[i]) > 1e-6:
-                                    print("NR error")
-                                    print(nrs1[i], \
-                                        nrs2[i], \
-                                        chem1[i], \
-                                        chem2[i], \
-                                        func1, \
+                                    print("NR error ", func1, \
                                         basis1, \
                                         func2, \
-                                        basis2)
+                                        basis2, \
+                                        nrs1[i], \
+                                        nrs2[i], \
+                                        chem1[i], \
+                                        chem2[i])
     
         exit()
     
