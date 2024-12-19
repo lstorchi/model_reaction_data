@@ -252,7 +252,7 @@ def readdata (removeNR=False, shiftusingNR=False):
     
     featuresvalues_perset = deepcopy(eq_featuresvalues_perset)
 
-    CHECKNRvalues = True
+    CHECKNRvalues = False
     if CHECKNRvalues:
         for setname in featuresvalues_perset:
             print("Setname: ", setname)
