@@ -57,7 +57,7 @@ if __name__ == "__main__":
     featuresvalues_perset,\
         fullsetnames, \
         models_results, \
-        supersetnames = readdata()
+        supersetnames = readdata(removeNR=True)
 
     #["PBE", "PBE0"]
     #["MINIX", "SVP", "TZVP", "QZVP"]
