@@ -57,7 +57,7 @@ if __name__ == "__main__":
     featuresvalues_perset,\
         fullsetnames, \
         models_results, \
-        supersetnames = readdata()
+        supersetnames = readdata(removeNR=True, shiftusingNR=True)
 
     #["PBE", "PBE0"]
     #["MINIX", "SVP", "TZVP", "QZVP"]
@@ -168,88 +168,7 @@ if __name__ == "__main__":
                           test_size=0.20, random_state=42)
         setlist = models_results[setname].setnames  
         supersetlist = models_results[setname].supersetnames
-        maxcomp = X.shape[1]
     
-        # PLS
-        ncomps, rmses, r2s, wtmads, loormses, mapes = \
-                models.pls_model (X, Y, supersetlist, setlist, \
-                ncomp_start = 1, ncomp_max = maxcomp, split = False, \
-                plot = False, loo=False)
-        r2max_comps = np.argmax(r2s)+1
-        rmsemin_comps = np.argmin(rmses)+1
-        mapemin_comps = np.argmin(mapes)+1
-        wtmadmin_comps = np.argmin(wtmads)+1
-        compstouse = mapemin_comps
-        #print("  Using ", compstouse, " components")
-        models_store[setname].plsmodel = PLSRegression(n_components=compstouse)
-        y_pred = models_store[setname].plsmodel.fit(X, Y).predict(X)
-        plsrmse = 0.0
-        try:
-            plsrmse = root_mean_squared_error(Y, y_pred)
-        except:
-            plsrmse = np.sqrt(mean_squared_error(Y, y_pred))
-        plsr2 = r2_score(Y, y_pred)
-        plsmape = mean_absolute_percentage_error(Y, y_pred)
-        if len(y_pred.shape) == 2:
-                y_pred = y_pred[:,0]
-        wtmadf = commonutils.wtmad2(setlist, Y, y_pred)
-        plswtmad = wtmadf[setname]
-        cv = LeaveOneOut()
-        model = PLSRegression(n_components=compstouse)
-        scores = cross_val_score(model, X, Y,\
-                scoring='neg_mean_squared_error', \
-                cv=cv, n_jobs=-1)
-        plsloormse = np.sqrt(np.mean(np.absolute(scores)))
-        if PRINTALSOINSTDOUT:
-            print("%40s ,            PLS RMSE, %10.2f"%(setname, plsrmse))
-            print("%40s ,        PLS LOO RMSE, %10.2f"%(setname, plsloormse))
-        print("%40s ,            PLS RMSE, %10.2f"%(setname, plsrmse), file=fp)
-        print("%40s ,        PLS LOO RMSE, %10.2f"%(setname, plsloormse), file=fp)
-        best_mape = 0.0
-        best_ncomp = 0
-        for ncomp in range(1, compstouse+1):
-            model = PLSRegression(n_components=ncomp)
-            model.fit(X_train, y_train)
-            y_pred = model.predict(X_test)
-            mape = mean_absolute_percentage_error(y_test, y_pred)
-            if ncomp == 1:
-                best_mape = mape
-                best_ncomp = ncomp
-            else:
-                if mape < best_mape:
-                    best_mape = mape
-                    best_ncomp = ncomp
-        models_store[setname].pls_model_splitted = PLSRegression(n_components=best_ncomp)
-        models_store[setname].pls_model_splitted.fit(X_train, y_train)
-        y_pred = models_store[setname].pls_model_splitted.predict(X_test)
-        plsrmsetest = 0.0
-        try:
-            plsrmsetest = root_mean_squared_error(y_test, y_pred)
-        except:
-            plsrmsetest = np.sqrt(mean_squared_error(y_test, y_pred))
-        plsmapetest = mean_absolute_percentage_error(y_test, y_pred)
-        y_pred = models_store[setname].pls_model_splitted.predict(X_train)
-        plsrmsetrain = 0.0
-        try:
-            plsrmsetrain = root_mean_squared_error(y_train, y_pred)
-        except:
-            plsrmsetrain = np.sqrt(mean_squared_error(y_train, y_pred))
-
-        plsmapetrain = mean_absolute_percentage_error(y_train, y_pred)
-        if PRINTALSOINSTDOUT:
-            print("%40s ,      PLS Train RMSE, %10.2f"%(setname,plsrmsetrain))
-            print("%40s ,      PLS  Test RMSE, %10.2f"%(setname,plsrmsetest))
-            print("%40s ,            PLS MAPE, %10.2f"%(setname,plsmape))    
-            print("%40s ,      PLS Train MAPE, %10.2f"%(setname,plsmapetrain))
-            print("%40s ,      PLS  Test MAPE, %10.2f"%(setname,plsmapetest))
-    
-        print("%40s ,      PLS Train RMSE, %10.2f"%(setname,plsrmsetrain), file=fp)
-        print("%40s ,      PLS  Test RMSE, %10.2f"%(setname,plsrmsetest), file=fp)
-        print("%40s ,            PLS MAPE, %10.2f"%(setname,plsmape), file=fp)  
-        print("%40s ,      PLS Train MAPE, %10.2f"%(setname,plsmapetrain), file=fp)
-        print("%40s ,      PLS  Test MAPE, %10.2f"%(setname,plsmapetest), file=fp)
-        #print()
-
         # Linear regression model to get starting beta values
         lr_start_model = clr.custom_loss_lr (loss=clr.mean_average_error)
         lr_start_split_model = clr.custom_loss_lr (loss=clr.mean_average_error)
@@ -385,15 +304,11 @@ if __name__ == "__main__":
               
     setname = None
     ssetname = "Full"
-    pls_model_full = models_store[ssetname].plsmodel
-    pls_model_full_splitted = models_store[ssetname].pls_model_splitted
     lr_model_full = models_store[ssetname].lr_model
     lr_model_full_splitted = models_store[ssetname].lr_model_splitted
     lr_custom_model_full = models_store[ssetname].lr_custom_model
     lr_custom_model_full_splitted = models_store[ssetname].lr_custom_model_splitted
     
-    ypredFull_pls = []
-    ypredFull_pls_split = []
     ypredFull_lr = []
     ypredFull_lr_split = []
     ypredFull_lr_custom = []
@@ -410,8 +325,6 @@ if __name__ == "__main__":
     fp = open("modelsresults.csv", "w")
     
     for ssetname in supersetnames:
-        pls_model_ssetname = models_store[ssetname].plsmodel
-        pls_model_ssetname_splitted = models_store[ssetname].pls_model_splitted
         lr_model_ssetname = models_store[ssetname].lr_model
         lr_model_ssetname_splitted = models_store[ssetname].lr_model_splitted
         lr_custom_model_ssetname = models_store[ssetname].lr_custom_model
@@ -423,24 +336,6 @@ if __name__ == "__main__":
                 models_results[ssetname].labels)
         setlist = models_results[ssetname].setnames
         setnamesFull.extend(setlist)
-    
-        # SuperSet PLS 
-        y_pred = pls_model_ssetname.predict(X)
-        if len(y_pred.shape) == 2:
-            y_pred = y_pred[:,0]
-        ypredFull_pls.extend(y_pred)
-        mape = mean_absolute_percentage_error(Y, y_pred)
-        if PRINTALSOINSTDOUT:
-            print(" %60s MAPE , %7.3f"%(ssetname+" , SS PLS", mape))
-        print(" %60s MAPE , %7.3f"%(ssetname+" , SS PLS", mape), file=fp)
-        y_pred = pls_model_ssetname_splitted.predict(X)
-        if len(y_pred.shape) == 2:
-            y_pred = y_pred[:,0]
-        ypredFull_pls_split.extend(y_pred)
-        mape = mean_absolute_percentage_error(Y, y_pred)
-        if PRINTALSOINSTDOUT:
-            print(" %60s MAPE , %7.3f"%(ssetname+" , SS PLS split", mape))
-        print(" %60s MAPE , %7.3f"%(ssetname+" , SS PLS split", mape), file=fp)
     
         # SuperSet LR
         y_pred = lr_model_ssetname.predict(X)
@@ -477,22 +372,6 @@ if __name__ == "__main__":
         if PRINTALSOINSTDOUT:
             print(" %60s MAPE , %7.3f"%(ssetname+" , SS Custom LR split", mape))
         print(" %60s MAPE , %7.3f"%(ssetname+" , SS Custom LR split", mape), file=fp)
-    
-        # Full PLS
-        y_pred = pls_model_full.predict(X)
-        if len(y_pred.shape) == 2:
-            y_pred = y_pred[:,0]
-        mape = mean_absolute_percentage_error(Y, y_pred)
-        if PRINTALSOINSTDOUT:
-            print(" %60s MAPE , %7.3f"%(ssetname+" , Full PLS", mape))
-        print(" %60s MAPE , %7.3f"%(ssetname+" , Full PLS", mape), file=fp)
-        y_pred = pls_model_full_splitted.predict(X)
-        if len(y_pred.shape) == 2:
-            y_pred = y_pred[:,0]
-        mape = mean_absolute_percentage_error(Y, y_pred)
-        if PRINTALSOINSTDOUT:
-            print(" %60s MAPE , %7.3f"%(ssetname+" , Full PLS split", mape))
-        print(" %60s MAPE , %7.3f"%(ssetname+" , Full PLS split", mape), file=fp)
     
         # Full LR
         y_pred = lr_model_full.predict(X)
@@ -587,16 +466,14 @@ if __name__ == "__main__":
     print("   Test accuracy: %5.2f"%(testaccuracy))
     print("Overall accuracy: %5.2f"%(overallaccuracy))
     
-    assert(len(ypredFull_pls) == len(ypredFull_pls_split))
-    assert(len(ypredFull_pls) == len(ypredFull_lr))
-    assert(len(ypredFull_pls) == len(ypredFull_lr_split)) 
-    assert(len(ypredFull_pls) == len(ypredFull_lr_custom))
-    assert(len(ypredFull_pls) == len(ypredFull_lr_custom_split))
-    assert(len(ypredFull_pls) == len(models_results["Full"].labels))
-    assert(len(ypredFull_pls) == len(setnamesFull))
-    assert(len(ypredFull_pls) == len(ypredFull_d3bj))
+    assert(len(ypredFull_lr) == len(ypredFull_lr_split)) 
+    assert(len(ypredFull_lr) == len(ypredFull_lr_custom))
+    assert(len(ypredFull_lr) == len(ypredFull_lr_custom_split))
+    assert(len(ypredFull_lr) == len(models_results["Full"].labels))
+    assert(len(ypredFull_lr) == len(setnamesFull))
+    assert(len(ypredFull_lr) == len(ypredFull_d3bj))
     for method in ypredFull_allbasissets:
-        assert(len(ypredFull_pls) == len(ypredFull_allbasissets[method]))
+        assert(len(ypredFull_lr) == len(ypredFull_allbasissets[method]))
     
     X, Y, features_names =\
             commonutils.build_XY_matrix (models_results['Full'].\
@@ -604,8 +481,6 @@ if __name__ == "__main__":
             models_results['Full'].labels)
     setlist = models_results['Full'].setnames
     
-    y_pred_RF_PLS = []
-    y_pred_RF_PLS_split = []
     y_pred_RF_LR = []
     y_pred_RF_LR_split = []
     y_pred_RF_LR_CUSTOM = []
@@ -614,14 +489,6 @@ if __name__ == "__main__":
         c = rf.predict([X[i]])
         supersetrname= supersetnameslist[c[0]]
         #print("X: ", i, " Y: ", Y[i], " C: ", c, " ==> ", supersetnameslist[c[0]])
-        y = models_store[supersetrname].plsmodel.predict([X[i]])
-        if len(y.shape) == 2:
-            y = y[:,0]
-        y_pred_RF_PLS.append(y[0])
-        y = models_store[supersetrname].pls_model_splitted.predict([X[i]])
-        if len(y.shape) == 2:
-            y = y[:,0]
-        y_pred_RF_PLS_split.append(y[0])
     
         y = models_store[supersetrname].lr_model.predict([X[i]])
         if len(y.shape) == 2:
@@ -644,19 +511,6 @@ if __name__ == "__main__":
     fp = open("modelsresults.csv", "a")
     
     predictred = {}
-    
-    predictred["Full , using PLS Full"] = \
-        models_store["Full"].plsmodel.predict(X)
-    if len(predictred["Full , using PLS Full"].shape) == 2:
-        predictred["Full , using PLS Full"] = \
-            predictred["Full , using PLS Full"][:,0]
-    predictred["Full , using PLS Full split"] =\
-                  models_store["Full"].pls_model_splitted.predict(X)
-    if len(predictred["Full , using PLS Full split"].shape) == 2:
-        predictred["Full , using PLS Full split"] = \
-                            predictred["Full , using PLS Full split"][:,0]
-    predictred["Full , using PLS SS"] = ypredFull_pls
-    predictred["Full , using PLS SS split"] = ypredFull_pls_split
     
     predictred["Full , using LR Full"] = \
                   models_store["Full"].lr_model.predict(X)
@@ -684,8 +538,6 @@ if __name__ == "__main__":
     predictred["Full , using Custom LR SS"] = ypredFull_lr_custom
     predictred["Full , using Custom LR SS split"] = ypredFull_lr_custom_split
     
-    predictred["Full , using PLSRF"] = y_pred_RF_PLS
-    predictred["Full , using PLSRF split"] = y_pred_RF_PLS_split
     predictred["Full , using LRRF"] = y_pred_RF_LR
     predictred["Full , using LRRF split"] = y_pred_RF_LR_split
     predictred["Full , using Custom LRRF"] = y_pred_RF_LR_CUSTOM
@@ -759,8 +611,6 @@ if __name__ == "__main__":
         lr_model_splitted = models_store[setname].lr_model_splitted
         lr_custom_model = models_store[setname].lr_custom_model
         lr_custom_model_splitted = models_store[setname].lr_custom_model_splitted
-        pls_model = models_store[setname].plsmodel
-        pls_model_splitted = models_store[setname].pls_model_splitted
     
         X, Y, features_names = \
                 commonutils.build_XY_matrix (models_results[setname].\
@@ -777,11 +627,5 @@ if __name__ == "__main__":
         lr_test_and_rpint (lr_custom_model_splitted, X, Y, \
                         setname + " Custom LR split ", \
                         features_names, fp)
-    
-        # PLS model
-        pls_test_and_rpint (pls_model, X, Y, setname + " PLS ", \
-                            features_names, fp)
-        pls_test_and_rpint (pls_model_splitted, X, Y, setname + " PLS split ", \
-                            features_names, fp)
     
     fp.close()

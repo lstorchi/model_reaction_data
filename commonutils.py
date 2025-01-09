@@ -23,6 +23,7 @@ class ModelResults:
     supersetnames : list = field(default_factory=list)
     chemicals : list = field(default_factory=list)
     labels: list = field(default_factory=list)
+    nrs: list = field(default_factory=list)
     features: dict = field(default_factory=dict)
     uncorrelated_features: dict = field(default_factory=dict)
 
