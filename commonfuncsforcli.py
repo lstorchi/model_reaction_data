@@ -252,67 +252,112 @@ def readdata (removeNR=False, shiftusingNR=False):
     
     featuresvalues_perset = deepcopy(eq_featuresvalues_perset)
 
-    for setname in featuresvalues_perset:
-        print("Setname: ", setname)
-        if setname not in models_results:
-            print("Setname not in models_results: ", setname)
-            exit(1)
-    
-        #["PBE", "PBE0"]
-        #["MINIX", "SVP", "TZVP", "QZVP"]
-    
-        nrsforfb = {}
-        chemicalsforfb = {}
-        for func in ["PBE", "PBE0"]:
-            for basis in ["MINIX", "SVP", "TZVP", "QZVP"]:
-                nrs = []
-                chemicals = []
-                for i, val in enumerate(featuresvalues_perset[setname]):
-                    chemicals.append(models_results[setname].chemicals[i])
-                    for k in val:
-                        if k.find("_NR" ) != -1 and \
-                            k.find(func + "_") != -1 and \
-                            k.find(basis + "_") != -1:
-                            nrs.append(val[k])  
-    
-                nrsforfb[func + "_" + basis] = nrs 
-                chemicalsforfb[func + "_" + basis] = chemicals
-    
-        for k in nrsforfb:
-            if len(nrsforfb[k]) != len(chemicalsforfb[k]):
-                print("NR values error")
-                print(k, len(nrsforfb[k]), len(chemicalsforfb[k]))
+    if shiftusingNR:
+        nrperstename = {}
+        for setname in featuresvalues_perset:
+            nrperstename[setname] = []
+            print("Setname: ", setname)
+            if setname not in models_results:
+                print("Setname not in models_results: ", setname)
                 exit(1)
-    
-        # compare nrs pair by pair looking for differnces
-        for func1 in ["PBE", "PBE0"]:
-            for basis1 in ["MINIX", "SVP", "TZVP", "QZVP"]:
-                for func2 in ["PBE", "PBE0"]:
-                    for basis2 in ["MINIX", "SVP", "TZVP", "QZVP"]:
-                        if func1 == func2 and basis1 == basis2:
-                            continue
-                        nrs1 = nrsforfb[func1 + "_" + basis1]
-                        chem1 = chemicalsforfb[func1 + "_" + basis1]
-                        nrs2 = nrsforfb[func2 + "_" + basis2]
-                        chem2 = chemicalsforfb[func2 + "_" + basis2]
-                        if len(nrs1) != len(nrs2):
-                            print("NR len values error")
-                            print(len(nrs1), len(nrs2), chem1, chem2)
-                            exit(1)
-    
-                        for i in range(len(nrs1)):
-                            if np.abs(nrs1[i] - nrs2[i]) > 1e-6:
-                                print("NR error ", func1, \
-                                    basis1, \
-                                    " compare to ", \
-                                    func2, \
-                                    basis2, \
-                                    "%8.5e"%(nrs1[i]), \
-                                    "%8.5e"%(nrs2[i]), \
-                                    " systems ", \
-                                    chem1[i], \
-                                    chem2[i])
+        
+            #["PBE", "PBE0"]
+            #["MINIX", "SVP", "TZVP", "QZVP"]
+        
+            nrsforfb = {}
+            chemicalsforfb = {}
+            for func in ["PBE", "PBE0"]:
+                for basis in ["MINIX", "SVP", "TZVP", "QZVP"]:
+                    nrs = []
+                    chemicals = []
+                    for i, val in enumerate(featuresvalues_perset[setname]):
+                        chemicals.append(models_results[setname].chemicals[i])
+                        for k in val:
+                            if k.find("_NR" ) != -1 and \
+                                k.find(func + "_") != -1 and \
+                                k.find(basis + "_") != -1:
+                                nrs.append(val[k])  
+        
+                    nrsforfb[func + "_" + basis] = nrs 
+                    chemicalsforfb[func + "_" + basis] = chemicals
+        
+            for k in nrsforfb:
+                if len(nrsforfb[k]) != len(chemicalsforfb[k]):
+                    print("NR values error")
+                    print(k, len(nrsforfb[k]), len(chemicalsforfb[k]))
+                    exit(1)
+        
+            # compare nrs pair by pair looking for differnces
+            for func1 in ["PBE", "PBE0"]:
+                for basis1 in ["MINIX", "SVP", "TZVP", "QZVP"]:
+                    for func2 in ["PBE", "PBE0"]:
+                        for basis2 in ["MINIX", "SVP", "TZVP", "QZVP"]:
+                            if func1 == func2 and basis1 == basis2:
+                                continue
 
+                            nrs1 = nrsforfb[func1 + "_" + basis1]
+                            chem1 = chemicalsforfb[func1 + "_" + basis1]
+                            nrs2 = nrsforfb[func2 + "_" + basis2]
+                            chem2 = chemicalsforfb[func2 + "_" + basis2]
+                            if len(nrs1) != len(nrs2):
+                                print("NR len values error")
+                                print(len(nrs1), len(nrs2), chem1, chem2)
+                                exit(1)
+        
+                            #for i in range(len(nrs1)):
+                            #    if np.abs(nrs1[i] - nrs2[i]) > 1e-6:
+                            #        print("NR Warning ", func1, \
+                            #            basis1, \
+                            #            " compare to ", \
+                            #            func2, \
+                            #            basis2, \
+                            #            "%8.5e"%(nrs1[i]), \
+                            #            "%8.5e"%(nrs2[i]), \
+                            #            " systems ", \
+                            #            chem1[i], \
+                            #            chem2[i])
+            
+            # compare excluding MINIX
+            for func1 in ["PBE", "PBE0"]:
+                for basis1 in ["SVP", "TZVP", "QZVP"]:
+                    for func2 in ["PBE", "PBE0"]:
+                        for basis2 in ["SVP", "TZVP", "QZVP"]:
+                            if func1 == func2 and basis1 == basis2:
+                                continue
+
+                            nrs1 = nrsforfb[func1 + "_" + basis1]
+                            chem1 = chemicalsforfb[func1 + "_" + basis1]
+                            nrs2 = nrsforfb[func2 + "_" + basis2]
+                            chem2 = chemicalsforfb[func2 + "_" + basis2]
+                            if len(nrs1) != len(nrs2):
+                                print("NR len values error")
+                                print(len(nrs1), len(nrs2), chem1, chem2)
+                                exit(1)
+        
+                            for i in range(len(nrs1)):
+                                if np.abs(nrs1[i] - nrs2[i]) > 1e-6:
+                                    print("NR Error ", func1, \
+                                        basis1, \
+                                        " compare to ", \
+                                        func2, \
+                                        basis2, \
+                                        "%8.5e"%(nrs1[i]), \
+                                        "%8.5e"%(nrs2[i]), \
+                                        " systems ", \
+                                        chem1[i], \
+                                        chem2[i])
+                                    exit(1)
+
+            nrperstename[setname] = nrsforfb["PBE_SVP"]
+            #print(len(nrperstename[setname]))
+
+
+        for setname in featuresvalues_perset: 
+            assert len(nrperstename[setname]) == len(models_results[setname].labels)
+
+            # shift labels using nrperstename
+            for i, val in enumerate(nrperstename[setname]):
+                models_results[setname].labels[i] -= val
     
     if removeNR:    
         for setname in featuresvalues_perset:

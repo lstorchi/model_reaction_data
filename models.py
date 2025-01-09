@@ -8,14 +8,14 @@ from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_percenta
 from sklearn.model_selection import (LeaveOneOut, cross_val_predict,
                                      cross_val_score, train_test_split)
 
-from tensorflow import keras
-import tensorflow as tf
-
-import keras.optimizers as tko
-import keras.activations as tka
-import keras.losses as tkl
-from keras.layers import Input, Dense
-from keras.models import Model
+# if needed TF
+#from tensorflow import keras
+#import tensorflow as tf
+#import keras.optimizers as tko
+#import keras.activations as tka
+#import keras.losses as tkl
+#from keras.layers import Input, Dense
+#from keras.models import Model
 
 from sklearn import preprocessing
 
@@ -129,163 +129,164 @@ def pls_model (Xin, Yin, supersetlist, setlist, \
 
 ####################################################################################################
 
-def nn_model(perc_split, X, scalex, Y, scaley, supersetlist, setlist, \
-             nepochs, modelshapes, batch_sizes, inputshape=-1,\
-             search=True, split=True):
-
-    loss_metric = "mse"
-    X_train = X
-    X_test = X
-    y_train = Y
-    y_test = Y
-
-    if split:
-        X_train, X_test, y_train, y_test = train_test_split(X, Y, \
-            test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
-    
-    if inputshape == -1:
-        inputshape = X_train.shape[1]
-
-    mapes = []
-    rmses = []
-    wtmads = []
-    models = []
-    modeidxs = []
-
-    if search:
-        midx = 0
-        maxidx = len(modelshapes)*len(nepochs)*len(batch_sizes)
-
-        for modelshape in modelshapes:
-            for nepoch in nepochs:
-                for nbatch_size in batch_sizes:
-                    model = keras.Sequential()
-                
-                    model.add(keras.layers.Input(shape=(inputshape,)))
-                
-                    for n in modelshape:
-                        model.add(keras.layers.Dense(units = n, \
-                                                     activation = 'relu'))
-                
-                    model.add(keras.layers.Dense(units = 1, \
-                                                 activation = 'linear'))
-                    model.compile(loss=loss_metric, optimizer="adam", \
-                                  metrics=['mse', 'mape'])
-                    
-                    model.fit(X_train, y_train, epochs=nepoch,  \
-                            batch_size=nbatch_size, \
-                            verbose=0)
-                    
-                    Y_rescaled = scaley.inverse_transform(Y)
-                    y_pred = model.predict(X, verbose=0)
-                    y_pred_rescaled = scaley.inverse_transform(y_pred)
-                    if len(y_pred_rescaled.shape) == 2:
-                        y_pred_rescaled = y_pred_rescaled[:,0]
-                    if len(Y_rescaled.shape) == 2:
-                        Y_rescaled = Y_rescaled[:,0]
-                    wtmad = commonutils.wtmad2(setlist, Y_rescaled, y_pred_rescaled)
-                    wtmad = wtmad["Full"]
-                    mape = mean_absolute_percentage_error(Y, y_pred_rescaled)
-                    rmse = root_mean_squared_error(Y_rescaled        , y_pred_rescaled)
-
-                    mapes.append(mape)
-                    wtmads.append(wtmad)
-                    rmses.append(rmse)
-
-                    models.append((modelshape, nepoch, nbatch_size))
-                    modeidxs.append(midx)
-                    midx += 1
-
-                    commonutils.printProgressBar(midx, maxidx, \
-                                    prefix = 'Progress:', \
-                                    suffix = 'Complete', length = 50)
-                    
-        index_min_mape = np.argmin(mapes)
-        index_min_wtmad = np.argmin(wtmads)
-        index_min_rmse = np.argmin(rmses)
-        
-        avg = np.average(mapes)
-        print("Average MAPE: ", avg)
-        std = np.std(mapes)
-        print("    STD MAPE: ", std)
-        avg = np.average(rmses)
-        print("Average RMSE: ", avg)
-        std = np.std(rmses)
-        print("    STD RMSE: ", std)
-        #plot hitogram
-        plt.clf()
-        plt.hist(mapes, bins=50)
-        plt.show()
-        plt.clf()
-        plt.hist(rmses, bins=50)
-        plt.show()
-        plt.clf()
-        plt.hist(wtmads, bins=50)
-        plt.show()
-
-
-        return models[index_min_mape], models[index_min_wtmad], models[index_min_rmse]
-    else:
-        modelshape = modelshapes[0]
-        nepoch = nepochs[0]
-        batch_size = batch_sizes[0]
- 
-        model = keras.Sequential()
-        model.add(keras.layers.Input(shape=(inputshape,)))
-        
-        for n in modelshape:
-            model.add(keras.layers.Dense(units = n, activation = 'relu'))
-        
-        model.add(keras.layers.Dense(units = 1, activation = 'linear'))
-        model.compile(loss=loss_metric, optimizer="adam", metrics=['mse', 'mape'])
-        """
-        cannot easily define this as yje training loss at the end of 
-        each epoch is the mean of the batch losses.
-        lossmetric == "wtmad":
-            def wtmad_loss(scaley, setlist, supersetlist):
-                def loss(y_true, y_pred):
-                    y_pred_rescaled = scaley.inverse_transform(y_pred)
-                    y_true_rescaled = scaley.inverse_transform(y_true)
-                    wtamad = commonutils.wtmad_calc(supersetlist, setlist, \
-                                                y_pred_rescaled, y_true_rescaled, \
-                                                includeFull = True)
-                    wtmad = wtamad["Full"]
-
-                    return 
-                return loss
-            model.compile(loss=wtmad_loss(scaley, setlist, supersetlist), \
-                          optimizer="adam", metrics=['mse', 'mape'])
-        """
-        X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, \
-                                    test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
-    
-        history = model.fit(X_train, y_train, \
-                            epochs=nepoch,  \
-                            batch_size=batch_size, \
-                            validation_data=(X_val, y_val),
-                            verbose=0)
-        
-        y_pred_train = model.predict(X_train)
-        y_pred_valid = model.predict(X_val)
-        y_pred_test = model.predict(X_test)
-        y_pred = model.predict(X)
-
-        results = {
-            "model" : model,
-            "history" : history,
-            "y_pred_train" : y_pred_train,
-            "y_train": y_train,
-            "y_pred_valid" : y_pred_valid,
-            "y_valid" : y_val,
-            "y_pred_test" : y_pred_test,
-            "y_test" : y_test,
-            "y_pred_full" : y_pred,
-            "y_full" : Y
-        }
-
-        return results
-            
-    return None
+# needed TF keras
+#def nn_model(perc_split, X, scalex, Y, scaley, supersetlist, setlist, \
+#             nepochs, modelshapes, batch_sizes, inputshape=-1,\
+#             search=True, split=True):
+#
+#    loss_metric = "mse"
+#    X_train = X
+#    X_test = X
+#    y_train = Y
+#    y_test = Y
+#
+#    if split:
+#        X_train, X_test, y_train, y_test = train_test_split(X, Y, \
+#            test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
+#    
+#    if inputshape == -1:
+#        inputshape = X_train.shape[1]
+#
+#    mapes = []
+#    rmses = []
+#    wtmads = []
+#    models = []
+#    modeidxs = []
+#
+#    if search:
+#        midx = 0
+#        maxidx = len(modelshapes)*len(nepochs)*len(batch_sizes)
+#
+#        for modelshape in modelshapes:
+#            for nepoch in nepochs:
+#                for nbatch_size in batch_sizes:
+#                    model = keras.Sequential()
+#                
+#                    model.add(keras.layers.Input(shape=(inputshape,)))
+#                
+#                    for n in modelshape:
+#                        model.add(keras.layers.Dense(units = n, \
+#                                                     activation = 'relu'))
+#                
+#                    model.add(keras.layers.Dense(units = 1, \
+#                                                 activation = 'linear'))
+#                    model.compile(loss=loss_metric, optimizer="adam", \
+#                                  metrics=['mse', 'mape'])
+#                    
+#                    model.fit(X_train, y_train, epochs=nepoch,  \
+#                            batch_size=nbatch_size, \
+#                            verbose=0)
+#                    
+#                    Y_rescaled = scaley.inverse_transform(Y)
+#                    y_pred = model.predict(X, verbose=0)
+#                    y_pred_rescaled = scaley.inverse_transform(y_pred)
+#                    if len(y_pred_rescaled.shape) == 2:
+#                        y_pred_rescaled = y_pred_rescaled[:,0]
+#                    if len(Y_rescaled.shape) == 2:
+#                        Y_rescaled = Y_rescaled[:,0]
+#                    wtmad = commonutils.wtmad2(setlist, Y_rescaled, y_pred_rescaled)
+#                    wtmad = wtmad["Full"]
+#                    mape = mean_absolute_percentage_error(Y, y_pred_rescaled)
+#                    rmse = root_mean_squared_error(Y_rescaled        , y_pred_rescaled)
+#
+#                    mapes.append(mape)
+#                    wtmads.append(wtmad)
+#                    rmses.append(rmse)
+#
+#                    models.append((modelshape, nepoch, nbatch_size))
+#                    modeidxs.append(midx)
+#                    midx += 1
+#
+#                    commonutils.printProgressBar(midx, maxidx, \
+#                                    prefix = 'Progress:', \
+#                                    suffix = 'Complete', length = 50)
+#                    
+#        index_min_mape = np.argmin(mapes)
+#        index_min_wtmad = np.argmin(wtmads)
+#        index_min_rmse = np.argmin(rmses)
+#        
+#        avg = np.average(mapes)
+#        print("Average MAPE: ", avg)
+#        std = np.std(mapes)
+#        print("    STD MAPE: ", std)
+#        avg = np.average(rmses)
+#        print("Average RMSE: ", avg)
+#        std = np.std(rmses)
+#        print("    STD RMSE: ", std)
+#        #plot hitogram
+#        plt.clf()
+#        plt.hist(mapes, bins=50)
+#        plt.show()
+#        plt.clf()
+#        plt.hist(rmses, bins=50)
+#        plt.show()
+#        plt.clf()
+#        plt.hist(wtmads, bins=50)
+#        plt.show()
+#
+#
+#        return models[index_min_mape], models[index_min_wtmad], models[index_min_rmse]
+#    else:
+#        modelshape = modelshapes[0]
+#        nepoch = nepochs[0]
+#        batch_size = batch_sizes[0]
+# 
+#        model = keras.Sequential()
+#        model.add(keras.layers.Input(shape=(inputshape,)))
+#        
+#        for n in modelshape:
+#            model.add(keras.layers.Dense(units = n, activation = 'relu'))
+#        
+#        model.add(keras.layers.Dense(units = 1, activation = 'linear'))
+#        model.compile(loss=loss_metric, optimizer="adam", metrics=['mse', 'mape'])
+#        """
+#        cannot easily define this as yje training loss at the end of 
+#        each epoch is the mean of the batch losses.
+#        lossmetric == "wtmad":
+#            def wtmad_loss(scaley, setlist, supersetlist):
+#                def loss(y_true, y_pred):
+#                    y_pred_rescaled = scaley.inverse_transform(y_pred)
+#                    y_true_rescaled = scaley.inverse_transform(y_true)
+#                    wtamad = commonutils.wtmad_calc(supersetlist, setlist, \
+#                                                y_pred_rescaled, y_true_rescaled, \
+#                                                includeFull = True)
+#                    wtmad = wtamad["Full"]
+#
+#                    return 
+#                return loss
+#            model.compile(loss=wtmad_loss(scaley, setlist, supersetlist), \
+#                          optimizer="adam", metrics=['mse', 'mape'])
+#        """
+#        X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, \
+#                                    test_size=perc_split, random_state=SPLIT_RANDOM_STATE)
+#    
+#        history = model.fit(X_train, y_train, \
+#                            epochs=nepoch,  \
+#                            batch_size=batch_size, \
+#                            validation_data=(X_val, y_val),
+#                            verbose=0)
+#        
+#        y_pred_train = model.predict(X_train)
+#        y_pred_valid = model.predict(X_val)
+#        y_pred_test = model.predict(X_test)
+#        y_pred = model.predict(X)
+#
+#        results = {
+#            "model" : model,
+#            "history" : history,
+#            "y_pred_train" : y_pred_train,
+#            "y_train": y_train,
+#            "y_pred_valid" : y_pred_valid,
+#            "y_valid" : y_val,
+#            "y_pred_test" : y_pred_test,
+#            "y_test" : y_test,
+#            "y_pred_full" : y_pred,
+#            "y_full" : Y
+#        }
+#
+#        return results
+#            
+#    return None
 
 ####################################################################################################
 
