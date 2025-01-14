@@ -179,8 +179,17 @@ if __name__ == "__main__":
                 lrmodel.set_solver("Nelder-Mead")
                 lrmodel.fit(X, Y, \
                     beta_init_values = lr_start_model.get_beta())
-            
+
             y_pred = lrmodel.predict(X)
+
+            fp = open("modelresults_"+ setname +".csv", "w")
+            print("True, Predicted, PredictedNR", file=fp)
+            for i , yp in enumerate(y_pred):
+                print("%12.6f ,  %12.6f , %12.6f"%(\
+                    Y[i], yp, models_results[setname].nrs[i]), \
+                    file=fp)
+            fp.close()
+
             Y = Y + models_results[setname].nrs
             y_pred = y_pred + models_results[setname].nrs
 
