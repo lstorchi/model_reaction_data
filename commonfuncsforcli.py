@@ -31,19 +31,19 @@ def lr_test_and_rpint (lr_model, X, Y, name, features_names, fp):
         rmse_eq = mean_squared_error(Y, y_pred_eq, squared=False)
     diffperc = np.abs(rmse - rmse_eq) / rmse * 100.0
     if diffperc > CUTDIFFPERCLR:
-        print("LR %40s RMSE Diff %5.3f "%(name, diffperc), "%")
-        print("%40s RMSE Diff %5.3f "%(name, diffperc), "%", file=fp)
+        print("LR %50s RMSE Diff %5.3f "%(name, diffperc), "%")
+        print("%50s RMSE Diff %5.3f "%(name, diffperc), "%", file=fp)
         exit(1)
 
 
     if PRINTALSOINSTDOUT:
-        print("%40s , %30s , %20.12f"%(name, "Intercept", lr_model.get_intercept()))
-    print("%40s , %30s , %20.12f"%(name, "Intercept", lr_model.get_intercept()), file=fp)
+        print("%50s , %30s , %20.12f"%(name, "Intercept", lr_model.get_intercept()))
+    print("%50s , %30s , %20.12f"%(name, "Intercept", lr_model.get_intercept()), file=fp)
     for i, f in enumerate(features_names):
         #print("  %15s %12.8e"%(f, lr_model.coef_.T[i]))
         if PRINTALSOINSTDOUT:
-            print("%40s , %30s , %20.12f"%(name, f, lr_model.get_coefficients().T[i]))
-        print("%40s , %30s , %20.12f"%(name, f, lr_model.get_coefficients().T[i]), file=fp)
+            print("%50s , %30s , %20.12f"%(name, f, lr_model.get_coefficients().T[i]))
+        print("%50s , %30s , %20.12f"%(name, f, lr_model.get_coefficients().T[i]), file=fp)
 
 ###############################################################
 
@@ -131,7 +131,7 @@ def readdata (removeNR=False, shiftusingNR=False):
             methodname = insidemethods[methodid]
             models_results[setname].insidemethods_rmse[methodname] = float("inf")
             models_results[setname].insidemethods_mape[methodname] = float("inf")
-            models_results[setname].insidemethods_wtamd[methodname] = float("inf")
+            #models_results[setname].insidemethods_wtamd[methodname] = float("inf")
             models_results[setname].insidemethods_ypred[methodname] = []
     
             y_pred = []
@@ -139,7 +139,8 @@ def readdata (removeNR=False, shiftusingNR=False):
                 y_pred.append(val["label"] + val["difs"][methodid])
     
             models_results[setname].insidemethods_ypred[methodname].extend(y_pred)
-    
+            
+            """
             wtmad = None
             fulllist = list(supersetnames.keys()) + ["Full"]
             if setname in fulllist:
@@ -148,7 +149,8 @@ def readdata (removeNR=False, shiftusingNR=False):
                         models_results[setname].labels, y_pred)
                 wtmad = wtmadf[setname]
                 models_results[setname].insidemethods_wtamd[methodname] = wtmad
-    
+            """
+
             rmse = 0.0
             try:
                 rmse = root_mean_squared_error(models_results[setname].\
@@ -168,7 +170,7 @@ def readdata (removeNR=False, shiftusingNR=False):
         for j, method in enumerate(methods):
             models_results[setname].funcional_basisset_rmse[method] = float("inf")
             models_results[setname].funcional_basisset_mape[method] = float
-            models_results[setname].funcional_basisset_wtamd[method] = float
+            #models_results[setname].funcional_basisset_wtamd[method] = float
             models_results[setname].funcional_basisset_ypred[method] = []
     
             y_pred = []
@@ -177,6 +179,7 @@ def readdata (removeNR=False, shiftusingNR=False):
     
             models_results[setname].funcional_basisset_ypred[method].extend(y_pred)
     
+            """
             wtmad = None            
             fulllist = list(supersetnames.keys()) + ["Full"]
             if setname in fulllist:
@@ -185,6 +188,7 @@ def readdata (removeNR=False, shiftusingNR=False):
                         models_results[setname].labels, y_pred)
                 wtmad = wtmadf[setname]
                 models_results[setname].funcional_basisset_wtamd[method] = wtmad
+            """
 
             rmse = 0.0
             try:
@@ -256,8 +260,8 @@ def readdata (removeNR=False, shiftusingNR=False):
         nrperstename = {}
         for setname in featuresvalues_perset:
             nrperstename[setname] = []
-            print("Setname: ", setname)
             if setname not in models_results:
+                print("Setname: ", setname)
                 print("Setname not in models_results: ", setname)
                 exit(1)
         
@@ -283,6 +287,7 @@ def readdata (removeNR=False, shiftusingNR=False):
         
             for k in nrsforfb:
                 if len(nrsforfb[k]) != len(chemicalsforfb[k]):
+                    print("Setname: ", setname)
                     print("NR values error")
                     print(k, len(nrsforfb[k]), len(chemicalsforfb[k]))
                     exit(1)
@@ -300,6 +305,7 @@ def readdata (removeNR=False, shiftusingNR=False):
                             nrs2 = nrsforfb[func2 + "_" + basis2]
                             chem2 = chemicalsforfb[func2 + "_" + basis2]
                             if len(nrs1) != len(nrs2):
+                                print("Setname: ", setname)
                                 print("NR len values error")
                                 print(len(nrs1), len(nrs2), chem1, chem2)
                                 exit(1)
@@ -330,12 +336,14 @@ def readdata (removeNR=False, shiftusingNR=False):
                             nrs2 = nrsforfb[func2 + "_" + basis2]
                             chem2 = chemicalsforfb[func2 + "_" + basis2]
                             if len(nrs1) != len(nrs2):
+                                print("Setname: ", setname)
                                 print("NR len values error")
                                 print(len(nrs1), len(nrs2), chem1, chem2)
                                 exit(1)
         
                             for i in range(len(nrs1)):
                                 if np.abs(nrs1[i] - nrs2[i]) > 1e-6:
+                                    print("Setname: ", setname)
                                     print("NR Error ", func1, \
                                         basis1, \
                                         " compare to ", \
@@ -354,6 +362,8 @@ def readdata (removeNR=False, shiftusingNR=False):
 
         for setname in featuresvalues_perset: 
             assert len(nrperstename[setname]) == len(models_results[setname].labels)
+
+            models_results[setname].nrs = nrperstename[setname]
 
             # shift labels using nrperstename
             for i, val in enumerate(nrperstename[setname]):

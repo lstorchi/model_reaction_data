@@ -28,14 +28,15 @@ class ModelResults:
     uncorrelated_features: dict = field(default_factory=dict)
 
     funcional_basisset_rmse: dict = field(default_factory=dict)
-    funcional_basisset_wtamd: dict = field(default_factory=dict)
+    #funcional_basisset_wtamd: dict = field(default_factory=dict)
     funcional_basisset_mape : dict = field(default_factory=dict)
     funcional_basisset_ypred : dict = field(default_factory=dict)
 
     insidemethods_rmse: dict = field(default_factory=dict)
-    insidemethods_wtamd: dict = field(default_factory=dict)
+    #insidemethods_wtamd: dict = field(default_factory=dict)
     insidemethods_mape : dict = field(default_factory=dict)
     insidemethods_ypred : dict = field(default_factory=dict)
+
 @dataclass(slots=False)
 class ModelsStore:
     
