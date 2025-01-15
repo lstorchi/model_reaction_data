@@ -626,6 +626,10 @@ if __name__ == "__main__":
     
     predictred = {}
     
+    X, y, features_names =\
+            commonutils.build_XY_matrix (models_results['Full'].\
+            features,\
+            models_results['Full'].labels) 
     y_true = y
     nrs = models_results["Full"].nrs
 
