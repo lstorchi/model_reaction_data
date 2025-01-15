@@ -548,7 +548,7 @@ if __name__ == "__main__":
             print("Setname: ", setname)
             for entry in featuresvalues_perset[setname]:
                 classes.append(supersetnameslist.index(setname))
-    X, Y, features_names =\
+    X, _, features_names =\
             commonutils.build_XY_matrix (\
             models_results['Full'].features,\
             models_results['Full'].labels)
@@ -584,7 +584,7 @@ if __name__ == "__main__":
     for method in ypredFull_allbasissets:
         assert(len(ypredFull_lr) == len(ypredFull_allbasissets[method]))
     
-    X, y, features_names =\
+    X, _, features_names =\
             commonutils.build_XY_matrix (models_results['Full'].\
             features,\
             models_results['Full'].labels)
@@ -705,13 +705,13 @@ if __name__ == "__main__":
         print("%44s %7.3f"%("Full , D3(BJ) WTMAD2, ", wtamd2))
     print("%44s %7.3f"%("Full , D3(BJ) WTMAD2, ", wtamd2), file=fp)
     """
+    y_true = models_results["Full"].labels
+    if SHIFTNR:
+        for i in range(len(y_true)):
+            y_true[i] = y_true[i] + models_results["Full"].nrs[i]
 
     for m in predictred:
         ypred = predictred[m]
-        y_true = models_results["Full"].labels
-        if SHIFTNR:
-            for i in range(len(y_true)):
-                y_true[i] = y_true[i] - models_results["Full"].nrs[i]
         mape_full_usingss = mean_absolute_percentage_error( \
                 y_true, ypred)
         if PRINTALSOINSTDOUT:
