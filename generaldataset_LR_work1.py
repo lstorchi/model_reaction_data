@@ -418,13 +418,13 @@ if __name__ == "__main__":
         lr_custom_model_ssetname = models_store[ssetname].lr_custom_model
         lr_custom_model_ssetname_splitted = models_store[ssetname].lr_custom_model_splitted
     
-        X, Y, features_names = \
+        X, y, features_names = \
                 commonutils.build_XY_matrix (\
                 models_results[ssetname].features,\
                 models_results[ssetname].labels)
         setlist = models_results[ssetname].setnames
         setnamesFull.extend(setlist)
-        y_true = Y
+        y_true = y
         nrs = models_results[ssetname].nrs
 
         # SuperSet LR
@@ -432,7 +432,7 @@ if __name__ == "__main__":
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         if SHIFTNR:
-            y_true, y_pred = shiftbackdata (Y, y_pred, nrs)
+            y_true, y_pred = shiftbackdata (y, y_pred, nrs)
         ypredFull_lr.extend(y_pred)
         mape = mean_absolute_percentage_error(y_true, y_pred)
         if PRINTALSOINSTDOUT:
@@ -442,7 +442,7 @@ if __name__ == "__main__":
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         if SHIFTNR:
-            y_true, y_pred = shiftbackdata (Y, y_pred, nrs)
+            y_true, y_pred = shiftbackdata (y, y_pred, nrs)
         ypredFull_lr_split.extend(y_pred)
         mape = mean_absolute_percentage_error(y_true, y_pred)
         if PRINTALSOINSTDOUT:
@@ -454,7 +454,7 @@ if __name__ == "__main__":
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         if SHIFTNR:
-            y_true, y_pred = shiftbackdata (Y, y_pred, nrs)
+            y_true, y_pred = shiftbackdata (y, y_pred, nrs)
         ypredFull_lr_custom.extend(y_pred)
         mape = mean_absolute_percentage_error(y_true, y_pred)
         if PRINTALSOINSTDOUT:
@@ -464,7 +464,7 @@ if __name__ == "__main__":
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         if SHIFTNR:
-            y_true, y_pred = shiftbackdata (Y, y_pred, nrs)
+            y_true, y_pred = shiftbackdata (y, y_pred, nrs)
         ypredFull_lr_custom_split.extend(y_pred)
         mape = mean_absolute_percentage_error(y_true, y_pred)
         if PRINTALSOINSTDOUT:
@@ -476,16 +476,16 @@ if __name__ == "__main__":
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         if SHIFTNR:
-            y_true, y_pred = shiftbackdata (Y, y_pred, nrs)
+            y_true, y_pred = shiftbackdata (y, y_pred, nrs)
         mape = mean_absolute_percentage_error(y_true, y_pred)
         if PRINTALSOINSTDOUT:
             print(" %60s MAPE , %12.6f"%(ssetname+" , Full LR", mape))
         print(" %60s MAPE , %12.6f"%(ssetname+" , Full LR", mape), file=fp)
-        ypred = lr_model_full_splitted.predict(X)
+        y_pred = lr_model_full_splitted.predict(X)
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         if SHIFTNR:
-            y_true, y_pred = shiftbackdata (Y, y_pred, nrs)
+            y_true, y_pred = shiftbackdata (y, y_pred, nrs)
         mape = mean_absolute_percentage_error(y_true, y_pred)
         if PRINTALSOINSTDOUT:
             print(" %60s MAPE , %12.6f"%(ssetname+" , Full LR split", mape))
@@ -496,7 +496,7 @@ if __name__ == "__main__":
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         if SHIFTNR:
-            y_true, y_pred = shiftbackdata (Y, y_pred, nrs)
+            y_true, y_pred = shiftbackdata (y, y_pred, nrs)
         mape = mean_absolute_percentage_error(y_true, y_pred)
         if PRINTALSOINSTDOUT:
             print(" %60s MAPE , %12.6f"%(ssetname+" , Full Custom LR", mape))
@@ -505,7 +505,7 @@ if __name__ == "__main__":
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         if SHIFTNR:
-            y_true, y_pred = shiftbackdata (Y, y_pred, nrs)
+            y_true, y_pred = shiftbackdata (y, y_pred, nrs)
         mape = mean_absolute_percentage_error(y_true, y_pred)
         if PRINTALSOINSTDOUT:
             print(" %60s MAPE , %12.6f"%(ssetname+" , Full Custom LR split", mape))
@@ -518,7 +518,7 @@ if __name__ == "__main__":
         ypredFull_d3bj.extend(models_results[ssetname].insidemethods_ypred["D3(BJ)"])
 
         if SHIFTNR: 
-            y_true = Y + nrs
+            y_true = y + nrs
         for method in models_results[ssetname].funcional_basisset_ypred:
             if method.find(selected_functional) != -1:
                 y_pred = models_results[ssetname].funcional_basisset_ypred[method]
