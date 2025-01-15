@@ -536,11 +536,8 @@ if __name__ == "__main__":
                         method, mapecompute), file=fp)
     fp.close()
 
-    exit()
-
     basissets_touse = set(basis_sets + [selected_basisset])
     functional_to_use = set(functionals + [selected_functional])
-    
 
     # build RF model
     classes = []
@@ -587,7 +584,7 @@ if __name__ == "__main__":
     for method in ypredFull_allbasissets:
         assert(len(ypredFull_lr) == len(ypredFull_allbasissets[method]))
     
-    X, Y, features_names =\
+    X, y, features_names =\
             commonutils.build_XY_matrix (models_results['Full'].\
             features,\
             models_results['Full'].labels)
@@ -629,18 +626,19 @@ if __name__ == "__main__":
     
     predictred = {}
     
-    y_true = Y
+    y_true = y
+    nrs = models_results["Full"].nrs
 
     y_pred = models_store["Full"].lr_model.predict(X)
     if SHIFTNR:
-        y_true, y_pred = shiftbackdata (Y, y_pred, models_results["Full"].nrs)
+        y_true, y_pred = shiftbackdata (y, y_pred, nrs)
     predictred["Full , using LR Full"] = y_pred
     if len(predictred["Full , using LR Full"].shape) == 2:
         predictred["Full , using LR Full"] = \
                             predictred["Full , using LR Full"][:,0]
     y_pred = models_store["Full"].lr_model_splitted.predict(X)
     if SHIFTNR:
-        y_true, y_pred = shiftbackdata (Y, y_pred, models_results["Full"].nrs)
+        y_true, y_pred = shiftbackdata (y, y_pred, nrs)
     predictred["Full , using LR Full split"] = y_pred
     if len(predictred["Full , using LR Full split"].shape) == 2:
         predictred["Full , using LR Full split"] =         \
@@ -650,14 +648,14 @@ if __name__ == "__main__":
 
     y_pred = models_store["Full"].lr_custom_model.predict(X)
     if SHIFTNR:
-        y_true, y_pred = shiftbackdata (Y, y_pred, models_results["Full"].nrs)   
+        y_true, y_pred = shiftbackdata (y, y_pred, nrs)   
     predictred["Full , using Custom LR Full"] = y_pred
     if len(predictred["Full , using Custom LR Full"].shape) == 2:
         predictred["Full , using Custom LR Full"] =  \
                           predictred["Full , using Custom LR Full"][:,0]
     y_pred = models_store["Full"].lr_custom_model_splitted.predict(X)
     if SHIFTNR:
-        y_true, y_pred = shiftbackdata (Y, y_pred, models_results["Full"].nrs)
+        y_true, y_pred = shiftbackdata (y, y_pred, nrs)
     predictred["Full , using Custom LR Full split"] =  y_pred
     if len(predictred["Full , using Custom LR Full split"].shape) == 2:
         predictred["Full , using Custom LR Full split"] = \
