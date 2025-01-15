@@ -47,7 +47,7 @@ warnings.simplefilter("ignore")
 from commonfuncsforcli import *
 
 CHECKANDTESTSINGLEMODEL = False
-SHIFTNR = False
+SHIFTNR = True
 
 if __name__ == "__main__":
 
@@ -113,7 +113,7 @@ if __name__ == "__main__":
         
         models_results[setname].features = desciptors
     
-    # feastures selection
+    # features selection
     setname = "Full"
     numoffeat = len(models_results[setname].features)
     print("Number of features for ", numoffeat)
@@ -231,28 +231,29 @@ if __name__ == "__main__":
         models_store[setname] = ModelsStore()
     
         print("Running models for dataset: ", setname)
-        X, Y, features_names = \
+        X, y, features_names = \
                 commonutils.build_XY_matrix \
                 (models_results[setname].features, \
                 models_results[setname].labels)
         X_train, X_test, y_train, y_test, nrs_train, nrs_test \
-              = train_test_split(X, Y, models_results[setname].nrs,
+              = train_test_split(X, y, models_results[setname].nrs,
                           test_size=0.20, random_state=42)
         setlist = models_results[setname].setnames  
         supersetlist = models_results[setname].supersetnames
-        y_true = Y  
+        y_true = y  
         y_test_true = y_test
         y_train_true = y_train
+        nrs = models_results[setname].nrs
 
         # Linear regression model to get starting beta values
         lr_start_model = clr.custom_loss_lr (loss=clr.mean_average_error)
         lr_start_split_model = clr.custom_loss_lr (loss=clr.mean_average_error)
         try:
-            lr_start_model.fit(X, Y)
+            lr_start_model.fit(X, y)
         except Exception as e:
             print("Error: ", e)
             lr_start_model.set_solver("Nelder-Mead")
-            lr_start_model.fit(X, Y)
+            lr_start_model.fit(X, y)
         try:
             lr_start_split_model.fit(X_train, y_train)
         except Exception as e:
@@ -264,22 +265,22 @@ if __name__ == "__main__":
         models_store[setname].lr_model = \
                 clr.custom_loss_lr (loss=clr.mean_average_error)
         try:
-            models_store[setname].lr_model.fit(X, Y, \
+            models_store[setname].lr_model.fit(X, y, \
                 beta_init_values = lr_start_model.get_beta())
         except Exception as e:
             print("Error: ", e)
             models_store[setname].lr_model.set_solver("Nelder-Mead")
-            models_store[setname].lr_model.fit(X, Y, \
+            models_store[setname].lr_model.fit(X, y, \
                 beta_init_values = lr_start_model.get_beta())
         y_pred_lr = models_store[setname].lr_model.predict(X)
         lrrmse = 0.0
         if SHIFTNR:
-            y_true, y_pred_lr = shiftbackdata (Y, y_pred_lr, models_results[setname].nrs)  
+            y_true, y_pred_lr = shiftbackdata (y, y_pred_lr, nrs)  
         try:
-            lrrmse = root_mean_squared_error(Y, y_pred_lr)
+            lrrmse = root_mean_squared_error(y_true, y_pred_lr)
         except:
-            lrrmse = np.sqrt(mean_squared_error(Y, y_pred_lr))
-        lrrmape = mean_absolute_percentage_error(Y, y_pred_lr)
+            lrrmse = np.sqrt(mean_squared_error(y_true, y_pred_lr))
+        lrrmape = mean_absolute_percentage_error(y_true, y_pred_lr)
         models_store[setname].lr_model_splitted = \
                 clr.custom_loss_lr (loss=clr.mean_average_error)
         try:
@@ -328,16 +329,16 @@ if __name__ == "__main__":
         models_store[setname].lr_custom_model =\
                 clr.custom_loss_lr (loss=clr.mean_absolute_percentage_error)
         try:
-            models_store[setname].lr_custom_model.fit(X, Y, \
+            models_store[setname].lr_custom_model.fit(X, y, \
                 beta_init_values = lr_start_model.get_beta())
         except Exception as e:
             print("Error: ", e)
             models_store[setname].lr_custom_model.set_solver("Nelder-Mead")
-            models_store[setname].lr_custom_model.fit(X, Y, \
+            models_store[setname].lr_custom_model.fit(X, y, \
                 beta_init_values = lr_start_model.get_beta())
         y_pred_custom_lr = models_store[setname].lr_custom_model.predict(X)
         if SHIFTNR:
-            y_true, y_pred_custom_lr = shiftbackdata (Y, y_pred_custom_lr, models_results[setname].nrs)
+            y_true, y_pred_custom_lr = shiftbackdata (y, y_pred_custom_lr, nrs)
         custom_lrrmse = 0.0
         try:
             custom_lrrmse = root_mean_squared_error(y_true, y_pred_custom_lr)
@@ -424,13 +425,14 @@ if __name__ == "__main__":
         setlist = models_results[ssetname].setnames
         setnamesFull.extend(setlist)
         y_true = Y
+        nrs = models_results[ssetname].nrs
 
         # SuperSet LR
         y_pred = lr_model_ssetname.predict(X)
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         if SHIFTNR:
-            y_true, y_pred = shiftbackdata (Y, y_pred, models_results[ssetname].nrs)
+            y_true, y_pred = shiftbackdata (Y, y_pred, nrs)
         ypredFull_lr.extend(y_pred)
         mape = mean_absolute_percentage_error(y_true, y_pred)
         if PRINTALSOINSTDOUT:
@@ -440,9 +442,9 @@ if __name__ == "__main__":
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         if SHIFTNR:
-            y_true, y_pred = shiftbackdata (Y, y_pred, models_results[ssetname].nrs)
+            y_true, y_pred = shiftbackdata (Y, y_pred, nrs)
         ypredFull_lr_split.extend(y_pred)
-        mape = mean_absolute_percentage_error(Y, y_pred)
+        mape = mean_absolute_percentage_error(y_true, y_pred)
         if PRINTALSOINSTDOUT:
             print(" %60s MAPE , %12.6f"%(ssetname+" , SS LR split", mape))
         print(" %60s MAPE , %12.6f"%(ssetname+" , SS LR split", mape), file=fp)
@@ -452,7 +454,7 @@ if __name__ == "__main__":
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         if SHIFTNR:
-            y_true, y_pred = shiftbackdata (Y, y_pred, models_results[ssetname].nrs)
+            y_true, y_pred = shiftbackdata (Y, y_pred, nrs)
         ypredFull_lr_custom.extend(y_pred)
         mape = mean_absolute_percentage_error(y_true, y_pred)
         if PRINTALSOINSTDOUT:
@@ -462,7 +464,7 @@ if __name__ == "__main__":
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         if SHIFTNR:
-            y_true, y_pred = shiftbackdata (Y, y_pred, models_results[ssetname].nrs)
+            y_true, y_pred = shiftbackdata (Y, y_pred, nrs)
         ypredFull_lr_custom_split.extend(y_pred)
         mape = mean_absolute_percentage_error(y_true, y_pred)
         if PRINTALSOINSTDOUT:
@@ -474,7 +476,7 @@ if __name__ == "__main__":
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         if SHIFTNR:
-            y_true, y_pred = shiftbackdata (Y, y_pred, models_results[ssetname].nrs)
+            y_true, y_pred = shiftbackdata (Y, y_pred, nrs)
         mape = mean_absolute_percentage_error(y_true, y_pred)
         if PRINTALSOINSTDOUT:
             print(" %60s MAPE , %12.6f"%(ssetname+" , Full LR", mape))
@@ -483,7 +485,7 @@ if __name__ == "__main__":
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         if SHIFTNR:
-            y_true, y_pred = shiftbackdata (Y, y_pred, models_results[ssetname].nrs)
+            y_true, y_pred = shiftbackdata (Y, y_pred, nrs)
         mape = mean_absolute_percentage_error(y_true, y_pred)
         if PRINTALSOINSTDOUT:
             print(" %60s MAPE , %12.6f"%(ssetname+" , Full LR split", mape))
@@ -494,7 +496,7 @@ if __name__ == "__main__":
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         if SHIFTNR:
-            y_true, y_pred = shiftbackdata (Y, y_pred, models_results[ssetname].nrs)
+            y_true, y_pred = shiftbackdata (Y, y_pred, nrs)
         mape = mean_absolute_percentage_error(y_true, y_pred)
         if PRINTALSOINSTDOUT:
             print(" %60s MAPE , %12.6f"%(ssetname+" , Full Custom LR", mape))
@@ -503,7 +505,7 @@ if __name__ == "__main__":
         if len(y_pred.shape) == 2:
             y_pred = y_pred[:,0]
         if SHIFTNR:
-            y_true, y_pred = shiftbackdata (Y, y_pred, models_results[ssetname].nrs)
+            y_true, y_pred = shiftbackdata (Y, y_pred, nrs)
         mape = mean_absolute_percentage_error(y_true, y_pred)
         if PRINTALSOINSTDOUT:
             print(" %60s MAPE , %12.6f"%(ssetname+" , Full Custom LR split", mape))
@@ -514,20 +516,28 @@ if __name__ == "__main__":
             print(" %60s MAPE , %12.6f"%(ssetname+" , D3(BJ)", mape))
         print(" %60s MAPE , %12.6f"%(ssetname+" , D3(BJ)", mape), file=fp)
         ypredFull_d3bj.extend(models_results[ssetname].insidemethods_ypred["D3(BJ)"])
-    
+
+        if SHIFTNR: 
+            y_true = Y + nrs
         for method in models_results[ssetname].funcional_basisset_ypred:
             if method.find(selected_functional) != -1:
                 y_pred = models_results[ssetname].funcional_basisset_ypred[method]
                 ypredFull_allbasissets[method].extend(y_pred)
+                mapecompute = mean_absolute_percentage_error(y_true, y_pred)
+                if SHIFTNR:
+                    if method.find("MINIX") != -1:
+                        print("Warning the MINIX NRS is different for heavy atoms")
+                        #mapecompute = float('nan')
+                        # the MINIX NRS is different for heavy atoms
                 if PRINTALSOINSTDOUT:
                     print(" %60s MAPE , %12.6f"%(ssetname+' , ' \
-                        +method,\
-                        mean_absolute_percentage_error(y_true, y_pred)))
+                        +method, mapecompute))
                 print(" %60s MAPE , %12.6f"%(ssetname+' , '+  \
-                        method,\
-                        mean_absolute_percentage_error(y_true, y_pred)), file=fp)
+                        method, mapecompute), file=fp)
     fp.close()
-    
+
+    exit()
+
     basissets_touse = set(basis_sets + [selected_basisset])
     functional_to_use = set(functionals + [selected_functional])
     
