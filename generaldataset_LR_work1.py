@@ -705,6 +705,7 @@ if __name__ == "__main__":
         print("%44s %7.3f"%("Full , D3(BJ) WTMAD2, ", wtamd2))
     print("%44s %7.3f"%("Full , D3(BJ) WTMAD2, ", wtamd2), file=fp)
     """
+
     y_true = models_results["Full"].labels
     if SHIFTNR:
         for i in range(len(y_true)):
