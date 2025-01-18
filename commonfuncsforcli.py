@@ -457,7 +457,9 @@ def readdata (removeFT="", shiftusingFT="", \
                 # shift labels using nrperstename
                 for i, val in enumerate(ftperstename[setname]):
                     models_results[setname].labels[i] -= val
-    
+        else:
+            models_results[setname].fts = nrperstename[setname]
+
     if removeFT != "":   
         for setname in featuresvalues_perset:
             toremove = []
