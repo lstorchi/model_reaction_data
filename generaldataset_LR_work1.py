@@ -81,7 +81,7 @@ if __name__ == "__main__":
     models_results, \
         supersetnames = readdata(shiftusingFT=SHIFTFT, \
                     selected_functionalin=selected_functional, \
-                    selected_basissetin=selected_basisset)
+                    selected_basisin=selected_basisset)
     
     sep = "_"
     for setname in fullsetnames:
