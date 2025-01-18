@@ -15,21 +15,21 @@ CUTDIFFPERCLR = 0.001
 ###############################################################
 
 def lr_test_and_rpint (lr_model, X, Y, name, features_names, fp,
-                       shiftnr=False, nrs=None):
+                       shiftft="", fts=None):
 
     #y_pred_eq = lr_model.intercept_ + np.dot(X, lr_model.coef_.T)
     y_true = Y
     y_pred = lr_model.predict(X)
-    if shiftnr:
-        y_true, y_pred = shiftbackdata(Y, y_pred, nrs)
+    if shiftft != "":
+        y_true, y_pred = shiftbackdata(Y, y_pred, fts)
     rmse = 0.0
     try:
         rmse = root_mean_squared_error(Y, y_pred)
     except:
         rmse = mean_squared_error(Y, y_pred, squared=False)
     y_pred_eq = lr_model.get_intercept() + np.dot(X, lr_model.get_coefficients().T)
-    if shiftnr: 
-        y_pred_eq = shiftbackdata(Y, y_pred_eq, nrs)[1]
+    if shiftft != "": 
+        y_pred_eq = shiftbackdata(Y, y_pred_eq, fts)[1]
     rmse_eq = 0.0
     try:
         rmse_eq = root_mean_squared_error(Y, y_pred_eq)
@@ -94,28 +94,28 @@ def pls_test_and_rpint (pls_model, X, Y, name, features_names, fp):
 
 ###############################################################
 
-def shiftbackdata (ytrue, ypred, nrs):
+def shiftbackdata (ytrue, ypred, fts):
 
     assert len(ytrue) == len(ypred)
-    assert len(ytrue) == len(nrs)    
+    assert len(ytrue) == len(fts)    
    
     yt = ytrue.copy()
     for i in range(len(yt)):
-        yt[i] += nrs[i]
+        yt[i] += fts[i]
 
     yp = ypred.copy()
     for i in range(len(yp)):
-        yp[i] += nrs[i]
+        yp[i] += fts[i]
     
     return yt, yp
 
 ###############################################################
 
-def readdata (removeNR=False, shiftusingNR=False):
+def readdata (removeFT="", shiftusingFT=""):
 
-    if shiftusingNR:
-        print("Shifting using NR")
-        removeNR = True
+    if shiftusingFT != "":
+        print("Shifting using ", shiftusingFT)
+        removeFT = shiftusingFT
 
     howmanydifs = 3
     allvalues_perset = pickle.load(open("./data/allvalues_perset.p", "rb"))
@@ -280,8 +280,10 @@ def readdata (removeNR=False, shiftusingNR=False):
     featuresvalues_perset = deepcopy(eq_featuresvalues_perset)
 
     nrperstename = {}
+    ftperstename = {}
     for setname in featuresvalues_perset:
         nrperstename[setname] = []
+        ftperstename[setname] = []
         if setname not in models_results:
             print("Setname: ", setname)
             print("Setname not in models_results: ", setname)
@@ -291,10 +293,12 @@ def readdata (removeNR=False, shiftusingNR=False):
         #["MINIX", "SVP", "TZVP", "QZVP"]
     
         nrsforfb = {}
+        ftsforfb = {}
         chemicalsforfb = {}
         for func in ["PBE", "PBE0"]:
             for basis in ["MINIX", "SVP", "TZVP", "QZVP"]:
                 nrs = []
+                fts = []
                 chemicals = []
                 for i, val in enumerate(featuresvalues_perset[setname]):
                     chemicals.append(models_results[setname].chemicals[i])
@@ -303,15 +307,29 @@ def readdata (removeNR=False, shiftusingNR=False):
                             k.find(func + "_") != -1 and \
                             k.find(basis + "_") != -1:
                             nrs.append(val[k])  
+                        
+                        if k.find("_"+removeFT ) != -1 and \
+                            k.find(func + "_") != -1 and \
+                            k.find(basis + "_") != -1:
+                            fts.append(val[k])
+                            
     
                 nrsforfb[func + "_" + basis] = nrs 
                 chemicalsforfb[func + "_" + basis] = chemicals
+                ftsforfb[func + "_" + basis] = fts
     
         for k in nrsforfb:
             if len(nrsforfb[k]) != len(chemicalsforfb[k]):
                 print("Setname: ", setname)
                 print("NR values error")
                 print(k, len(nrsforfb[k]), len(chemicalsforfb[k]))
+                exit(1)
+        
+        for k in ftsforfb:
+            if len(ftsforfb[k]) != len(chemicalsforfb[k]):
+                print("Setname: ", setname)
+                print("FT values error")
+                print(k, len(ftsforfb[k]), len(chemicalsforfb[k]))
                 exit(1)
     
         # compare nrs pair by pair looking for differnces
@@ -345,6 +363,39 @@ def readdata (removeNR=False, shiftusingNR=False):
                         #            chem1[i], \
                         #            chem2[i])
         
+        # compare fts pair by pair looking for differnces
+        for func1 in ["PBE", "PBE0"]:
+            for basis1 in ["MINIX", "SVP", "TZVP", "QZVP"]:
+                for func2 in ["PBE", "PBE0"]:
+                    for basis2 in ["MINIX", "SVP", "TZVP", "QZVP"]:
+                        if func1 == func2 and basis1 == basis2:
+                            continue
+
+                        fts1 = ftsforfb[func1 + "_" + basis1]
+                        chem1 = chemicalsforfb[func1 + "_" + basis1]
+                        fts2 = ftsforfb[func2 + "_" + basis2]
+                        chem2 = chemicalsforfb[func2 + "_" + basis2]
+                        if len(fts1) != len(fts2):
+                            print("Setname: ", setname)
+                            print("FT len values error")
+                            print(len(fts1), len(fts2), chem1, chem2)
+                            exit(1)
+    
+                        for i in range(len(fts1)):
+                            if np.abs(fts1[i] - fts2[i]) > 1e-6:
+                                print("Setname: ", setname)
+                                print(removeFT + " Error ", func1, \
+                                    basis1, \
+                                    " compare to ", \
+                                    func2, \
+                                    basis2, \
+                                    "%8.5e"%(fts1[i]), \
+                                    "%8.5e"%(fts2[i]), \
+                                    " systems ", \
+                                    chem1[i], \
+                                    chem2[i])
+                                #exit(1)
+
         # compare excluding MINIX
         for func1 in ["PBE", "PBE0"]:
             for basis1 in ["SVP", "TZVP", "QZVP"]:
@@ -378,25 +429,29 @@ def readdata (removeNR=False, shiftusingNR=False):
                                     chem2[i])
                                 exit(1)
 
+        print ("Using values from PBE_SVP") 
         nrperstename[setname] = nrsforfb["PBE_SVP"]
+        ftperstename[setname] = ftsforfb["PBE_SVP"]
         #print(len(nrperstename[setname]))
 
     for setname in featuresvalues_perset: 
         assert len(nrperstename[setname]) == len(models_results[setname].labels)
+        assert len(ftperstename[setname]) == len(models_results[setname].labels)
 
-        models_results[setname].nrs = nrperstename[setname]
+        #models_results[setname].nrs = nrperstename[setname]
+        models_results[setname].fts = ftperstename[setname]
 
-        if shiftusingNR:
+        if shiftusingFT != "":
             # shift labels using nrperstename
-            for i, val in enumerate(nrperstename[setname]):
+            for i, val in enumerate(ftperstename[setname]):
                 models_results[setname].labels[i] -= val
     
-    if removeNR:    
+    if removeFT != "":   
         for setname in featuresvalues_perset:
             toremove = []
             for i, val in enumerate(featuresvalues_perset[setname]):
                 for k in val:
-                    if k.find("_NR" ) != -1:
+                    if k.find("_"+removeFT ) != -1:
                         toremove.append((i, k))
             # remove starting from the end  
             toremove = sorted(toremove, key=lambda x: x[0], reverse=True)
