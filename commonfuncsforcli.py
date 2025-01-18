@@ -446,15 +446,17 @@ def readdata (removeFT="", shiftusingFT="", \
 
     for setname in featuresvalues_perset: 
         assert len(nrperstename[setname]) == len(models_results[setname].labels)
-        assert len(ftperstename[setname]) == len(models_results[setname].labels)
-
-        #models_results[setname].nrs = nrperstename[setname]
-        models_results[setname].fts = ftperstename[setname]
-
+        
         if shiftusingFT != "":
-            # shift labels using nrperstename
-            for i, val in enumerate(ftperstename[setname]):
-                models_results[setname].labels[i] -= val
+            assert len(ftperstename[setname]) == len(models_results[setname].labels)
+
+            #models_results[setname].nrs = nrperstename[setname]
+            models_results[setname].fts = ftperstename[setname]
+
+            if shiftusingFT != "":
+                # shift labels using nrperstename
+                for i, val in enumerate(ftperstename[setname]):
+                    models_results[setname].labels[i] -= val
     
     if removeFT != "":   
         for setname in featuresvalues_perset:
