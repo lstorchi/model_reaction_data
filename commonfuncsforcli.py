@@ -111,7 +111,9 @@ def shiftbackdata (ytrue, ypred, fts):
 
 ###############################################################
 
-def readdata (removeFT="", shiftusingFT=""):
+def readdata (removeFT="", shiftusingFT="", \
+            selected_functionalin="PBE", \
+            selected_basisin="SVP"):
 
     if shiftusingFT != "":
         print("Shifting using ", shiftusingFT)
@@ -308,10 +310,11 @@ def readdata (removeFT="", shiftusingFT=""):
                             k.find(basis + "_") != -1:
                             nrs.append(val[k])  
                         
-                        if k.find("_"+removeFT ) != -1 and \
-                            k.find(func + "_") != -1 and \
-                            k.find(basis + "_") != -1:
-                            fts.append(val[k])
+                        if removeFT != "":
+                            if k.find("_"+removeFT ) != -1 and \
+                                k.find(func + "_") != -1 and \
+                                k.find(basis + "_") != -1:
+                                fts.append(val[k])
                             
     
                 nrsforfb[func + "_" + basis] = nrs 
@@ -325,12 +328,13 @@ def readdata (removeFT="", shiftusingFT=""):
                 print(k, len(nrsforfb[k]), len(chemicalsforfb[k]))
                 exit(1)
         
-        for k in ftsforfb:
-            if len(ftsforfb[k]) != len(chemicalsforfb[k]):
-                print("Setname: ", setname)
-                print("FT values error")
-                print(k, len(ftsforfb[k]), len(chemicalsforfb[k]))
-                exit(1)
+        if removeFT != "":
+            for k in ftsforfb:
+                if len(ftsforfb[k]) != len(chemicalsforfb[k]):
+                    print("Setname: ", setname)
+                    print("FT values error")
+                    print(k, len(ftsforfb[k]), len(chemicalsforfb[k]))
+                    exit(1)
     
         # compare nrs pair by pair looking for differnces
         for func1 in ["PBE", "PBE0"]:
@@ -364,37 +368,38 @@ def readdata (removeFT="", shiftusingFT=""):
                         #            chem2[i])
         
         # compare fts pair by pair looking for differnces
-        for func1 in ["PBE", "PBE0"]:
-            for basis1 in ["MINIX", "SVP", "TZVP", "QZVP"]:
-                for func2 in ["PBE", "PBE0"]:
-                    for basis2 in ["MINIX", "SVP", "TZVP", "QZVP"]:
-                        if func1 == func2 and basis1 == basis2:
-                            continue
-
-                        fts1 = ftsforfb[func1 + "_" + basis1]
-                        chem1 = chemicalsforfb[func1 + "_" + basis1]
-                        fts2 = ftsforfb[func2 + "_" + basis2]
-                        chem2 = chemicalsforfb[func2 + "_" + basis2]
-                        if len(fts1) != len(fts2):
-                            print("Setname: ", setname)
-                            print("FT len values error")
-                            print(len(fts1), len(fts2), chem1, chem2)
-                            exit(1)
-    
-                        for i in range(len(fts1)):
-                            if np.abs(fts1[i] - fts2[i]) > 1e-6:
+        if removeFT != "":
+            for func1 in ["PBE", "PBE0"]:
+                for basis1 in ["MINIX", "SVP", "TZVP", "QZVP"]:
+                    for func2 in ["PBE", "PBE0"]:
+                        for basis2 in ["MINIX", "SVP", "TZVP", "QZVP"]:
+                            if func1 == func2 and basis1 == basis2:
+                                continue
+        
+                            fts1 = ftsforfb[func1 + "_" + basis1]
+                            chem1 = chemicalsforfb[func1 + "_" + basis1]
+                            fts2 = ftsforfb[func2 + "_" + basis2]
+                            chem2 = chemicalsforfb[func2 + "_" + basis2]
+                            if len(fts1) != len(fts2):
                                 print("Setname: ", setname)
-                                print(removeFT + " Error ", func1, \
-                                    basis1, \
-                                    " compare to ", \
-                                    func2, \
-                                    basis2, \
-                                    "%8.5e"%(fts1[i]), \
-                                    "%8.5e"%(fts2[i]), \
-                                    " systems ", \
-                                    chem1[i], \
-                                    chem2[i])
-                                #exit(1)
+                                print("FT len values error")
+                                print(len(fts1), len(fts2), chem1, chem2)
+                                exit(1)
+        
+                            for i in range(len(fts1)):
+                                if np.abs(fts1[i] - fts2[i]) > 1e-6:
+                                    print("Setname: ", setname)
+                                    print(removeFT + " Error ", func1, \
+                                        basis1, \
+                                        " compare to ", \
+                                        func2, \
+                                        basis2, \
+                                        "%8.5e"%(fts1[i]), \
+                                        "%8.5e"%(fts2[i]), \
+                                        " systems ", \
+                                        chem1[i], \
+                                        chem2[i])
+                                    #exit(1)
 
         # compare excluding MINIX
         for func1 in ["PBE", "PBE0"]:
@@ -429,9 +434,14 @@ def readdata (removeFT="", shiftusingFT=""):
                                     chem2[i])
                                 exit(1)
 
-        print ("Using values from PBE_SVP") 
-        nrperstename[setname] = nrsforfb["PBE_SVP"]
-        ftperstename[setname] = ftsforfb["PBE_SVP"]
+        print ("Using values from ", selected_functionalin, " ", \
+               selected_basisin) 
+        nrperstename[setname] = nrsforfb[selected_functionalin+\
+                                        "_"+ \
+                                        selected_basisin]
+        ftperstename[setname] = ftsforfb[selected_functionalin+\
+                                        "_"+ \
+                                        selected_basisin]
         #print(len(nrperstename[setname]))
 
     for setname in featuresvalues_perset: 

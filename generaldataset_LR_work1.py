@@ -57,11 +57,6 @@ if __name__ == "__main__":
                 "[<functionals> <basis_sets>]")
         sys.exit(1)
 
-    featuresvalues_perset,\
-        fullsetnames, \
-        models_results, \
-        supersetnames = readdata(shiftusingFT=SHIFTFT)
-
     #["PBE", "PBE0"]
     #["MINIX", "SVP", "TZVP", "QZVP"]
 
@@ -77,9 +72,16 @@ if __name__ == "__main__":
         basis_sets = sys.argv[4].split(",")
 
     print("Selected functional: ", selected_functional)
-    print("Selected basis set: ", selected_basisset)
-    print("Functionals: ", functionals)
-    print("Basis sets: ", basis_sets)
+    print(" Selected basis set: ", selected_basisset)
+    print("        Functionals: ", functionals)
+    print("         Basis sets: ", basis_sets)
+    
+    featuresvalues_perset,\
+    fullsetnames, \
+    models_results, \
+        supersetnames = readdata(shiftusingFT=SHIFTFT, \
+                    selected_functionalin=selected_functional, \
+                    selected_basissetin=selected_basisset)
     
     sep = "_"
     for setname in fullsetnames:
