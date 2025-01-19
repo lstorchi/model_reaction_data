@@ -47,7 +47,7 @@ warnings.simplefilter("ignore")
 from commonfuncsforcli import *
 
 CHECKANDTESTSINGLEMODEL = False
-SHIFTFT = "NR"
+SHIFTFT = ""
 
 if __name__ == "__main__":
 

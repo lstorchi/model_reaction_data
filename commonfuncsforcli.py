@@ -261,15 +261,52 @@ def readdata (removeFT="", shiftusingFT="", \
     #        for k in val:
     #            print("   ", k, val[k])
     
-    equations = {"EC" :"EC" ,\
-                "EX" : "EX",\
-                "FSPE" : "FINAL_SINGLE_POINT_ENERGY",\
-                "DC" : "Dispersion_correction",\
-                "PE" : "Potential_Energy",\
-                "KE" : "Kinetic_Energy",\
-                "OEE" : "One_Electron_Energy",\
-                "TEE" : "Two_Electron_Energy",\
-                "NR" : "Nuclear_Repulsion"}
+    # all features 
+    
+    #equations = {"EC" :"EC" ,\
+    #            "EX" : "EX",\
+    #            "FSPE" : "FINAL_SINGLE_POINT_ENERGY",\
+    #            "DC" : "Dispersion_correction",\
+    #            "PE" : "Potential_Energy",\
+    #            "KE" : "Kinetic_Energy",\
+    #            "OEE" : "One_Electron_Energy",\
+    #            "TEE" : "Two_Electron_Energy",\
+    #            "NR" : "Nuclear_Repulsion"}
+    
+    # First Reduced Form:
+
+    equations = {"Te": "Kinetic_Energy", \
+             "V_NN": "Nuclear_Repulsion",\
+             "V_eN": "One_Electron_Energy - Kinetic_Energy",\
+             "EX": "EX",\
+             "E_J": "Two_Electron_Energy - EX - EC",\
+             "DC": "Dispersion_correction",\
+             "EC": "EC"}
+
+    # Second Reduced Form: Electrostatic
+
+    # equations = {"Te": "Kinetic_Energy", \
+    #              "ES": "Potential_Energy - EX - EC",\
+    #              "EX": "EX",\
+    #              "DC": "Dispersion_correction",\
+    #              "EC": "EC"}
+
+    # Third Reduced Form: ES No DC
+
+    # equations = {"Te": "Kinetic_Energy", \
+    #                 "ES": "Potential_Energy - EX - EC",\
+    #                 "EX": "EX",\
+    #                 "EC": "EC"}
+
+    # Fourht Model: Reduced No DC
+
+    # equations = {"Te": "Kinetic_Energy", \
+    #              "V_NN": "Nuclear_Repulsion",\
+    #              "V_eN": "One_Electron_Energy - Kinetic_Energy",\
+    #              "EX": "EX",\
+    #              "E_J": "Two_Electron_Energy - EX - EC",\
+    #              "EC": "EC"}
+
     eq_featuresvalues_perset =  \
         commonutils.equation_parser_compiler(equations, \
                                             functionals, \
