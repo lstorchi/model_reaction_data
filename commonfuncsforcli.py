@@ -272,7 +272,7 @@ def readdata (removeFT="", shiftusingFT="", \
     #            "OEE" : "One_Electron_Energy",\
     #            "TEE" : "Two_Electron_Energy",\
     #            "NR" : "Nuclear_Repulsion"}
-    
+    #NRname = "NR" 
     # First Reduced Form:
 
     equations = {"Te": "Kinetic_Energy", \
@@ -282,7 +282,8 @@ def readdata (removeFT="", shiftusingFT="", \
              "E_J": "Two_Electron_Energy - EX - EC",\
              "DC": "Dispersion_correction",\
              "EC": "EC"}
-
+    NRname = "V_NN" 
+    
     # Second Reduced Form: Electrostatic
 
     # equations = {"Te": "Kinetic_Energy", \
@@ -342,7 +343,7 @@ def readdata (removeFT="", shiftusingFT="", \
                 for i, val in enumerate(featuresvalues_perset[setname]):
                     chemicals.append(models_results[setname].chemicals[i])
                     for k in val:
-                        if k.find("_NR" ) != -1 and \
+                        if k.find("_"+NRname ) != -1 and \
                             k.find(func + "_") != -1 and \
                             k.find(basis + "_") != -1:
                             nrs.append(val[k])  
