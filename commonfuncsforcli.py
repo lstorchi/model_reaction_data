@@ -273,6 +273,7 @@ def readdata (removeFT="", shiftusingFT="", \
     #            "TEE" : "Two_Electron_Energy",\
     #            "NR" : "Nuclear_Repulsion"}
     #NRname = "NR" 
+
     # First Reduced Form:
 
     equations = {"Te": "Kinetic_Energy", \
