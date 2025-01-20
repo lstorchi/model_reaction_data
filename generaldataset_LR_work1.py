@@ -47,7 +47,6 @@ warnings.simplefilter("ignore")
 from commonfuncsforcli import *
 
 CHECKANDTESTSINGLEMODEL = False
-SHIFTFT = ""
 
 if __name__ == "__main__":
 
@@ -55,7 +54,49 @@ if __name__ == "__main__":
         print("Usage: python3 runmodels.py " + \
               "<selected_functional> <selected_basisset> " + \
                 "[<functionals> <basis_sets>]")
-        sys.exit(1)
+        sys.exit(1) 
+
+    # all features 
+    equations = {"EC" :"EC" ,\
+                "EX" : "EX",\
+                "FSPE" : "FINAL_SINGLE_POINT_ENERGY",\
+                "DC" : "Dispersion_correction",\
+                "PE" : "Potential_Energy",\
+                "KE" : "Kinetic_Energy",\
+                "OEE" : "One_Electron_Energy",\
+                "TEE" : "Two_Electron_Energy",\
+                "NR" : "Nuclear_Repulsion"}
+    SHIFTFT = ""
+
+    # First Reduced Form: No DC 
+    #equations = {"EC" :"EC" ,\
+    #            "EX" : "EX",\
+    #            "FSPE" : "FINAL_SINGLE_POINT_ENERGY",\
+    #            "PE" : "Potential_Energy",\
+    #            "KE" : "Kinetic_Energy",\
+    #            "OEE" : "One_Electron_Energy",\
+    #            "TEE" : "Two_Electron_Energy",\
+    #            "NR" : "Nuclear_Repulsion"}
+    #SHIFTFT = "DC"
+
+    # First Reduced Form:
+    #equations = {"Te": "Kinetic_Energy", \
+    #         "V_NN": "Nuclear_Repulsion",\
+    #         "V_eN": "One_Electron_Energy - Kinetic_Energy",\
+    #         "EX": "EX",\
+    #         "E_J": "Two_Electron_Energy - EX - EC",\
+    #         "DC": "Dispersion_correction",\
+    #         "EC": "EC"}
+    #SHIFTFT = ""
+
+    # Fourht Model: Reduced No DC
+    # equations = {"Te": "Kinetic_Energy", \
+    #              "V_NN": "Nuclear_Repulsion",\
+    #              "V_eN": "One_Electron_Energy - Kinetic_Energy",\
+    #              "EX": "EX",\
+    #              "E_J": "Two_Electron_Energy - EX - EC",\
+    #              "EC": "EC"}
+    # SHIFTFT = "DC"
 
     #["PBE", "PBE0"]
     #["MINIX", "SVP", "TZVP", "QZVP"]
@@ -81,7 +122,8 @@ if __name__ == "__main__":
     models_results, \
         supersetnames = readdata(shiftusingFT=SHIFTFT, \
                     selected_functionalin=selected_functional, \
-                    selected_basisin=selected_basisset)
+                    selected_basisin=selected_basisset, \
+                    equations=equations)
     
     sep = "_"
     for setname in fullsetnames:
@@ -237,9 +279,19 @@ if __name__ == "__main__":
                 commonutils.build_XY_matrix \
                 (models_results[setname].features, \
                 models_results[setname].labels)
-        X_train, X_test, y_train, y_test, fts_train, fts_test \
+        X_test = None
+        X_train = None
+        y_test = None
+        y_train = None
+        fts_test = None
+        fts_train = None
+        if len(models_results[setname].fts) > 0:
+            X_train, X_test, y_train, y_test, fts_train, fts_test \
               = train_test_split(X, y, models_results[setname].fts,
                           test_size=0.20, random_state=42)
+        else:
+            X_train, X_test, y_train, y_test \
+              = train_test_split(X, y, test_size=0.20, random_state=42)
         setlist = models_results[setname].setnames  
         supersetlist = models_results[setname].supersetnames
         y_true = y  
@@ -262,70 +314,6 @@ if __name__ == "__main__":
             print("Error: ", e)
             lr_start_split_model.set_solver("Nelder-Mead")
             lr_start_split_model.fit(X_train, y_train)
-
-        # Linear Regression
-        models_store[setname].lr_model = \
-                clr.custom_loss_lr (loss=clr.mean_average_error)
-        try:
-            models_store[setname].lr_model.fit(X, y, \
-                beta_init_values = lr_start_model.get_beta())
-        except Exception as e:
-            print("Error: ", e)
-            models_store[setname].lr_model.set_solver("Nelder-Mead")
-            models_store[setname].lr_model.fit(X, y, \
-                beta_init_values = lr_start_model.get_beta())
-        y_pred_lr = models_store[setname].lr_model.predict(X)
-        lrrmse = 0.0
-        if SHIFTFT != "":
-            y_true, y_pred_lr = shiftbackdata (y, y_pred_lr, fts)  
-        try:
-            lrrmse = root_mean_squared_error(y_true, y_pred_lr)
-        except:
-            lrrmse = np.sqrt(mean_squared_error(y_true, y_pred_lr))
-        lrrmape = mean_absolute_percentage_error(y_true, y_pred_lr)
-        models_store[setname].lr_model_splitted = \
-                clr.custom_loss_lr (loss=clr.mean_average_error)
-        try:
-            models_store[setname].lr_model_splitted.fit(X_train, y_train,\
-                beta_init_values = lr_start_split_model.get_beta())
-        except Exception as e:
-            print("Error: ", e)
-            models_store[setname].lr_model_splitted.set_solver("Nelder-Mead")   
-            models_store[setname].lr_model_splitted.fit(X_train, y_train,\
-                beta_init_values = lr_start_split_model.get_beta())
-        y_pred_lr = models_store[setname].lr_model_splitted.predict(X_test)
-        if SHIFTFT != "":
-            y_test_true, y_pred_lr = shiftbackdata (y_test, y_pred_lr, fts_test)
-        lrrmsetest = 0.0
-        try:
-            lrrmsetest = root_mean_squared_error(y_test_true, y_pred_lr)
-        except:
-            lrrmsetest = np.sqrt(mean_squared_error(y_test_true, y_pred_lr))
-        lrrmaoetest = mean_absolute_percentage_error(y_test_true, y_pred_lr)
-        y_pred_lr = models_store[setname].lr_model_splitted.predict(X_train)
-        if SHIFTFT != "":
-            y_train_true, y_pred_lr = shiftbackdata (y_train, y_pred_lr, fts_train)
-        lrrmsetrain = 0.0
-        try:
-            lrrmsetrain = root_mean_squared_error(y_train_true, y_pred_lr)
-        except:
-            lrrmsetrain = np.sqrt(mean_squared_error(y_train_true, y_pred_lr))
-        lrrmaopetrain = mean_absolute_percentage_error(y_train_true, y_pred_lr)
-        if PRINTALSOINSTDOUT:
-            print("%40s ,             LR RMSE, %12.6f"%(setname,lrrmse))
-            print("%40s ,       LR Train RMSE, %12.6f"%(setname,lrrmsetrain))
-            print("%40s ,        LR Test RMSE, %12.6f"%(setname,lrrmsetest))
-            print("%40s ,             LR MAPE, %12.6f"%(setname,lrrmape))
-            print("%40s ,       LR Train MAPE, %12.6f"%(setname,lrrmaopetrain))
-            print("%40s ,        LR Test MAPE, %12.6f"%(setname,lrrmaoetest))
-    
-        print("%40s ,             LR RMSE, %12.6f"%(setname,lrrmse), file=fp)
-        print("%40s ,       LR Train RMSE, %12.6f"%(setname,lrrmsetrain), file=fp)
-        print("%40s ,        LR Test RMSE, %12.6f"%(setname,lrrmsetest), file=fp)
-        print("%40s ,             LR MAPE, %12.6f"%(setname,lrrmape), file=fp)
-        print("%40s ,       LR Train MAPE, %12.6f"%(setname,lrrmaopetrain), file=fp)
-        print("%40s ,        LR Test MAPE, %12.6f"%(setname,lrrmaoetest), file=fp)
-        #print()
     
         # Custom Loss Linear Regression
         models_store[setname].lr_custom_model =\
@@ -394,13 +382,9 @@ if __name__ == "__main__":
               
     setname = None
     ssetname = "Full"
-    lr_model_full = models_store[ssetname].lr_model
-    lr_model_full_splitted = models_store[ssetname].lr_model_splitted
     lr_custom_model_full = models_store[ssetname].lr_custom_model
     lr_custom_model_full_splitted = models_store[ssetname].lr_custom_model_splitted
     
-    ypredFull_lr = []
-    ypredFull_lr_split = []
     ypredFull_lr_custom = []
     ypredFull_lr_custom_split = []
     ypredFull_allbasissets = {}
@@ -415,8 +399,6 @@ if __name__ == "__main__":
     fp = open("modelsresults.csv", "w")
     
     for ssetname in supersetnames:
-        lr_model_ssetname = models_store[ssetname].lr_model
-        lr_model_ssetname_splitted = models_store[ssetname].lr_model_splitted
         lr_custom_model_ssetname = models_store[ssetname].lr_custom_model
         lr_custom_model_ssetname_splitted = models_store[ssetname].lr_custom_model_splitted
     
@@ -429,28 +411,6 @@ if __name__ == "__main__":
         y_true = y
         fts = models_results[ssetname].fts
 
-        # SuperSet LR
-        y_pred = lr_model_ssetname.predict(X)
-        if len(y_pred.shape) == 2:
-            y_pred = y_pred[:,0]
-        if SHIFTFT != "":
-            y_true, y_pred = shiftbackdata (y, y_pred, fts)
-        ypredFull_lr.extend(y_pred)
-        mape = mean_absolute_percentage_error(y_true, y_pred)
-        if PRINTALSOINSTDOUT:
-            print(" %60s MAPE , %12.6f"%(ssetname+" , SS LR", mape))
-        print(" %60s MAPE , %12.6f"%(ssetname+" , SS LR", mape), file=fp)
-        y_pred = lr_model_ssetname_splitted.predict(X)
-        if len(y_pred.shape) == 2:
-            y_pred = y_pred[:,0]
-        if SHIFTFT != "":
-            y_true, y_pred = shiftbackdata (y, y_pred, fts)
-        ypredFull_lr_split.extend(y_pred)
-        mape = mean_absolute_percentage_error(y_true, y_pred)
-        if PRINTALSOINSTDOUT:
-            print(" %60s MAPE , %12.6f"%(ssetname+" , SS LR split", mape))
-        print(" %60s MAPE , %12.6f"%(ssetname+" , SS LR split", mape), file=fp)
-        
         # SuperSet Custom LR
         y_pred = lr_custom_model_ssetname.predict(X)
         if len(y_pred.shape) == 2:
@@ -472,26 +432,6 @@ if __name__ == "__main__":
         if PRINTALSOINSTDOUT:
             print(" %60s MAPE , %12.6f"%(ssetname+" , SS Custom LR split", mape))
         print(" %60s MAPE , %12.6f"%(ssetname+" , SS Custom LR split", mape), file=fp)
-    
-        # Full LR
-        y_pred = lr_model_full.predict(X)
-        if len(y_pred.shape) == 2:
-            y_pred = y_pred[:,0]
-        if SHIFTFT != "":
-            y_true, y_pred = shiftbackdata (y, y_pred, fts)
-        mape = mean_absolute_percentage_error(y_true, y_pred)
-        if PRINTALSOINSTDOUT:
-            print(" %60s MAPE , %12.6f"%(ssetname+" , Full LR", mape))
-        print(" %60s MAPE , %12.6f"%(ssetname+" , Full LR", mape), file=fp)
-        y_pred = lr_model_full_splitted.predict(X)
-        if len(y_pred.shape) == 2:
-            y_pred = y_pred[:,0]
-        if SHIFTFT != "":
-            y_true, y_pred = shiftbackdata (y, y_pred, fts)
-        mape = mean_absolute_percentage_error(y_true, y_pred)
-        if PRINTALSOINSTDOUT:
-            print(" %60s MAPE , %12.6f"%(ssetname+" , Full LR split", mape))
-        print(" %60s MAPE , %12.6f"%(ssetname+" , Full LR split", mape), file=fp)
     
         # Full Custom LR
         y_pred = lr_custom_model_full.predict(X)
@@ -577,14 +517,12 @@ if __name__ == "__main__":
     print("   Test accuracy: %5.2f"%(testaccuracy))
     print("Overall accuracy: %5.2f"%(overallaccuracy))
     
-    assert(len(ypredFull_lr) == len(ypredFull_lr_split)) 
-    assert(len(ypredFull_lr) == len(ypredFull_lr_custom))
-    assert(len(ypredFull_lr) == len(ypredFull_lr_custom_split))
-    assert(len(ypredFull_lr) == len(models_results["Full"].labels))
-    assert(len(ypredFull_lr) == len(setnamesFull))
-    assert(len(ypredFull_lr) == len(ypredFull_d3bj))
+    assert(len(ypredFull_lr_custom) == len(ypredFull_lr_custom_split))
+    assert(len(ypredFull_lr_custom) == len(models_results["Full"].labels))
+    assert(len(ypredFull_lr_custom) == len(setnamesFull))
+    assert(len(ypredFull_lr_custom) == len(ypredFull_d3bj))
     for method in ypredFull_allbasissets:
-        assert(len(ypredFull_lr) == len(ypredFull_allbasissets[method]))
+        assert(len(ypredFull_lr_custom) == len(ypredFull_allbasissets[method]))
     
     X, _, features_names =\
             commonutils.build_XY_matrix (models_results['Full'].\
@@ -592,8 +530,6 @@ if __name__ == "__main__":
             models_results['Full'].labels)
     setlist = models_results['Full'].setnames
     
-    y_pred_RF_LR = []
-    y_pred_RF_LR_split = []
     y_pred_RF_LR_CUSTOM = []
     y_pred_RF_LR_CUSTOM_split = []
     for i in range(len(X)):
@@ -606,15 +542,6 @@ if __name__ == "__main__":
             # this is maybe not properly correct but it is a good approximation
             nr = models_results['Full'].fts[i]
 
-        y = models_store[supersetrname].lr_model.predict([X[i]])
-        if len(y.shape) == 2:
-            y = y[:,0]
-        y_pred_RF_LR.append(y[0]+nr)
-        y = models_store[supersetrname].lr_model_splitted.predict([X[i]])
-        if len(y.shape) == 2:
-            y = y[:,0]
-        y_pred_RF_LR_split.append(y[0]+nr)
-    
         y = models_store[supersetrname].lr_custom_model.predict([X[i]])
         if len(y.shape) == 2:
             y = y[:,0]
@@ -635,23 +562,6 @@ if __name__ == "__main__":
     y_true = y
     fts = models_results["Full"].fts
 
-    y_pred = models_store["Full"].lr_model.predict(X)
-    if SHIFTFT != "":
-        y_true, y_pred = shiftbackdata (y, y_pred, fts)
-    predictred["Full , using LR Full"] = y_pred
-    if len(predictred["Full , using LR Full"].shape) == 2:
-        predictred["Full , using LR Full"] = \
-                            predictred["Full , using LR Full"][:,0]
-    y_pred = models_store["Full"].lr_model_splitted.predict(X)
-    if SHIFTFT != "":
-        y_true, y_pred = shiftbackdata (y, y_pred, fts)
-    predictred["Full , using LR Full split"] = y_pred
-    if len(predictred["Full , using LR Full split"].shape) == 2:
-        predictred["Full , using LR Full split"] =         \
-            predictred["Full , using LR Full split"][:,0]
-    predictred["Full , using LR SS"] = ypredFull_lr
-    predictred["Full , using LR SS split"] = ypredFull_lr_split
-
     y_pred = models_store["Full"].lr_custom_model.predict(X)
     if SHIFTFT != "":
         y_true, y_pred = shiftbackdata (y, y_pred, fts)   
@@ -669,44 +579,10 @@ if __name__ == "__main__":
     predictred["Full , using Custom LR SS"] = ypredFull_lr_custom
     predictred["Full , using Custom LR SS split"] = ypredFull_lr_custom_split
     
-    predictred["Full , using LRRF"] = y_pred_RF_LR
-    predictred["Full , using LRRF split"] = y_pred_RF_LR_split
     predictred["Full , using Custom LRRF"] = y_pred_RF_LR_CUSTOM
     predictred["Full , using Custom LRRF split"] = y_pred_RF_LR_CUSTOM_split
 
     mapes_to_collect = {}
-
-    """
-    for m in predictred:
-        ypred = predictred[m]
-        wtamd2_full_usingss = \
-                commonutils.wtmad2(setnamesFull,\
-                ypred,\
-                models_results["Full"].labels)
-        wtamd2 = wtamd2_full_usingss["Full"]
-        if PRINTALSOINSTDOUT:
-            print("%44s %7.3f"%(m + " WTMAD2, ", wtamd2))
-        print("%44s %7.3f"%(m + " WTMAD2, ", wtamd2), file=fp)
-    
-    for method in ypredFull_allbasissets:
-        wtamd2_full_allbasissets = \
-                commonutils.wtmad2(setnamesFull, \
-                ypredFull_allbasissets[method], \
-                models_results["Full"].labels)
-        wtamd2 = wtamd2_full_allbasissets["Full"]
-        if PRINTALSOINSTDOUT:
-            print("%44s %7.3f"%("Full , "+ method + " WTMAD2, ", wtamd2))
-        print("%44s %7.3f"%("Full , "+ method + " WTMAD2, ", wtamd2), file=fp)
-    
-    wtamd2_full_d3bj = \
-            commonutils.wtmad2(setnamesFull, \
-            ypredFull_d3bj,  \
-            models_results["Full"].labels)
-    wtamd2 = wtamd2_full_d3bj["Full"]
-    if PRINTALSOINSTDOUT:
-        print("%44s %7.3f"%("Full , D3(BJ) WTMAD2, ", wtamd2))
-    print("%44s %7.3f"%("Full , D3(BJ) WTMAD2, ", wtamd2), file=fp)
-    """
 
     y_true = models_results["Full"].labels
     if SHIFTFT != "":
@@ -754,11 +630,6 @@ if __name__ == "__main__":
                 commonutils.build_XY_matrix (models_results[setname].\
                 features, \
                 models_results[setname].labels)
-        # LR model
-        lr_test_and_rpint (lr_model, X, Y, setname + " LR ", features_names, fp, \
-                           shiftft=SHIFTFT, fts=models_results[setname].fts)
-        lr_test_and_rpint (lr_model_splitted, X, Y, setname + " LR split ", \
-                           features_names, fp, shiftft=SHIFTFT, fts=models_results[setname].fts)
     
         # Custom LR model
         lr_test_and_rpint (lr_custom_model, X, Y, setname + " Custom LR ", \
