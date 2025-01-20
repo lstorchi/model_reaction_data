@@ -114,15 +114,17 @@ def shiftbackdata (ytrue, ypred, fts):
 def readdata (removeFT="", shiftusingFT="", \
             selected_functionalin="PBE", \
             selected_basisin="SVP", \
-                equations = {"EC" :"EC" ,\
-                            "EX" : "EX",\
-                            "FSPE" : "FINAL_SINGLE_POINT_ENERGY",\
-                            "DC" : "Dispersion_correction",\
-                            "PE" : "Potential_Energy",\
-                            "KE" : "Kinetic_Energy",\
-                            "OEE" : "One_Electron_Energy",\
-                            "TEE" : "Two_Electron_Energy",\
-                            "NR" : "Nuclear_Repulsion"}):
+            equations = {"EC" :"EC" ,\
+                         "EX" : "EX",\
+                         "FSPE" : "FINAL_SINGLE_POINT_ENERGY",\
+                         "DC" : "Dispersion_correction",\
+                         "PE" : "Potential_Energy",\
+                         "KE" : "Kinetic_Energy",\
+                         "OEE" : "One_Electron_Energy",\
+                         "TEE" : "Two_Electron_Energy",\
+                         "NR" : "Nuclear_Repulsion"}, \
+            excludesubsetfromtraining = "", \
+            subsettotestseparatly = ""):
 
     if shiftusingFT != "":
         print("Shifting using ", shiftusingFT)
@@ -130,13 +132,52 @@ def readdata (removeFT="", shiftusingFT="", \
 
     howmanydifs = 3
     allvalues_perset = pickle.load(open("./data/allvalues_perset.p", "rb"))
-    methods = pickle.load(open("./data/methods.p", "rb"))
     fullsetnames = pickle.load(open("./data/fullsetnames.p", "rb"))
-    functionals = pickle.load(open("./data/functionals.p", "rb"))
-    basis_sets = pickle.load(open("./data/basis_sets.p", "rb"))
     supersetnames = pickle.load(open("./data/supersetnames.p", "rb"))
 
+    methods = pickle.load(open("./data/methods.p", "rb"))
+    functionals = pickle.load(open("./data/functionals.p", "rb"))
+    basis_sets = pickle.load(open("./data/basis_sets.p", "rb"))
+
+    if subsettotestseparatly != "":
+        print("Testing only ", subsettotestseparatly)
+        fullname = ""
+        for superset in supersetnames:
+            for subset in supersetnames[superset]:
+                if subset == subsettotestseparatly:
+                    fullname = superset + "_" + subset
+                    print("Testing ", fullname)
+        
+        # here need to extract the X and y for suset and the rest
+        # TODO
+
+    if excludesubsetfromtraining != "":
+        toremovefulllist = ""
+        for superset in supersetnames:
+            for subset in supersetnames[superset]:
+                if subset ==  excludesubsetfromtraining:
+                    supersetnames[superset].remove(subset)
+                    toremovefulllist = superset + "_" + subset
+                    print("Excluding ", subset)
+        if toremovefulllist in fullsetnames:
+            fullsetnames.remove(toremovefulllist)
+            print("Excluding ", toremovefulllist)
+        else:
+            print("Errorv: ", toremovefulllist, " not in fullsetnames")
+            exit(1)
+
+        extractedsetvalues = None
+        if toremovefulllist in allvalues_perset:
+            extractedsetvalues = allvalues_perset[toremovefulllist]
+            del allvalues_perset[toremovefulllist]
+            print("Excluding ", toremovefulllist)
+        else: 
+            print("Error: ", toremovefulllist, " not in allvalues_perset")
+            exit(1)
+
     print("Printing also to stdout: ", PRINTALSOINSTDOUT) 
+
+    exit(1)
     
     allfeatures = set()
     for setname in fullsetnames:

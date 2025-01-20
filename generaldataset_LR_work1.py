@@ -56,6 +56,8 @@ if __name__ == "__main__":
                 "[<functionals> <basis_sets>]")
         sys.exit(1) 
 
+    exludesubset = "FLPs"
+    testseparately = "FLPs"
     # all features 
     equations = {"EC" :"EC" ,\
                 "EX" : "EX",\
@@ -120,10 +122,12 @@ if __name__ == "__main__":
     featuresvalues_perset,\
     fullsetnames, \
     models_results, \
-        supersetnames = readdata(shiftusingFT=SHIFTFT, \
+    supersetnames = readdata(shiftusingFT=SHIFTFT, \
                     selected_functionalin=selected_functional, \
                     selected_basisin=selected_basisset, \
-                    equations=equations)
+                    equations=equations, \
+                    excludesubsetfromtraining=exludesubset, \
+                    subsettotestseparatly=testseparately)
     
     sep = "_"
     for setname in fullsetnames:
