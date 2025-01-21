@@ -50,7 +50,7 @@ CHECKANDTESTSINGLEMODEL = False
 EXTRACTFLPS = True
 
 REMOVEFLPS = False
-STARTBETAONE = True
+STARTBETAONE = False
 
 if __name__ == "__main__":
 
@@ -72,7 +72,7 @@ if __name__ == "__main__":
                 "NR" : "Nuclear_Repulsion"}
     SHIFTFT = ""
 
-    # First Reduced Form: No DC 
+    # All features + DC
     #equations = {"EC" :"EC" ,\
     #            "EX" : "EX",\
     #            "FSPE" : "FINAL_SINGLE_POINT_ENERGY",\
@@ -93,16 +93,7 @@ if __name__ == "__main__":
     #         "EC": "EC"}
     #SHIFTFT = ""
 
-    # Second Model: Reduced No DC
-    # equations = {"Te": "Kinetic_Energy", \
-    #              "V_NN": "Nuclear_Repulsion",\
-    #              "V_eN": "One_Electron_Energy - Kinetic_Energy",\
-    #              "EX": "EX",\
-    #              "E_J": "Two_Electron_Energy - EX - EC",\
-    #              "EC": "EC"}
-    # SHIFTFT = "DC"
-
-    # Second Model: Reduced 
+    # First Reduced Form + DC
     # equations = {"Te": "Kinetic_Energy", \
     #              "V_NN": "Nuclear_Repulsion",\
     #              "V_eN": "One_Electron_Energy - Kinetic_Energy",\
@@ -110,10 +101,7 @@ if __name__ == "__main__":
     #              "E_J": "Two_Electron_Energy - EX - EC",\
     #              "DC": "Dispersion_correction",\
     #              "EC": "EC"}
-    # SHIFTFT = ""
-
-    #["PBE", "PBE0"]
-    #["MINIX", "SVP", "TZVP", "QZVP"]
+    # SHIFTFT = "DC"
 
     selected_basisset = ""
     selected_functional = ""
