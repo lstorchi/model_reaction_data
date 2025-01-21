@@ -48,7 +48,7 @@ from commonfuncsforcli import *
 
 CHECKANDTESTSINGLEMODEL = False
 EXTRACTFLPS = True
-REMOVEFLPS = True
+REMOVEFLPS = False
 
 if __name__ == "__main__":
 
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     #         "EC": "EC"}
     #SHIFTFT = ""
 
-    # Fourht Model: Reduced No DC
+    # Second Model: Reduced No DC
     # equations = {"Te": "Kinetic_Energy", \
     #              "V_NN": "Nuclear_Repulsion",\
     #              "V_eN": "One_Electron_Energy - Kinetic_Energy",\
@@ -99,6 +99,16 @@ if __name__ == "__main__":
     #              "E_J": "Two_Electron_Energy - EX - EC",\
     #              "EC": "EC"}
     # SHIFTFT = "DC"
+
+    # Second Model: Reduced 
+    # equations = {"Te": "Kinetic_Energy", \
+    #              "V_NN": "Nuclear_Repulsion",\
+    #              "V_eN": "One_Electron_Energy - Kinetic_Energy",\
+    #              "EX": "EX",\
+    #              "E_J": "Two_Electron_Energy - EX - EC",\
+    #              "DC": "Dispersion_correction",\
+    #              "EC": "EC"}
+    # SHIFTFT = ""
 
     #["PBE", "PBE0"]
     #["MINIX", "SVP", "TZVP", "QZVP"]
@@ -712,20 +722,25 @@ if __name__ == "__main__":
             c = rf.predict([Xflps[i]])
             nr = 0.0
             supersetrname = supersetnameslist[c[0]]
-            #print("X: ", i, " Y: ", Y[i], " C: ", c, " ==> ", supersetnameslist[c[0]])
            
             if SHIFTFT != "":
                 # this is maybe not properly correct but it is a good approximation
                 nr = ftsflps[i]
            
-            y = models_store[supersetrname].lr_custom_model.predict([X[i]])
+            y = models_store[supersetrname].lr_custom_model.predict([Xflps[i]])
             if len(y.shape) == 2:
                 y = y[:,0]
             y_pred_RF_LR_CUSTOM_FORFLPS.append(y[0]+nr)
-            y = models_store[supersetrname].lr_custom_model_splitted.predict([X[i]])
+            y = models_store[supersetrname].lr_custom_model_splitted.predict([Xflps[i]])
             if len(y.shape) == 2:
                 y = y[:,0]
             y_pred_RF_LR_CUSTOM_FORFLPS_split.append(y[0]+nr)
+
+            ypredrealmodel = models_store["LARGE_SYSTEMS"].lr_custom_model.predict([Xflps[i]]) 
+            ypredrfmodel = models_store[supersetrname].lr_custom_model.predict([Xflps[i]])
+            print("X: ", i, " Y: %10.2f"%(yflps[i]), " C: ", c, " ==> ", supersetnameslist[c[0]])
+            print("Ypred: %10.2f"%(ypredrealmodel[0]+nr), " YpredRF: %10.2f"%(ypredrfmodel[0]+nr))
+
 
         y_pred_LR_CUSTOM_FULL_FORGMTK = \
                 models_store["Full"].lr_custom_model.predict(Xtherest)
