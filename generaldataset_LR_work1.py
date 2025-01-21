@@ -48,7 +48,9 @@ from commonfuncsforcli import *
 
 CHECKANDTESTSINGLEMODEL = False
 EXTRACTFLPS = True
+
 REMOVEFLPS = False
+STARTBETAONE = True
 
 if __name__ == "__main__":
 
@@ -379,30 +381,37 @@ if __name__ == "__main__":
         # Linear regression model to get starting beta values
         lr_start_model = clr.custom_loss_lr (loss=clr.mean_average_error)
         lr_start_split_model = clr.custom_loss_lr (loss=clr.mean_average_error)
-        try:
-            lr_start_model.fit(X, y)
-        except Exception as e:
-            print("Error: ", e)
-            lr_start_model.set_solver("Nelder-Mead")
-            lr_start_model.fit(X, y)
-        try:
-            lr_start_split_model.fit(X_train, y_train)
-        except Exception as e:
-            print("Error: ", e)
-            lr_start_split_model.set_solver("Nelder-Mead")
-            lr_start_split_model.fit(X_train, y_train)
+        if not STARTBETAONE:
+            try:
+                lr_start_model.fit(X, y)
+            except Exception as e:
+                print("Error: ", e)
+                lr_start_model.set_solver("Nelder-Mead")
+                lr_start_model.fit(X, y)
+            try:
+                lr_start_split_model.fit(X_train, y_train)
+            except Exception as e:
+                print("Error: ", e)
+                lr_start_split_model.set_solver("Nelder-Mead")
+                lr_start_split_model.fit(X_train, y_train)
     
         # Custom Loss Linear Regression
         models_store[setname].lr_custom_model =\
                 clr.custom_loss_lr (loss=clr.mean_absolute_percentage_error)
         try:
-            models_store[setname].lr_custom_model.fit(X, y, \
-                beta_init_values = lr_start_model.get_beta())
+            if STARTBETAONE:
+                models_store[setname].lr_custom_model.fit(X, y) 
+            else:
+                models_store[setname].lr_custom_model.fit(X, y, \
+                    beta_init_values = lr_start_model.get_beta())
         except Exception as e:
             print("Error: ", e)
             models_store[setname].lr_custom_model.set_solver("Nelder-Mead")
-            models_store[setname].lr_custom_model.fit(X, y, \
-                beta_init_values = lr_start_model.get_beta())
+            if STARTBETAONE:
+                models_store[setname].lr_custom_model.fit(X, y)
+            else:
+                models_store[setname].lr_custom_model.fit(X, y, \
+                    beta_init_values = lr_start_model.get_beta())
         y_pred_custom_lr = models_store[setname].lr_custom_model.predict(X)
         if SHIFTFT != "":
             y_true, y_pred_custom_lr = shiftbackdata (y, y_pred_custom_lr, fts)
@@ -415,13 +424,19 @@ if __name__ == "__main__":
         models_store[setname].lr_custom_model_splitted  = \
                 clr.custom_loss_lr (loss=clr.mean_absolute_percentage_error)
         try:
-            models_store[setname].lr_custom_model_splitted.fit(X_train, y_train, \
-                beta_init_values = lr_start_split_model.get_beta())
+            if STARTBETAONE:
+                models_store[setname].lr_custom_model_splitted.fit(X_train, y_train)
+            else:
+                models_store[setname].lr_custom_model_splitted.fit(X_train, y_train, \
+                    beta_init_values = lr_start_split_model.get_beta())
         except Exception as e:
             print("Error: ", e)
             models_store[setname].lr_custom_model_splitted.set_solver("Nelder-Mead")
-            models_store[setname].lr_custom_model_splitted.fit(X_train, y_train, \
-                beta_init_values = lr_start_split_model.get_beta())
+            if STARTBETAONE:
+                models_store[setname].lr_custom_model_splitted.fit(X_train, y_train)
+            else:
+                models_store[setname].lr_custom_model_splitted.fit(X_train, y_train, \
+                    beta_init_values = lr_start_split_model.get_beta())
         y_pred_custom_lr = models_store[setname].lr_custom_model_splitted.predict(X_test)
         if SHIFTFT != "":
             y_test_true, y_pred_custom_lr = shiftbackdata (y_test, y_pred_custom_lr, fts_test)
