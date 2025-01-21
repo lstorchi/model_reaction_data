@@ -47,6 +47,8 @@ warnings.simplefilter("ignore")
 from commonfuncsforcli import *
 
 CHECKANDTESTSINGLEMODEL = False
+EXTRACTFLPS = True
+REMOVEFLPS = True
 
 if __name__ == "__main__":
 
@@ -202,13 +204,14 @@ if __name__ == "__main__":
 
     # test separately need to split in two sets the data 
     # specific for FLPs thata is at the end
-    EXTRACTFLPS = True
     flpsdim = 14
+    Xflps = []
+    yflps = None
+    ftsflps = []
+    Xtherest = []
+    ytherest = None
+    ftsrest = []
     if EXTRACTFLPS:
-        Xflps = []
-        yflps = None
-        Xtherest = []
-        ytherest = None
         flpsname = "FLPs"
         flpssupername  = "LARGE_SYSTEMS"
         flpsfullname  = "LARGE_SYSTEMS_FLPs"
@@ -217,6 +220,7 @@ if __name__ == "__main__":
             Xflps.append(models_results[flpsfullname].features[k])
         Xflps = np.array(Xflps).T
         yflps = np.array(models_results[flpsfullname].labels)
+        ftsflps = np.array(models_results[flpsfullname].fts)
 
         fulldim = len(models_results["Full"].labels)
         for k in models_results["Full"].features:
@@ -225,6 +229,7 @@ if __name__ == "__main__":
         ytherest = np.array(models_results["Full"].labels) 
         Xtherest = Xtherest[:-flpsdim]
         ytherest = ytherest[:-flpsdim]
+        ftsrest = models_results["Full"].fts[:-flpsdim] 
 
         print("Xflps shape: ", Xflps.shape)
         print("yflps shape: ", yflps.shape)
@@ -232,7 +237,6 @@ if __name__ == "__main__":
         print("ytherest shape: ", ytherest.shape)
         print("Full dim ", len(models_results["Full"].labels))
 
-    REMOVEFLPS = True
     if REMOVEFLPS:
         print("Removing FLPS from training")
         flpsname = "FLPs"
@@ -333,7 +337,7 @@ if __name__ == "__main__":
         exit()
     
     models_store = {}
-    fp = open("modelsgeneral.csv", "w")
+    #fp = open("modelsgeneral.csv", "w")
     for setname in list(supersetnames)+["Full"]:
         models_store[setname] = ModelsStore()
     
@@ -434,14 +438,14 @@ if __name__ == "__main__":
             print("%40s ,Custom LR Train MAPE, %12.6f"%(setname,custom_lrrmapetrain))
             print("%40s , Custom LR Test MAPE: %12.6f"%(setname,custom_lrrmapetest))
     
-        print("%40s ,      Custom LR RMSE, %12.6f"%(setname,custom_lrrmse), file=fp)
-        print("%40s ,Custom LR Train RMSE, %12.6f"%(setname,custom_lrrmsetrain), file=fp)
-        print("%40s , Custom LR Test RMSE, %12.6f"%(setname,custom_lrrmsetest), file=fp)
-        print("%40s ,      Custom LR MAPE, %12.6f"%(setname,custom_lrrmape), file=fp)
-        print("%40s ,Custom LR Train MAPE, %12.6f"%(setname,custom_lrrmapetrain), file=fp)
-        print("%40s , Custom LR Test MAPE: %12.6f"%(setname,custom_lrrmapetest), file=fp)
+        #print("%40s ,      Custom LR RMSE, %12.6f"%(setname,custom_lrrmse), file=fp)
+        #print("%40s ,Custom LR Train RMSE, %12.6f"%(setname,custom_lrrmsetrain), file=fp)
+        #print("%40s , Custom LR Test RMSE, %12.6f"%(setname,custom_lrrmsetest), file=fp)
+        #print("%40s ,      Custom LR MAPE, %12.6f"%(setname,custom_lrrmape), file=fp)
+        #print("%40s ,Custom LR Train MAPE, %12.6f"%(setname,custom_lrrmapetrain), file=fp)
+        #print("%40s , Custom LR Test MAPE: %12.6f"%(setname,custom_lrrmapetest), file=fp)
     
-    fp.close()
+    #fp.close()
               
     setname = None
     ssetname = "Full"
@@ -555,6 +559,7 @@ if __name__ == "__main__":
                 classes.append(supersetnameslist.index(setname))
     if REMOVEFLPS:
         classes = classes[:-flpsdim]
+        #supersetnameslist = supersetnameslist[:-flpsdim]
 
     X, _, features_names =\
             commonutils.build_XY_matrix (\
@@ -616,7 +621,7 @@ if __name__ == "__main__":
         if len(y.shape) == 2:
             y = y[:,0]
         y_pred_RF_LR_CUSTOM_split.append(y[0]+nr)
-    
+
     fp = open("modelsresults.csv", "a")
     
     predictred = {}
@@ -661,7 +666,7 @@ if __name__ == "__main__":
                 y_true, ypred)
         if PRINTALSOINSTDOUT:
             print("%44s %12.6f"%(m + " MAPE, ", mape_full_usingss))
-        print("%44s %12.6f"%(m + " MAPE, ", mape_full_usingss), file=fp)
+        print("%69s %12.6f"%(m + " MAPE ,", mape_full_usingss), file=fp)
         mapes_to_collect[m] = mape_full_usingss
 
     for method in ypredFull_allbasissets:
@@ -669,15 +674,131 @@ if __name__ == "__main__":
                 models_results["Full"].labels, ypredFull_allbasissets[method])
         if PRINTALSOINSTDOUT:
             print("%44s %12.6f"%("Full , " + method + " MAPE, ", mape_full_allbasissets))
-        print("%44s %12.6f"%("Full , " + method + " MAPE, ", mape_full_allbasissets), file=fp)
+        print("%69s %12.6f"%("Full , " + method + " MAPE ,", mape_full_allbasissets), file=fp)
         mapes_to_collect[method] = mape_full_allbasissets
 
     mape_full_d3bj = mean_absolute_percentage_error( \
             models_results["Full"].labels, ypredFull_d3bj)
     if PRINTALSOINSTDOUT:
         print("%44s %12.6f"%("Full , D3(BJ) MAPE, ", mape_full_d3bj))
-    print("%44s %12.6f"%("Full , D3(BJ) MAPE, ", mape_full_d3bj), file=fp)
+    print("%69s %12.6f"%("Full , D3(BJ) MAPE ,", mape_full_d3bj), file=fp)
     mapes_to_collect["D3(BJ)"] = mape_full_d3bj
+
+    if EXTRACTFLPS:
+        y_pred_RF_LR_CUSTOM_FORGMTK = []
+        y_pred_RF_LR_CUSTOM_FORGMTK_split = []
+        y_pred_RF_LR_CUSTOM_FORFLPS = []
+        y_pred_RF_LR_CUSTOM_FORFLPS_split = []
+        for i in range(len(Xtherest)):
+            c = rf.predict([Xtherest[i]])
+            nr = 0.0
+            supersetrname = supersetnameslist[c[0]]
+            #print("X: ", i, " Y: ", Y[i], " C: ", c, " ==> ", supersetnameslist[c[0]])
+           
+            if SHIFTFT != "":
+                # this is maybe not properly correct but it is a good approximation
+                nr = ftsrest[i]
+           
+            y = models_store[supersetrname].lr_custom_model.predict([X[i]])
+            if len(y.shape) == 2:
+                y = y[:,0]
+            y_pred_RF_LR_CUSTOM_FORGMTK.append(y[0]+nr)
+            y = models_store[supersetrname].lr_custom_model_splitted.predict([X[i]])
+            if len(y.shape) == 2:
+                y = y[:,0]
+            y_pred_RF_LR_CUSTOM_FORGMTK_split.append(y[0]+nr)
+        
+        for i in range(len(Xflps)):
+            c = rf.predict([Xflps[i]])
+            nr = 0.0
+            supersetrname = supersetnameslist[c[0]]
+            #print("X: ", i, " Y: ", Y[i], " C: ", c, " ==> ", supersetnameslist[c[0]])
+           
+            if SHIFTFT != "":
+                # this is maybe not properly correct but it is a good approximation
+                nr = ftsflps[i]
+           
+            y = models_store[supersetrname].lr_custom_model.predict([X[i]])
+            if len(y.shape) == 2:
+                y = y[:,0]
+            y_pred_RF_LR_CUSTOM_FORFLPS.append(y[0]+nr)
+            y = models_store[supersetrname].lr_custom_model_splitted.predict([X[i]])
+            if len(y.shape) == 2:
+                y = y[:,0]
+            y_pred_RF_LR_CUSTOM_FORFLPS_split.append(y[0]+nr)
+
+        y_pred_LR_CUSTOM_FULL_FORGMTK = \
+                models_store["Full"].lr_custom_model.predict(Xtherest)
+        if SHIFTFT != "":
+            for i in range(len(y_pred_LR_CUSTOM_FULL_FORGMTK)):
+                y_pred_LR_CUSTOM_FULL_FORGMTK[i] = \
+                        y_pred_LR_CUSTOM_FULL_FORGMTK[i] + ftsrest[i]
+        y_pred_LR_CUSTOM_FULL_FORGMTK_split = \
+                models_store["Full"].lr_custom_model_splitted.predict(Xtherest)
+        if SHIFTFT != "":
+            for i in range(len(y_pred_LR_CUSTOM_FULL_FORGMTK_split)):
+                y_pred_LR_CUSTOM_FULL_FORGMTK_split[i] = \
+                        y_pred_LR_CUSTOM_FULL_FORGMTK_split[i] + ftsrest[i]
+        y_pred_LR_CUSTOM_FULL_FORFLPS = \
+                models_store["Full"].lr_custom_model.predict(Xflps)
+        if SHIFTFT != "":
+            for i in range(len(y_pred_LR_CUSTOM_FULL_FORFLPS)):
+                y_pred_LR_CUSTOM_FULL_FORFLPS[i] = \
+                        y_pred_LR_CUSTOM_FULL_FORFLPS[i] + ftsflps[i]
+        y_pred_LR_CUSTOM_FULL_FORFLPS_split = \
+                models_store["Full"].lr_custom_model_splitted.predict(Xflps)
+        if SHIFTFT != "":
+            for i in range(len(y_pred_LR_CUSTOM_FULL_FORFLPS_split)):
+                y_pred_LR_CUSTOM_FULL_FORFLPS_split[i] = \
+                        y_pred_LR_CUSTOM_FULL_FORFLPS_split[i] + ftsflps[i]
+        y_pred_LR_CUSTOM_SS_FORFLPS = \
+            models_store["LARGE_SYSTEMS"].lr_custom_model.predict(Xflps)    
+        if SHIFTFT != "":
+            for i in range(len(y_pred_LR_CUSTOM_SS_FORFLPS)):
+                y_pred_LR_CUSTOM_SS_FORFLPS[i] = \
+                        y_pred_LR_CUSTOM_SS_FORFLPS[i] + ftsflps[i]
+        y_pred_LR_CUSTOM_SS_FORFLPS_split = \
+            models_store["LARGE_SYSTEMS"].lr_custom_model_splitted.predict(Xflps)
+        if SHIFTFT != "":
+            for i in range(len(y_pred_LR_CUSTOM_SS_FORFLPS_split)):
+                y_pred_LR_CUSTOM_SS_FORFLPS_split[i] = \
+                        y_pred_LR_CUSTOM_SS_FORFLPS_split[i] + ftsflps[i]
+
+        # for GMTK
+        y_true = ytherest
+        if SHIFTFT != "":
+            for i in range(len(y_true)):
+                y_true[i] = y_true[i] + ftsrest[i]
+        mape = mean_absolute_percentage_error(y_true, \
+                            y_pred_RF_LR_CUSTOM_FORGMTK)
+        print(" %60s MAPE , %12.6f"%("GMTK , Custom LR RF", mape), file=fp)
+        mape = mean_absolute_percentage_error(y_true, \
+                            y_pred_RF_LR_CUSTOM_FORGMTK_split)
+        print(" %60s MAPE , %12.6f"%("GMTK , Custom LR RF split", mape), file=fp)
+        mape = mean_absolute_percentage_error(y_true, \
+                            y_pred_LR_CUSTOM_FULL_FORGMTK)
+        print(" %60s MAPE , %12.6f"%("GMTK , Custom LR Full", mape), file=fp)
+        mape = mean_absolute_percentage_error(y_true, \
+                            y_pred_LR_CUSTOM_FULL_FORGMTK_split)
+        print(" %60s MAPE , %12.6f"%("GMTK , Custom LR Full split", mape), file=fp)
+
+        # for FLPs
+        y_true = yflps
+        if SHIFTFT != "":
+            for i in range(len(y_true)):
+                y_true[i] = y_true[i] + ftsflps[i]
+        mape = mean_absolute_percentage_error(y_true, \
+                            y_pred_RF_LR_CUSTOM_FORFLPS)
+        print(" %60s MAPE , %12.6f"%("FLPs , Custom LR RF", mape), file=fp)
+        mape = mean_absolute_percentage_error(y_true, \
+                            y_pred_RF_LR_CUSTOM_FORFLPS_split)
+        print(" %60s MAPE , %12.6f"%("FLPs , Custom LR RF split", mape), file=fp)
+        mape = mean_absolute_percentage_error(y_true, \
+                            y_pred_LR_CUSTOM_FULL_FORFLPS)
+        print(" %60s MAPE , %12.6f"%("FLPs , Custom LR Full", mape), file=fp)
+        mape = mean_absolute_percentage_error(y_true, \
+                            y_pred_LR_CUSTOM_FULL_FORFLPS_split)
+        print(" %60s MAPE , %12.6f"%("FLPs , Custom LR Full split", mape), file=fp)
 
     fp.close()
 
