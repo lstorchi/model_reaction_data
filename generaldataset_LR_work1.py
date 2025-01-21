@@ -717,7 +717,8 @@ if __name__ == "__main__":
             if len(y.shape) == 2:
                 y = y[:,0]
             y_pred_RF_LR_CUSTOM_FORGMTK_split.append(y[0]+nr)
-        
+
+        fpflps = open("modelsresultsflps.csv", "w") 
         for i in range(len(Xflps)):
             c = rf.predict([Xflps[i]])
             nr = 0.0
@@ -738,9 +739,15 @@ if __name__ == "__main__":
 
             ypredrealmodel = models_store["LARGE_SYSTEMS"].lr_custom_model.predict([Xflps[i]]) 
             ypredrfmodel = models_store[supersetrname].lr_custom_model.predict([Xflps[i]])
-            print("X: ", i, " Y: %10.2f"%(yflps[i]), " C: ", c, " ==> ", supersetnameslist[c[0]])
-            print("Ypred: %10.2f"%(ypredrealmodel[0]+nr), " YpredRF: %10.2f"%(ypredrfmodel[0]+nr))
-
+            ypredfull = models_store["Full"].lr_custom_model.predict([Xflps[i]])
+            print("X: ", i, " Ytrue: %10.2f"%(yflps[i]), \
+                  "Ypred: %10.2f"%(ypredrealmodel[0]+nr), \
+                  "YpredRF: %10.2f"%(ypredrfmodel[0]+nr), \
+                  "YpredFull: %10.2f"%(ypredfull[0]+nr), \
+                  " ==> ", supersetnameslist[c[0]],file=fpflps)
+            #print("X: ", i, " Y: %10.2f"%(yflps[i]), " C: ", c, " ==> ", supersetnameslist[c[0]])
+            #print("Ypred: %10.2f"%(ypredrealmodel[0]+nr), " YpredRF: %10.2f"%(ypredrfmodel[0]+nr))
+        fpflps.close()
 
         y_pred_LR_CUSTOM_FULL_FORGMTK = \
                 models_store["Full"].lr_custom_model.predict(Xtherest)
