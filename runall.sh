@@ -1,4 +1,4 @@
-export codetorun="generaldataset_LR_work1.py" 
+export codetorun=$1
 export extractor="./extractLR.sh"
 
 python3 $codetorun PBE MINIX > out
