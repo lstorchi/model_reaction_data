@@ -25,7 +25,7 @@ class ModelResults:
     labels: list = field(default_factory=list)
     fts: list = field(default_factory=list)
     features: dict = field(default_factory=dict)
-    uncorrelated_features: dict = field(default_factory=dict)
+    #uncorrelated_features: dict = field(default_factory=dict)
 
     funcional_basisset_rmse: dict = field(default_factory=dict)
     #funcional_basisset_wtamd: dict = field(default_factory=dict)

@@ -56,8 +56,6 @@ if __name__ == "__main__":
                 "[<functionals> <basis_sets>]")
         sys.exit(1) 
 
-    exludesubset = "FLPs"
-    testseparately = "FLPs"
     # all features 
     equations = {"EC" :"EC" ,\
                 "EX" : "EX",\
@@ -125,9 +123,7 @@ if __name__ == "__main__":
     supersetnames = readdata(shiftusingFT=SHIFTFT, \
                     selected_functionalin=selected_functional, \
                     selected_basisin=selected_basisset, \
-                    equations=equations, \
-                    excludesubsetfromtraining=exludesubset, \
-                    subsettotestseparatly=testseparately)
+                    equations=equations)
     
     sep = "_"
     for setname in fullsetnames:
@@ -203,6 +199,69 @@ if __name__ == "__main__":
         if len(models_results[setname].features) != numoffeat:
             print("Number of features for ", setname, " is different")
             sys.exit(1)
+
+    # test separately need to split in two sets the data 
+    # specific for FLPs thata is at the end
+    EXTRACTFLPS = True
+    flpsdim = 14
+    if EXTRACTFLPS:
+        Xflps = []
+        yflps = None
+        Xtherest = []
+        ytherest = None
+        flpsname = "FLPs"
+        flpssupername  = "LARGE_SYSTEMS"
+        flpsfullname  = "LARGE_SYSTEMS_FLPs"
+ 
+        for k in models_results[flpsfullname].features:
+            Xflps.append(models_results[flpsfullname].features[k])
+        Xflps = np.array(Xflps).T
+        yflps = np.array(models_results[flpsfullname].labels)
+
+        fulldim = len(models_results["Full"].labels)
+        for k in models_results["Full"].features:
+            Xtherest.append(models_results["Full"].features[k])
+        Xtherest = np.array(Xtherest).T
+        ytherest = np.array(models_results["Full"].labels) 
+        Xtherest = Xtherest[:-flpsdim]
+        ytherest = ytherest[:-flpsdim]
+
+        print("Xflps shape: ", Xflps.shape)
+        print("yflps shape: ", yflps.shape)
+        print("Xtherest shape: ", Xtherest.shape)
+        print("ytherest shape: ", ytherest.shape)
+        print("Full dim ", len(models_results["Full"].labels))
+
+    REMOVEFLPS = True
+    if REMOVEFLPS:
+        print("Removing FLPS from training")
+        flpsname = "FLPs"
+        flpssupername  = "LARGE_SYSTEMS"
+        flpsfullname = "LARGE_SYSTEMS_FLPs"
+
+        del models_results[flpsfullname]
+        # remove last 14 elements each list
+        for setname in [flpssupername, "Full"]:
+            models_results[setname].setnames = \
+                models_results[setname].setnames[:-flpsdim]   
+            models_results[setname].supersetnames = \
+                models_results[setname].supersetnames[:-flpsdim]
+            models_results[setname].chemicals = \
+                models_results[setname].chemicals[:-flpsdim]
+            models_results[setname].labels = \
+                models_results[setname].labels[:-flpsdim]
+            models_results[setname].fts = \
+                models_results[setname].fts[:-flpsdim]
+            
+            for featname in models_results[setname].features:
+                models_results[setname].features[featname] = \
+                    models_results[setname].features[featname][:-flpsdim]
+            for funtionalpredname in models_results[setname].funcional_basisset_ypred:
+                models_results[setname].funcional_basisset_ypred[funtionalpredname] = \
+                    models_results[setname].funcional_basisset_ypred[funtionalpredname][:-flpsdim]
+            for predtionname in models_results[setname].insidemethods_ypred:
+                models_results[setname].insidemethods_ypred[predtionname] = \
+                    models_results[setname].insidemethods_ypred[predtionname][:-flpsdim]
 
     if CHECKANDTESTSINGLEMODEL:
         for setname in list(supersetnames)+["Full"]:
@@ -494,6 +553,9 @@ if __name__ == "__main__":
             print("Setname: ", setname)
             for entry in featuresvalues_perset[setname]:
                 classes.append(supersetnameslist.index(setname))
+    if REMOVEFLPS:
+        classes = classes[:-flpsdim]
+
     X, _, features_names =\
             commonutils.build_XY_matrix (\
             models_results['Full'].features,\

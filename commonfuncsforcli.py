@@ -122,9 +122,7 @@ def readdata (removeFT="", shiftusingFT="", \
                          "KE" : "Kinetic_Energy",\
                          "OEE" : "One_Electron_Energy",\
                          "TEE" : "Two_Electron_Energy",\
-                         "NR" : "Nuclear_Repulsion"}, \
-            excludesubsetfromtraining = "", \
-            subsettotestseparatly = ""):
+                         "NR" : "Nuclear_Repulsion"}):
 
     if shiftusingFT != "":
         print("Shifting using ", shiftusingFT)
@@ -139,45 +137,7 @@ def readdata (removeFT="", shiftusingFT="", \
     functionals = pickle.load(open("./data/functionals.p", "rb"))
     basis_sets = pickle.load(open("./data/basis_sets.p", "rb"))
 
-    if subsettotestseparatly != "":
-        print("Testing only ", subsettotestseparatly)
-        fullname = ""
-        for superset in supersetnames:
-            for subset in supersetnames[superset]:
-                if subset == subsettotestseparatly:
-                    fullname = superset + "_" + subset
-                    print("Testing ", fullname)
-        
-        # here need to extract the X and y for suset and the rest
-        # TODO
-
-    if excludesubsetfromtraining != "":
-        toremovefulllist = ""
-        for superset in supersetnames:
-            for subset in supersetnames[superset]:
-                if subset ==  excludesubsetfromtraining:
-                    supersetnames[superset].remove(subset)
-                    toremovefulllist = superset + "_" + subset
-                    print("Excluding ", subset)
-        if toremovefulllist in fullsetnames:
-            fullsetnames.remove(toremovefulllist)
-            print("Excluding ", toremovefulllist)
-        else:
-            print("Errorv: ", toremovefulllist, " not in fullsetnames")
-            exit(1)
-
-        extractedsetvalues = None
-        if toremovefulllist in allvalues_perset:
-            extractedsetvalues = allvalues_perset[toremovefulllist]
-            del allvalues_perset[toremovefulllist]
-            print("Excluding ", toremovefulllist)
-        else: 
-            print("Error: ", toremovefulllist, " not in allvalues_perset")
-            exit(1)
-
     print("Printing also to stdout: ", PRINTALSOINSTDOUT) 
-
-    exit(1)
     
     allfeatures = set()
     for setname in fullsetnames:
@@ -268,7 +228,7 @@ def readdata (removeFT="", shiftusingFT="", \
     
     featuresvalues_perset = {}
     for setname in fullsetnames:
-        featuresvalues_perset [setname] = []
+        featuresvalues_perset[setname] = []
         for val in allvalues_perset[setname]:
             featuresvalues_perset[setname].append({})
             for k in val:
@@ -300,6 +260,8 @@ def readdata (removeFT="", shiftusingFT="", \
     
     featuresvalues_perset = deepcopy(eq_featuresvalues_perset)
 
+
+    # this is related to the removeFT and to the shiftusingFT
     nrperstename = {}
     ftperstename = {}
     for setname in featuresvalues_perset:
