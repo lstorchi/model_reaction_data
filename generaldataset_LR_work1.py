@@ -61,47 +61,26 @@ if __name__ == "__main__":
         sys.exit(1) 
 
     # all features 
-    equations = {"EC" :"EC" ,\
-                "EX" : "EX",\
-                "FSPE" : "FINAL_SINGLE_POINT_ENERGY",\
-                "DC" : "Dispersion_correction",\
-                "PE" : "Potential_Energy",\
-                "KE" : "Kinetic_Energy",\
-                "OEE" : "One_Electron_Energy",\
-                "TEE" : "Two_Electron_Energy",\
-                "NR" : "Nuclear_Repulsion"}
-    SHIFTFT = ""
-
-    # All features + DC
-    #equations = {"EC" :"EC" ,\
-    #            "EX" : "EX",\
-    #            "FSPE" : "FINAL_SINGLE_POINT_ENERGY",\
-    #            "PE" : "Potential_Energy",\
-    #            "KE" : "Kinetic_Energy",\
-    #            "OEE" : "One_Electron_Energy",\
-    #            "TEE" : "Two_Electron_Energy",\
-    #            "NR" : "Nuclear_Repulsion"}
-    #SHIFTFT = "DC"
+    # equations = {"EC" :"EC" ,\
+    #             "EX" : "EX",\
+    #             "FSPE" : "FINAL_SINGLE_POINT_ENERGY",\
+    #             "DC" : "Dispersion_correction",\
+    #             "PE" : "Potential_Energy",\
+    #             "KE" : "Kinetic_Energy",\
+    #             "OEE" : "One_Electron_Energy",\
+    #             "TEE" : "Two_Electron_Energy",\
+    #             "NR" : "Nuclear_Repulsion"}
+    # SHIFTFT = ""
 
     # First Reduced Form:
-    #equations = {"Te": "Kinetic_Energy", \
-    #         "V_NN": "Nuclear_Repulsion",\
-    #         "V_eN": "One_Electron_Energy - Kinetic_Energy",\
-    #         "EX": "EX",\
-    #         "E_J": "Two_Electron_Energy - EX - EC",\
-    #         "DC": "Dispersion_correction",\
-    #         "EC": "EC"}
-    #SHIFTFT = ""
-
-    # First Reduced Form + DC
-    # equations = {"Te": "Kinetic_Energy", \
-    #              "V_NN": "Nuclear_Repulsion",\
-    #              "V_eN": "One_Electron_Energy - Kinetic_Energy",\
-    #              "EX": "EX",\
-    #              "E_J": "Two_Electron_Energy - EX - EC",\
-    #              "DC": "Dispersion_correction",\
-    #              "EC": "EC"}
-    # SHIFTFT = "DC"
+    equations = {"Te": "Kinetic_Energy", \
+             "V_NN": "Nuclear_Repulsion",\
+             "V_eN": "One_Electron_Energy - Kinetic_Energy",\
+             "EX": "EX",\
+             "E_J": "Two_Electron_Energy - EX - EC",\
+             "DC": "Dispersion_correction",\
+             "EC": "EC"}
+    SHIFTFT = "DC"
 
     selected_basisset = ""
     selected_functional = ""
