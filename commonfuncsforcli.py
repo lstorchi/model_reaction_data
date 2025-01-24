@@ -41,7 +41,7 @@ def lr_test_and_print (lr_model, X, Y, name, features_names, fp,
         print("%50s RMSE Diff %5.3f "%(name, diffperc), "%", file=fp)
         exit(1)
 
-    print("%50s , "%(name), end="")
+    print("%50s , "%(name), file=fp, end="")
     print("%20.12f , "%(lr_model.get_intercept()), file=fp, end="")
     for i, f in enumerate(features_names):
         if i == len(features_names) - 1:
