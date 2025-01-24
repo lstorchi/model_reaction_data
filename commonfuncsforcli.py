@@ -14,6 +14,44 @@ CUTDIFFPERCLR = 0.001
 
 ###############################################################
 
+def lr_test_and_print (lr_model, X, Y, name, features_names, fp,
+                       shiftft="", fts=None):
+
+    #y_pred_eq = lr_model.intercept_ + np.dot(X, lr_model.coef_.T)
+    y_true = Y
+    y_pred = lr_model.predict(X)
+    if shiftft != "":
+        y_true, y_pred = shiftbackdata(Y, y_pred, fts)
+    rmse = 0.0
+    try:
+        rmse = root_mean_squared_error(Y, y_pred)
+    except:
+        rmse = mean_squared_error(Y, y_pred, squared=False)
+    y_pred_eq = lr_model.get_intercept() + np.dot(X, lr_model.get_coefficients().T)
+    if shiftft != "": 
+        y_pred_eq = shiftbackdata(Y, y_pred_eq, fts)[1]
+    rmse_eq = 0.0
+    try:
+        rmse_eq = root_mean_squared_error(Y, y_pred_eq)
+    except:
+        rmse_eq = mean_squared_error(Y, y_pred_eq, squared=False)
+    diffperc = np.abs(rmse - rmse_eq) / rmse * 100.0
+    if diffperc > CUTDIFFPERCLR:
+        print("LR %50s RMSE Diff %5.3f "%(name, diffperc), "%")
+        print("%50s RMSE Diff %5.3f "%(name, diffperc), "%", file=fp)
+        exit(1)
+
+    print("%50s , "%(name), end="")
+    print("%20.12f , "%(lr_model.get_intercept()), file=fp, end="")
+    for i, f in enumerate(features_names):
+        if i == len(features_names) - 1:
+            print("%20.12f "%(lr_model.get_coefficients().T[i]), file=fp)
+        else:
+            print("%20.12f , "%(lr_model.get_coefficients().T[i]), file=fp, end="")
+
+
+###############################################################
+
 def lr_test_and_rpint (lr_model, X, Y, name, features_names, fp,
                        shiftft="", fts=None):
 
