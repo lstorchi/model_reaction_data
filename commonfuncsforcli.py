@@ -223,10 +223,14 @@ def readdata (removeFT="", shiftusingFT="", \
                     labels, \
                     y_pred)
             except:
-                rmse = mean_squared_error(models_results[setname].\
-                    labels, \
-                    y_pred, 
-                    squared=False)
+                try:
+                    rmse = mean_squared_error(models_results[setname].\
+                        labels, \
+                        y_pred, 
+                        squared=False)
+                except:
+                    mse = mean_squared_error(models_results[setname].labels, y_pred)
+                    rmse = np.sqrt(mse)
 
             models_results[setname].insidemethods_rmse[methodname] = rmse
             
@@ -250,8 +254,13 @@ def readdata (removeFT="", shiftusingFT="", \
                 rmse = root_mean_squared_error(models_results[setname].labels,\
                     y_pred)
             except:
-                rmse = mean_squared_error(models_results[setname].labels,\
+                try:
+                    rmse = mean_squared_error(models_results[setname].labels,\
                     y_pred, squared=False) 
+                except:
+                    mse = mean_squared_error(models_results[setname].labels, y_pred)
+                    rmse = np.sqrt(mse)
+
             models_results[setname].funcional_basisset_rmse[method] = rmse
     
             mape = mean_absolute_percentage_error(models_results[setname].labels, y_pred)
@@ -290,7 +299,7 @@ def readdata (removeFT="", shiftusingFT="", \
     #        print("Val: ",len(val))
     #        for k in val:
     #            print("   ", k, val[k])
-
+    
     eq_featuresvalues_perset =  \
         commonutils.equation_parser_compiler(equations, \
                                             functionals, \
@@ -299,9 +308,7 @@ def readdata (removeFT="", shiftusingFT="", \
                                             featuresvalues_perset, \
                                             warining=False)
 
-    
     featuresvalues_perset = deepcopy(eq_featuresvalues_perset)
-
 
     # this is related to the removeFT and to the shiftusingFT
     nrperstename = {}
